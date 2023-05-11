@@ -3,98 +3,69 @@ A 65x Assembler built with PowerShell...
 
 Why? Because I can...
 
-## C64 Example Loop
-Simple example that shows a lot of the capabilities of this assembler.
+
+## Features
+
 - Include Files
-- Macros
-- Variables and Expressions
+Additional files can be including assembled but the #INCLUDE directive.
+- Nested Macros
+The #DEFINE Macro(Param1, Param2) ... #ENDM can be used to define macros and can even used to expand macros within other macros.
+- Expressions
+Full expressions and binary math support. << >> & | %1010 etc...
+- Multi-Pass Assembly
+1st pass of assembly only used to get all label locations. 2nd pass generates code with actual labels and offsets.
+- Labels and Variables
+Labels are just variables that are set to the current location in the assembly.
 
-```assembly
-* = $0801
+## Tests
 
-#INCLUDE include.asm
+###C64
+tests\c64 has the tests that show C64 functionality...
 
-@BASICSTUB()
 
-QuarterPage = 1000 / 4
+## SuperMon64
+I converted the https://github.com/jblang/supermon64 supermon64 assembly source to be a stress test of the assembler and my parsing.
 
-START:      LDX.#       QuarterPage
+## File Loading
 
-LOOP:       TXA
-            
-            STA,X       SCREEN + (QuarterPage * 0)
-            STA,X       COLOR + (QuarterPage * 0)
 
-            STA,X       SCREEN + (QuarterPage * 1)
-            STA,X       COLOR + (QuarterPage * 1)
-            
-            STA,X       SCREEN + (QuarterPage * 2)
-            STA,X       COLOR + (QuarterPage * 2)
+## Macros and Macro Expansion
 
-            STA,X       SCREEN + (QuarterPage * 3)
-            STA,X       COLOR + (QuarterPage * 3)
+## Syntax
+I am using a modified syntax that makes the expression parsing much easier because the modifiers that affect the addressing modes make it hard to have general expression parsing when parcheesis and modifiers such as ,X are part of the operand part of the syntax. Also the zero page addressing modes are hard to detect if the size of the operand cannot be determined yet (because we are in the 1st pass of the assembly).
 
-            DEX
-            BNE         LOOP
+By moving the modifiers to the Mnemonic part of the parsing the operand can then be treated like an expression as a whole.
 
-            RTS
+The general format for lines in the assembly are:
+
+
+|line|description|
+|-|-|
+`#DIRECTIVE parameters ; comment|Directive
+left = right ; commment|Assignment
+label: mnemonic operand ; comment |Syntax
+
+### Regular Expressions
+I use regular expressions to clean off the comments from the end of the line and then determine what type of line I am working with.
+
+This is not an efficient way to parse but it is easy to code
+
 ```
+ToFix : The table below is off...
 ```
-0801 |          |             | * = $0801
-0801 |          |             | 
-0801 |          |             | #INCLUDE include.asm
-0801 |          |             | ; Start Including 'include.asm'
-0801 |          |             | ; include.asm file...
-0801 |          |             | SCREEN = $0400
-0801 |          |             | COLOR = $D800
-0801 |          |             | 
-0801 |          |             | HIGHNIBBLE = %11110000
-0801 |          |             | LOWNIBBLE = %00001111
-0801 |          |             | 
-0801 |          |             | 
-0801 |          |             | ; Ending Including 'include.asm'
-0801 |          |             | 
-0801 |          |             | 
-0801 | 0B 08    |             |             DATA        $080B    ; Basic Stub
-0803 | 0A 00    |             |             DATA        $000A    ; 10 SYS2061
-0805 | 9E       |             |             DATA.B      $9E
-0806 | 32       |             |             DATA.B      $32
-0807 | 30       |             |             DATA.B      $30
-0808 | 36       |             |             DATA.B      $36
-0809 | 31       |             |             DATA.B      $31
-080A | 00       |             |             DATA.B      $00
-080B | 00 00    |             |             DATA        $0000
-080D |          |             | 
-080D |          |             | 
-080D |          |             | QuarterPage = 1000 / 4
-080D |          |             | 
-080D | A2 FA    | LDX #$FA    | START:      LDX.#       QuarterPage
-080F |          |             | 
-080F | 8A       | TXA         | LOOP:       TXA
-0810 |          |             |             
-0810 | 9D 00 04 | STA $0400,X |             STA,X       SCREEN + (QuarterPage * 0)
-0813 | 9D 00 D8 | STA $D800,X |             STA,X       COLOR + (QuarterPage * 0)
-0816 |          |             | 
-0816 | 9D FA 04 | STA $04FA,X |             STA,X       SCREEN + (QuarterPage * 1)
-0819 | 9D FA D8 | STA $D8FA,X |             STA,X       COLOR + (QuarterPage * 1)
-081C |          |             |             
-081C | 9D F4 05 | STA $05F4,X |             STA,X       SCREEN + (QuarterPage * 2)
-081F | 9D F4 D9 | STA $D9F4,X |             STA,X       COLOR + (QuarterPage * 2)
-0822 |          |             | 
-0822 | 9D EE 06 | STA $06EE,X |             STA,X       SCREEN + (QuarterPage * 3)
-0825 | 9D EE DA | STA $DAEE,X |             STA,X       COLOR + (QuarterPage * 3)
-0828 |          |             | 
-0828 | CA       | DEX         |             DEX
-0829 | D0 E4    | BNE $E4     |             BNE         LOOP
-082B |          |             | 
-082B | 60       | RTS         |             RTS
-```
-![loop-emulated](https://github.com/detlefgrohs/PSAssembler/assets/5494000/936caac8-f745-4b9b-89d5-541178ec1414)
-
-
-
-
-
-
-
+|Format|OpCode|Addressing Mode|Mnemonic|
+|---|---|---|---|
+|LDA #[d8]|0xa9|Immediate|LDA.#|
+|LDA [d8]|0xa5|ZeroPage|LDA.zp|
+|"LDA [d8]|X"|0xb5|ZeroPageX|"LDA.zp|X"|
+|"LDX [d8]|Y"|0xb6|ZeroPageY|"LDX.zp|Y"|
+|LDA [a16]|0xad|Absolute|LDA|
+|"LDA [a16]|X"|0xbd|AbsoluteX|"LDA|X"|
+|"LDA [a16]|Y"|0xb9|AbsoluteY|"LDA|Y"|
+|"LDA ([d8])|Y"|0xb1|IndexedIndirectY|"LDA.i|Y"|
+|"LDA ([d8]|X)"|0xa1|IndexedIndirectX|"LDA.i|X"|
+|TAX|0xaa|Implied|TAX|
+|ASL A|0x0a|Accumulator|ASL.A|
+|JMP ([a16])|0x6c|Indirect|JMP.i|
+|BEQ [r8]|0xf0|Relative|BEQ|
 

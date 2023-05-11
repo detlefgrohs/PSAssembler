@@ -1,7 +1,4 @@
-# PSAssembler
-A 65x Assembler built with PowerShell...
-
-Why? Because I can...
+# Tests\C64
 
 ## C64 Example Loop
 Simple example that shows a lot of the capabilities of this assembler.
