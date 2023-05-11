@@ -1,2 +1,3 @@
 # PSAssembler
 A 65x Assembler built with PowerShell...
+![loop-emulated](https://github.com/detlefgrohs/PSAssembler/assets/5494000/936caac8-f745-4b9b-89d5-541178ec1414)
