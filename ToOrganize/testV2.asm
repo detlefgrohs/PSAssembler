@@ -1,0 +1,9 @@
+* = $0801
+
+#MACRO SHIFTL(VALUE,AMOUNT)
+    @VALUE << @AMOUNT
+#ENDM
+
+
+    @SHIFTL(0,1)
+    

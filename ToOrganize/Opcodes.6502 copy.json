@@ -1,0 +1,56 @@
+{
+    "LDA #[d8]" : { "OpCode" : "0xa9", "AddressingMode": "Immediate" },
+
+    "LDA #[d8]":  {
+                      "Opcode":  169,
+                      "AddressingMode":  "Immediate"
+                  },
+    "LDA [d8]":  {
+                     "Opcode":  165,
+                     "AddressingMode":  "ZeroPage"
+                 },
+    "LDA [d8],X":  {
+                       "Opcode":  181,
+                       "AddressingMode":  "ZeroPageX"
+                   },
+    "LDA [a16]":  {
+                      "Opcode":  173,
+                      "AddressingMode":  "Absolute"
+                  },
+    "LDA [a16],X":  {
+                        "Opcode":  189,
+                        "AddressingMode":  "AbsoluteX"
+                    },
+    "LDA [a16],Y":  {
+                        "Opcode":  185,
+                        "AddressingMode":  "AbsoluteY"
+                    },
+    "LDA ([d8],X)":  {
+                         "Opcode":  161,
+                         "AddressingMode":  "IndirectIndexX"
+                     },
+    "LDA ([d8]),Y":  {
+                         "Opcode":  177,
+                         "AddressingMode":  "IndirectIndexY"
+                     },
+    "BYTE [d8]":  {
+                      "Opcode":  null,
+                      "AddressingMode":  "Immediate"
+                  },
+    "WORD [a16]":  {
+                       "Opcode":  null,
+                       "AddressingMode":  "Absolute"
+                   },
+
+                   "RTS":  {
+                    "Opcode":  96,
+                    "AddressingMode":  "Implied"
+                },
+
+                "STA [a16]":  {
+                    "Opcode":  141,
+                    "AddressingMode":  "Absolute"
+                }
+
+                
+}
