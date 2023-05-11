@@ -1,7 +1,7 @@
 0801 |          |             | * = $0801
 0801 |          |             | 
-0801 |          |             | #INCLUDE include.asm
-0801 |          |             | ; Start Including 'include.asm'
+0801 |          |             | #INCLUDE ..\include.asm
+0801 |          |             | ; Start Including '..\include.asm'
 0801 |          |             | ; include.asm file...
 0801 |          |             | SCREEN = $0400
 0801 |          |             | COLOR = $D800
@@ -10,7 +10,7 @@
 0801 |          |             | LOWNIBBLE = %00001111
 0801 |          |             | 
 0801 |          |             | 
-0801 |          |             | ; Ending Including 'include.asm'
+0801 |          |             | ; Ending Including '..\include.asm'
 0801 |          |             | 
 0801 |          |             | 
 0801 | 0B 08    |             |             DATA        $080B    ; Basic Stub

@@ -4,11 +4,23 @@
     [Switch]$GenerateOUT,
     [Switch]$ExecutePRG,
     [Switch]$DumpVariables,
-    [Switch]$IncludeHFilesInOutput,
-    [Switch]$GenerateLST
+    [Switch]$IncludeHFilesInOutput
 )
 
 $Global:AssemblerPath = [System.IO.Path]::GetDirectoryName($myInvocation.MyCommand.Definition);
+# $Global:ScriptRoot = $myInvocation.PSScriptRoot
+# $Global:FullPath = [IO.Path]::Combine($Global:ScriptRoot, $FileName);
+# $Global:DirectoryName = [IO.Path]::GetDirectoryName($Global:FullPath);
+
+# ToDo: The directory stuff is interesting.
+#       Need to know the location of the assembler script to load the opcodes.cpu.json file
+#       and also the location of the source assembly file for relative include files.
+# Write-Host -Foregroundcolor Yellow $Global:AssemblerPath
+# Write-Host -Foregroundcolor Yellow $myInvocation.PSCommandPath
+# Write-Host -Foregroundcolor Yellow $myInvocation.PSScriptRoot
+# Write-Host -Foregroundcolor Yellow $Global:FullPath
+# Write-Host -Foregroundcolor Yellow $Global:DirectoryName
+
 
 class AssemblerV3 {
     $OPCodes = [Ordered]@{};
@@ -101,10 +113,13 @@ class AssemblerV3 {
                     $CurrentMacroName = $Matches['macroname']
                     $this.Macros.Add($Matches['macroname'], @{ Replacement = @(); Parameters = @(); });
                     $Matches['parameters'] -split ',' | ForEach-Object { $this.Macros[$CurrentMacroName].Parameters += $_; }
+                    #$this.Output += "   Defining Macro '$($CurrentMacroName)'";
                     $this.Output += @{ Line = "   Defining Macro '$($CurrentMacroName)'"; Type = "Info"; Source = "" }
                 } else {
+                    #Write-Host " ~~~ $($currentLine.Line)"
                     if (($currentLine.Line -replace ';.*', '') -match '@(?<macroname>[a-z_]*)\((?<parameters>[^)]*)\)') {
                         $replacementCode = @();
+                        #Write-Host " ZZZZ "
 
                         if ($this.Macros.ContainsKey($Matches['macroname'])) {
                             $macroExpansionOccured = $true;
@@ -118,18 +133,27 @@ class AssemblerV3 {
                                     }
                                     $parameterIndex += 1;
                                 }
+                                #Write-Host "   => $($replacementLine)"
                                 $replacementCode += $replacementLine;
                             }
                         } else {
                             $this.Output += @{ Line = "   Macro '$($Matches['macroname'])' not found."; Type = "Error"; Source = "" }
+                            #$this.Output += "   Macro '$($Matches['macroname'])' not found."
                             $replacementCode += '; ' + $Matches[0];
                         }
-
+                        #Write-Host $replacementCode.Count;
                         if ($replacementCode.Count -eq 1) {
+                            #Write-Host " *** $($Matches[0])";
+                            #Write-Host " !!! $($replacementCode[0])"
+                            #$processedLines += @{ Line = $currentLine.Line.Replace($Matches[0], $replacementCode); Source =  $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
                             $processedLines += @{ Line = $currentLine.Line.Replace($Matches[0], $replacementCode[0]); Source =  $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
                         } else {
+                            #Write-Host " *** $($Matches[0])";
+                            #Write-Host " !!! $($replacementCode[0])"
+                            #$processedLines += @{ Line = $currentLine.Line.Replace($Matches[0], $replacementCode[0]); Source = $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
                             $processedLines += @{ Line = $currentLine.Line.Replace($Matches[0], $replacementCode[0]); Source = $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
                             for($index = 1; $index -lt $replacementCode.Count ; $index += 1) {
+                            #    Write-Host "@@@ $($replacementCode[$index])"
                                 $processedLines += @{ Line = $replacementCode[$index]; Source = $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
                             }
                         }
@@ -160,7 +184,9 @@ class AssemblerV3 {
                 $lines += @{  Line = $_; LineNumber = $lineNumber; Source = $FileName; }
                 if ($_ -match '.*#INCLUDE\s+([^\s]*).*') {
                     $includeFileName = $Matches[1];
+                    #$lines += @{ Line = "; Start Including '$($includeFileName)'"; Source = 'Assembler'; };
                     $this.LoadFile([IO.Path]::Combine([IO.Path]::GetDirectoryName($FileName), $includeFileName)) | ForEach-Object { $lines += $_; }
+                    #$lines += @{ Line = "; Ending Including '$($includeFileName)'"; Source = 'Assembler'; };
                 }
                 $lineNumber += 1;
             }
@@ -220,46 +246,39 @@ class AssemblerV3 {
         
         if ($parsedSyntax.Mnemonic -ne $null) {
             $operation = $this.OPCodes[$parsedSyntax.Mnemonic];
+            $details = $operation.Format;
+            
+            if ($operation.Opcode -ne '') { $codes += [byte]$operation.Opcode }
 
-            if ($operation -ne $null) {
-                $details = $operation.Format;
-                
-                if ($operation.Opcode -ne '') { $codes += [byte]$operation.Opcode }
-
-                if ($operation.AddressingMode -eq 'Relative') {
-                    if ($this.Pass -eq 1) {
-                        $codes += [byte]0x00;
-                    } else {
-                        $offset = $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine) - ($this.Address + 2);
-
-                        if ($offset -lt -128 -or $offset -gt 127) {
-                            $this.Output += @{ Line = "   Branch too large..."; Type = "Error"; Source = "" }
-                            $this.Errors += @{ Message = "   Branch too large..."; Line = $CurrentLine; }
-                            $offset = [byte]0;
-                        }
-
-                        $value = $this.TernaryObject($offset -lt 0, { $offset + 0x100 }, { $offset });
-                        $codes += [byte]$value;
-                        $details = $details.Replace('[r8]', '$' + $value.ToString('X2'));   
-                    }
-                } elseif ($operation.AddressingMode -eq 'Data') {
-                    $dataOffset = $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine);
+            if ($operation.AddressingMode -eq 'Relative') {
+                if ($this.Pass -eq 1) {
+                    $codes += [byte]0x00;
                 } else {
-                    if ($operation.Bytes -eq 1) {
-                        $value = if ($this.Pass -eq 1) { 0; } else { $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine); }
-                        $codes += [byte]$value;
-                        $details = $operation.Format.Replace('[d8]', '$'+ $value.ToString('X2'));
+                    $offset = $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine) - ($this.Address + 2);
+
+                    if ($offset -lt -128 -or $offset -gt 127) {
+                        $this.Output += @{ Line = "   Branch too large..."; Type = "Error"; Source = "" }
+                        #$this.Output += "   Branch too large...";
+                        $this.Errors += @{ Message = "   Branch too large..."; Line = $CurrentLine; }
+                        $offset = [byte]0;
                     }
-                    if ($operation.Bytes -eq 2) {
-                        $value = if ($this.Pass -eq 1) { 0; } else { $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine); }
-                        $codes += ($this.WordToByteArray($value))
-                        $details = $details.Replace('[a16]', '$'+ $value.ToString('X4'));
-                    }
+
+                    $value = $this.TernaryObject($offset -lt 0, { $offset + 0x100 }, { $offset });
+                    $codes += [byte]$value;
+                    $details = $details.Replace('[r8]', '$' + $value.ToString('X2'));   
                 }
+            } elseif ($operation.AddressingMode -eq 'Data') {
+                $dataOffset = $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine);
             } else {
-                if ($this.Pass -ne 1) {
-                    $this.Output += @{ Line = "   Parsing Error.."; Type = "Error"; Source = "" }
-                    $this.Errors += @{ Message = "   Parsing Error..."; Line = $CurrentLine; }
+                if ($operation.Bytes -eq 1) {
+                    $value = if ($this.Pass -eq 1) { 0; } else { $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine); }
+                    $codes += [byte]$value;
+                    $details = $operation.Format.Replace('[d8]', '$'+ $value.ToString('X2'));
+                }
+                if ($operation.Bytes -eq 2) {
+                    $value = if ($this.Pass -eq 1) { 0; } else { $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine); }
+                    $codes += ($this.WordToByteArray($value))
+                    $details = $details.Replace('[a16]', '$'+ $value.ToString('X4'));
                 }
             }
         }
@@ -271,6 +290,7 @@ class AssemblerV3 {
             }
             $this.Output += @{ Line = ($line + "| " + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line; 
                                Type = "Code"; Source = $CurrentLine.Source; }
+            #$this.Output += ($line + "| " + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line;
             $this.Bytes += $codes;
         }
         $this.Address += $codes.Count + $dataOffset;
@@ -279,14 +299,30 @@ class AssemblerV3 {
 
 $assembler = [AssemblerV3]::new('6502');
 
-$assembler.AssembleFile([IO.Path]::Combine($Global:ScriptRoot, $FileName));
+#$lines = $assembler.LoadFile($FileName);
 
-if ($GenerateLST) {
-    $assembler.Output | ForEach-Object {
-        if ($IncludeHFilesInOutput -or (-not $_.Source.EndsWith('.h'))) {
-            $_.Line
-        }
+# | ForEach-Object {
+#     "$($_.Source).$($_.LineNumber) : $($_.Line)";
+# }
+
+# $assembler.Pass = 1;
+# $lines = $assembler.ExpandMacros($lines);
+
+# $lines | ForEach-Object {
+#      "$($_.Source).$($_.LineNumber) : $($_.Line)";
+# }
+
+$assembler.AssembleFile([IO.Path]::Combine($Global:ScriptRoot, $FileName));
+$assembler.Output | ForEach-Object {
+    if ($IncludeHFilesInOutput -or (-not $_.Source.EndsWith('.h'))) {
+        $_.Line
     }
+}
+
+$assembler.Macros.Keys | ForEach-Object {
+    Write-Host $_
+    $assembler.Macros[$_].Parameters
+    $assembler.Macros[$_].Replacement
 }
 
 if ($DumpVariables) {
@@ -296,25 +332,25 @@ if ($DumpVariables) {
 }
 
 if ($assembler.Errors.Count -gt 0) {
-    Write-Host -ForegroundColor Red "$($assembler.Errors.Count) Error(s) during assembly."
+    Write-Host -ForegroundColor Red "$($assembler.Errors.Count) Errors during assembly."
     $assembler.Errors | ForEach-Object {
         Write-Host -ForegroundColor Red "$($_.Line.Source) : $($_.Line.LineNumber) : $($_.Line.Line) => $($_.Message)"
     }
-    return;
-}
-
-if ($GenerateOUT) {
-    $outFileName = $FileName.Replace('.asm', '.out');
-    Write-Host -ForegroundColor Yellow "Writing '$($outFileName)'"
-    $assembler.Export($outFileName, $false);
 }
 
 if ($GeneratePRG -or $ExecutePRG) {
     $prgFileName = $FileName.Replace('.asm', '.prg')
-    Write-Host -ForegroundColor Yellow "Writing '$($prgFileName)'"
+
     $assembler.Export($prgFileName, $true);
     if ($ExecutePRG) {
-        Write-Host -ForegroundColor Yellow "Launching'$($prgFileName)' in Vice."
-        (. "C:\Program Files\GTK3VICE-3.7-win64\bin\x64sc.exe" $prgFileName) | Out-Null
+        . "C:\Program Files\GTK3VICE-3.7-win64\bin\x64sc.exe" $prgFileName
     }
 }
+
+if ($GenerateOUT) {
+    $outFileName = $FileName.Replace('.asm', '.out');
+    $assembler.Export($outFileName, $false);
+}
+
+# 285 Lines Before Optimizations
+# Added FILL support...

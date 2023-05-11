@@ -1,6 +1,6 @@
 * = $0801
 
-#INCLUDE include.asm
+#INCLUDE ..\include.asm
 
 @BASICSTUB()
 
