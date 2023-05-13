@@ -1,6 +1,6 @@
 * = $0801
 
-#INCLUDE ..\include.asm
+#INCLUDE ..\includes.h
 
 @BASICSTUB()
 
@@ -10,17 +10,17 @@ START:      LDX.#       QuarterPage
 
 LOOP:       TXA
             
-            STA,X       SCREEN + (QuarterPage * 0)
-            STA,X       COLOR + (QuarterPage * 0)
+            STA,X       VICII_SCREEN_RAM + (QuarterPage * 0)
+            STA,X       VICII_COLOR_RAM + (QuarterPage * 0)
 
-            STA,X       SCREEN + (QuarterPage * 1)
-            STA,X       COLOR + (QuarterPage * 1)
+            STA,X       VICII_SCREEN_RAM + (QuarterPage * 1)
+            STA,X       VICII_COLOR_RAM + (QuarterPage * 1)
             
-            STA,X       SCREEN + (QuarterPage * 2)
-            STA,X       COLOR + (QuarterPage * 2)
+            STA,X       VICII_SCREEN_RAM + (QuarterPage * 2)
+            STA,X       VICII_COLOR_RAM + (QuarterPage * 2)
 
-            STA,X       SCREEN + (QuarterPage * 3)
-            STA,X       COLOR + (QuarterPage * 3)
+            STA,X       VICII_SCREEN_RAM + (QuarterPage * 3)
+            STA,X       VICII_COLOR_RAM + (QuarterPage * 3)
 
             DEX
             BNE         LOOP

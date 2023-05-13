@@ -7,3 +7,6 @@ ZP_FP_TO_INT_FUNC_PTR       = $03
 ZP_INT_TO_FP_FUNC_PTR       = $05
 
 
+
+ZP_FB     = $FB
+ZP_FD     = $FD

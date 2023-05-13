@@ -9,3 +9,6 @@
 
 
 #INCLUDE includes\basicstub.h
+
+
+#INCLUDE macros.h

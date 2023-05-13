@@ -5,7 +5,8 @@
     [Switch]$ExecutePRG,
     [Switch]$DumpVariables,
     [Switch]$IncludeHFilesInOutput,
-    [Switch]$GenerateLST
+    [Switch]$GenerateLST,
+    [Switch]$VerboseLST
 )
 
 $Global:AssemblerPath = [System.IO.Path]::GetDirectoryName($myInvocation.MyCommand.Definition);
@@ -22,13 +23,22 @@ class AssemblerV3 {
     [UInt16]$StartingAddress;
     $InMacro = $false;
     $Errors = @();
+    $VerboseLST = $false;
+
+    # For Report
+    $StartDTM = [DateTime]::Now;
+    $EndDTM = [DateTime]::Now;
+    $LoadedLines = 0;
+    $AssembledLines = 0;
+
+    $ReservedVariableNames = @( "if", "else", "lt", "gt", "eq", "ne", "not", "and", "or")
 
     AssemblerV3([string]$CPU = '6502') {
         (Get-Content -Path "$($Global:AssemblerPath)\Opcodes.$($CPU).json" | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $this.OPCodes.Add($_.Name, $_.Value); }
         $this.CreateSyntaxPattern();
     }
     [void]CreateSyntaxPattern() {
-        $patterns = [ordered]@{ directive = '\s*#(?<command>[^\s]*)(?<parameters>[^;]*)?';
+        $patterns = [ordered]@{ directive = '\s*((?<label>[^\s]*):)?\s*#(?<command>[^\s]*)(?<parameters>[^;]*)?';
                                 equation =  '\s*(?<left>[^\s]*)\s*=\s*(?<right>.*)?';
                                 code =      '\s*((?<label>[^\s]*):)?\s*(?<mnemonic>[^\s]*)\s*(?<operand>.*)\s*';
                                };
@@ -56,13 +66,33 @@ class AssemblerV3 {
     }
     [uint16] EvaluateExpression($Expression, $Line) {
         $expressionVariables = @();
-        ([RegEx]'[a-zA-Z_]\w*').Matches($Expression) | ForEach-Object {
-            if (-not $expressionVariables.Contains($_.Value)) { $expressionVariables += $_.Value; }
+        ([RegEx]'[$]?\w+').Matches($Expression -replace '''.''', '') | ForEach-Object {
+            if (-not (($_.Value.StartsWith('$')) -or ($_.Value -match '^[0-9]*$'))) {
+                if (-not $this.ReservedVariableNames.Contains($_.Value)) {
+                    if (-not $expressionVariables.Contains($_.Value)) { $expressionVariables += $_.Value; }
+                }
+            }
         }
         $expressionVariables | Sort-Object { $_.Length } -Descending | ForEach-Object {
-            if ($this.Variables.ContainsKey($_)) { $Expression = $Expression.Replace($_, $this.Variables[$_]); };
+            if ($this.Variables.ContainsKey($_)) { $Expression = $Expression.Replace($_, $this.Variables[$_]); }
+            else {
+                switch ($_) {
+                    "ORG" { $Expression = $Expression.Replace($_, $this.StartingAddress); }
+                    "CURADDR" { $Expression = $Expression.Replace($_, $this.Address); }
+                    "BYTESLEN" { $Expression = $Expression.Replace($_, $this.Bytes.Length); }
+                    "BYTES" { $Expression = $Expression.Replace($_, 'this.Bytes'); }
+                    default {
+                        $Expression = $Expression.Replace($_, ''); 
+                        $this.Output += @{ Line = "   Variable not found: '$($_)'"; Type = "Error"; Source = "" }
+                        $this.Errors += @{ Message = "   Variable not found: '$($_)'"; Line = $Line }
+                    }
+                }
+            }
         }
+        if ($Expression -eq '') { return [uint16]0; }
+
         $Expression = $Expression.Replace('$', '0x');
+        $Expression = $Expression.Replace('this', '$this');  # Hacky...
         $Expression = $Expression -replace '%([0-1]+)', '[Convert]::ToInt16(''$1'', 2)'
         $Expression = $Expression -replace '''(.)''', '[byte][char]''$1'''
         $Expression = $Expression -replace '>>', ' -shr '
@@ -84,7 +114,7 @@ class AssemblerV3 {
         if ($Test) { return &$T; } else { return &$F; }
     }
     [array] ExpandMacros($Lines) {
-        Write-Host -ForegroundColor Green "Expanding Macros Pass #$($this.Pass)"
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Expanding Macros Pass #$($this.Pass)"
         $this.Pass += 1;
 
         $processedLines = @();
@@ -101,7 +131,6 @@ class AssemblerV3 {
                     $CurrentMacroName = $Matches['macroname']
                     $this.Macros.Add($Matches['macroname'], @{ Replacement = @(); Parameters = @(); });
                     $Matches['parameters'] -split ',' | ForEach-Object { $this.Macros[$CurrentMacroName].Parameters += $_; }
-                    $this.Output += @{ Line = "   Defining Macro '$($CurrentMacroName)'"; Type = "Info"; Source = "" }
                 } else {
                     if (($currentLine.Line -replace ';.*', '') -match '@(?<macroname>[a-z_]*)\((?<parameters>[^)]*)\)') {
                         $replacementCode = @();
@@ -122,9 +151,14 @@ class AssemblerV3 {
                             }
                         } else {
                             $this.Output += @{ Line = "   Macro '$($Matches['macroname'])' not found."; Type = "Error"; Source = "" }
+                            $this.Errors += @{ Message = "   Macro '$($Matches['macroname'])' not found."; Line = $currentLine; }
                             $replacementCode += '; ' + $Matches[0];
                         }
 
+                        if ($this.VerboseLST) {
+                            $processedLines += @{ Line = '; ' + $currentLine.Line + ' ; @' + $CurrentMacroName; 
+                                                  Source = $currentLine.Source; LineNumber = $currentLine.LineNumber; }
+                        }
                         if ($replacementCode.Count -eq 1) {
                             $processedLines += @{ Line = $currentLine.Line.Replace($Matches[0], $replacementCode[0]); Source =  $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
                         } else {
@@ -145,7 +179,7 @@ class AssemblerV3 {
         return $processedLines;
     }
     [array] LoadFile($FileName) {
-        Write-Host -ForegroundColor Green "Loading file '$($FileName)'"
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Loading file '$($FileName)'"
         $lineNumber = 0;
         $lines = @();
         $stopLoading = $false;
@@ -171,17 +205,23 @@ class AssemblerV3 {
         return @(($Word -band 0x00FF), (( $Word -band 0xFF00 ) -shr 8));
     }
     [void] AssembleFile($FileName) {
+        $this.StartDTM = [DateTime]::Now;
+        Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Starting Assembly..."
         $lines = $this.LoadFile($FileName);
+        $this.LoadedLines = $lines.Count;
         $this.Pass = 1;
         $lines = $this.ExpandMacros($lines);
 
         $this.Pass = 1;
-        Write-Host -ForegroundColor Green "Assembly Pass #$($this.Pass)"
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
         $lines | ForEach-Object { $this.Assemble($_); }
         $this.Pass = 2;
         $this.Address = 0;
-        Write-Host -ForegroundColor Green "Assembly Pass #$($this.Pass)"
-        $lines | ForEach-Object { $this.Assemble($_); }     
+        $this.AssembledLines = 0;
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
+        $lines | ForEach-Object { $this.Assemble($_); }
+        Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Completed Assembly..."
+        $this.EndDTM = [DateTime]::Now;
     }
     [void] Export($FileName, $PrePendStartingAddress) {
         $out = $this.Bytes;
@@ -198,11 +238,14 @@ class AssemblerV3 {
         $this.TernaryVoid($this.Variables.ContainsKey($Name), { }, { $this.Variables.Add($Name, $Value); });
     }
     [void] Assemble($CurrentLine) {
+        $this.AssembledLines += 1;
+
         $codes = @();
         $details = "";
         $dataOffset = 0;
         $parsedSyntax = $this.ParseSyntax($CurrentLine.Line);
-        
+        $skipOutput = $false;
+
         if ($parsedSyntax.Label -ne $null) {
             $this.UpsertVariable($parsedSyntax.Label, $this.Address);
         }
@@ -217,8 +260,33 @@ class AssemblerV3 {
                 $this.UpsertVariable($parsedSyntax.Left, $value);
             }
         }
-        
-        if ($parsedSyntax.Mnemonic -ne $null) {
+        if ($parsedSyntax.Command -ne $null) {
+            #if ($this.Pass -ne 1) {
+                switch ($parsedSyntax.Command) {
+                    "TEXT" {
+                        if ($parsedSyntax.Parameters -match '"(.*)"') {
+                            $this.Output += @{ Line = ("$($this.Address.ToString('X4')) |          " + "| " + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line; 
+                                       Type = "Code"; Source = $CurrentLine.Source; }
+                            for($index = 0; $index -lt $Matches[1].Length; $index += 1) {
+                                $charValue = [byte]$Matches[1][$index];
+                                if ($charValue -ge 64 -and $charValue -le 95) { $charValue -= 64; } 
+                                $this.Assemble(@{ Line = "   DATA.b `$$($charValue.ToString('X2'))"; Source = $CurrentLine.Source; LineNumber = $CurrentLine.LineNumber });
+                            }
+                            $skipOutput = $true;
+                            #$dataOffset = $Matches[1].Length;   # Advance current by size of message...
+                        }
+                    }
+                    "ASSERT" {
+                        if ($this.Pass -ne 1) {
+                            if ($this.EvaluateExpression($parsedSyntax.Parameters, $currentLine) -eq 0) {
+                                $this.Output += @{ Line = "   Failed assertion ($($parsedSyntax.Parameters))"; Type = "Error"; Source = "" }
+                                $this.Errors += @{ Message = "   Failed assertion ($($parsedSyntax.Parameters))"; Line = $CurrentLine; }                            
+                            } 
+                        }
+                    }
+                }
+            #}
+        } elseif ($parsedSyntax.Mnemonic -ne $null) {
             $operation = $this.OPCodes[$parsedSyntax.Mnemonic];
 
             if ($operation -ne $null) {
@@ -263,8 +331,7 @@ class AssemblerV3 {
                 }
             }
         }
-
-        if ($this.Pass -ne 1) {
+        if ($this.Pass -ne 1 -and -not $skipOutput) {
             $line = "$($this.Address.ToString('X4')) | ";
             for ($index = 0; $index -lt 3; $index += 1) {
                 if ($index -lt $codes.Count) { $line += "$($codes[$index].ToString('X2')) "; } else { $line += "   "; }
@@ -275,10 +342,23 @@ class AssemblerV3 {
         }
         $this.Address += $codes.Count + $dataOffset;
     }
+    [void] Report() {
+        Write-Host -ForegroundColor Cyan "Assembly Report:"
+        Write-Host -ForegroundColor Cyan "   Assembly Start  : $($this.StartDTM.ToString())"
+        Write-Host -ForegroundColor Cyan "   Assembly End    : $($this.EndDTM.ToString())"
+        $elapsed = $this.EndDTM - $this.StartDTM;
+        Write-Host -ForegroundColor Cyan "   Elapsed Seconds : $($elapsed.TotalSeconds.ToString('0.00'))"
+
+        Write-Host -ForegroundColor Cyan "   Loaded Lines    : $($this.LoadedLines.ToString('#,#'))"
+        Write-Host -ForegroundColor Cyan "   Assembled Lines : $($this.AssembledLines.ToString('#,#'))"
+        Write-Host -ForegroundColor Cyan "   Assembled Bytes : $($this.Bytes.Count.ToString('#,#'))"
+        Write-Host -ForegroundColor Cyan "   Labels/Variables: $($this.Variables.Count.ToString('#,#'))"
+        Write-Host -ForegroundColor Cyan "   Macros          : $($this.Macros.Count.ToString('#,#'))"
+    }
 }
 
 $assembler = [AssemblerV3]::new('6502');
-
+$assembler.VerboseLST = $VerboseLST;
 $assembler.AssembleFile([IO.Path]::Combine($Global:ScriptRoot, $FileName));
 
 if ($GenerateLST) {
@@ -289,6 +369,8 @@ if ($GenerateLST) {
     }
 }
 
+$assembler.Report();
+
 if ($DumpVariables) {
     $assembler.Variables.Keys | Sort-Object | ForEach-Object {
         "   $($_) = `$$($assembler.Variables[$_].ToString('X4'))"
@@ -296,7 +378,7 @@ if ($DumpVariables) {
 }
 
 if ($assembler.Errors.Count -gt 0) {
-    Write-Host -ForegroundColor Red "$($assembler.Errors.Count) Error(s) during assembly."
+    Write-Host -ForegroundColor Red "$([DateTime]::Now.ToString('HH:mm:ss')) : $($assembler.Errors.Count) Error(s) during assembly."
     $assembler.Errors | ForEach-Object {
         Write-Host -ForegroundColor Red "$($_.Line.Source) : $($_.Line.LineNumber) : $($_.Line.Line) => $($_.Message)"
     }
@@ -305,16 +387,54 @@ if ($assembler.Errors.Count -gt 0) {
 
 if ($GenerateOUT) {
     $outFileName = $FileName.Replace('.asm', '.out');
-    Write-Host -ForegroundColor Yellow "Writing '$($outFileName)'"
+    Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Writing '$($outFileName)'"
     $assembler.Export($outFileName, $false);
 }
 
 if ($GeneratePRG -or $ExecutePRG) {
     $prgFileName = $FileName.Replace('.asm', '.prg')
-    Write-Host -ForegroundColor Yellow "Writing '$($prgFileName)'"
+    Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Writing '$($prgFileName)'"
     $assembler.Export($prgFileName, $true);
     if ($ExecutePRG) {
         Write-Host -ForegroundColor Yellow "Launching'$($prgFileName)' in Vice."
         (. "C:\Program Files\GTK3VICE-3.7-win64\bin\x64sc.exe" $prgFileName) | Out-Null
     }
 }
+
+<#
+
+    [x] Assembly Stats
+
+    [ ] MultiByte DATA.b
+
+    [ ] Examples
+        [x] ScrollUp with Color
+            [ ] Optimize
+        [x] NewMaze
+            [ ] Optimize
+            [ ] Smooth scrolling
+        [ ] Text Routine
+            [ ] Struct for x,y etc...
+            [ ] ScrollUp copied
+            [ ] byte, word, fp to string...
+
+        [ ] Math Routines - In Assembly
+
+
+    [x] Assertions
+        [ ] formatting
+
+    [ ] New Directives
+        [ ] #PRINT
+        [ ] 
+
+    [ ] Keywords
+        [ ] 2 Types Reserved for PS Syntax
+        [ ] Reserved Variables
+
+    [ ] Reassigning labels or variables?
+
+    [ ] Tests
+        With Assertions
+
+#>

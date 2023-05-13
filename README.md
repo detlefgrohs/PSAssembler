@@ -30,7 +30,32 @@ I converted the https://github.com/jblang/supermon64 supermon64 assembly source 
 
 
 ## Macros and Macro Expansion
+Macros are defined with the #MACRO directive and a block of code is contained between that and the #ENDM directive. Parameters are defined and replaced in the macro block with @ prefixes. Macro expansion will continue until there are no more macro expansions available. Anytime a @MacroName is not found, it will comment out the line, note the error and continue parsing the code. This is to ensure that all of the errors are collected and reported when possible.
 
+```assembly
+#MACRO LO(VALUE)
+(@VALUE & $00FF)
+#ENDM
+
+#MACRO HI(VALUE)
+((@VALUE & $FF00) >> 8)
+#ENDM
+
+#MACRO SET_WORD(ADDRESS,VALUE)
+    LDA.#   @LO(@VALUE)
+    STA     @ADDRESS
+    LDA.#   @HI(@VALUE)
+    STA     @ADDRESS+1
+#ENDM
+
+@SET_WORD($ABCD,$1234)
+```
+```assembly
+0000 | A9 34    | LDA #$34    |     LDA.#   ($1234 & $00FF)
+0002 | 8D CD AB | STA $ABCD   |     STA     $ABCD
+0005 | A9 12    | LDA #$12    |     LDA.#   (($1234 & $FF00) >> 8)
+0007 | 8D CE AB | STA $ABCE   |     STA     $ABCD+1
+```
 ## Syntax
 I am using a modified syntax that makes the expression parsing much easier because the modifiers that affect the addressing modes make it hard to have general expression parsing when parcheesis and modifiers such as ,X are part of the operand part of the syntax. Also the zero page addressing modes are hard to detect if the size of the operand cannot be determined yet (because we are in the 1st pass of the assembly).
 

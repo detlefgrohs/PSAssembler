@@ -422,7 +422,7 @@ LD:     LDY.# 1              ; default to reading from tape, device #1
         STY.zp SATUS           ; clear status
         LDA.# STAGE >> 8        ; set filename pointer to staging buffer
         STA.zp FNADR+1
-        LDA.# STAGE & 0x00ff 
+        LDA.# STAGE & $00ff 
         STA.zp FNADR
 L1:     JSR GETCHR          ; get a character
         BEQ LSHORT          ; no filename given, try load or verify from tape
@@ -546,7 +546,7 @@ ASCAN:  LDA DIGCNT          ; did we find address digits last time?
         JSR RDVAL           ; otherwise, look for an address
         BEQ AFORM0          ; we didn't find an address, look for characters
         BCS AERROR          ; carry flag indicates error
-        LDA.# 0x24  ; "$"
+        LDA.# $24  ; "$"
         STA,X U0AA0         ; prefix addresses with $
         INX                 ; next position in buffer
         LDY.# 4              ; non-zero page addresses are 4 hex digits
