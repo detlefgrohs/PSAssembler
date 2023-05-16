@@ -7,31 +7,31 @@
 TARGET_PTR     = $FB
 SOURCE_PTR     = $FD
 
-LINE_LOOP:  LDX.#       VICII_SCREEN_TEXT_WIDTH
-CHAR_LOOP:  @RAND()     ; A will have a random byte
+START:      LDX.#       VICII_SCREEN_TEXT_WIDTH
+.1:         @RAND()     ; A will have a random byte
 
-            BPL         RAND_HIGH
+            BPL         .2
             LDA.#       $4D
-            JMP         CONT
-RAND_HIGH:  LDA.#       $4E
-CONT:       
-            STA,X       VICII_SCREEN_TEXT_LINE_24
+            JMP         .3
+
+.2:         LDA.#       $4E
+.3:         STA,X       VICII_SCREEN_TEXT_LINE_24
             DEX
-            BPL         CHAR_LOOP
+            BPL         .1
             JSR         SCROLL_UP
-            JMP         LINE_LOOP
+            JMP         START
 
 SCROLL_UP:  @SET_ZP_WORD(TARGET_PTR,VICII_SCREEN_TEXT_LINE_00)
             @SET_ZP_WORD(SOURCE_PTR,VICII_SCREEN_TEXT_LINE_01)
 
             LDX.#       VICII_SCREEN_TEXT_HEIGHT - 1
-SU_L_LOOP:  LDY.#       VICII_SCREEN_TEXT_WIDTH - 1
-SU_C_LOOP:  LDA.i,Y     SOURCE_PTR
+.1:         LDY.#       VICII_SCREEN_TEXT_WIDTH - 1
+.2:         LDA.i,Y     SOURCE_PTR
             STA.i,Y     TARGET_PTR
-            @DEY_BPL(SU_C_LOOP)     ; Char--
-            @DEX_BNE(SU_NEXT)       ; Line--
+            @DEY_BPL(.2)     ; Char--
+            @DEX_BNE(.3)       ; Line--
             RTS
-            
-SU_NEXT:    @ADD_ZP_WORD(TARGET_PTR,VICII_SCREEN_TEXT_WIDTH)
+
+.3:         @ADD_ZP_WORD(TARGET_PTR,VICII_SCREEN_TEXT_WIDTH)
             @ADD_ZP_WORD(SOURCE_PTR,VICII_SCREEN_TEXT_WIDTH)
-JMP         SU_L_LOOP
+            JMP         .1

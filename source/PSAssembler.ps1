@@ -4,6 +4,7 @@
     [Switch]$GenerateOUT,
     [Switch]$ExecutePRG,
     [Switch]$DumpVariables,
+    [Switch]$DumpLabels,
     [Switch]$IncludeHFilesInOutput,
     [Switch]$GenerateLST,
     [Switch]$VerboseLST
@@ -11,19 +12,28 @@
 
 $Global:AssemblerPath = [System.IO.Path]::GetDirectoryName($myInvocation.MyCommand.Definition);
 
+enum PassType {
+    Preparation = 0
+    Collection = 1 
+    Optmization = 2
+    Assembly = 3
+}
+
 class AssemblerV3 {
     $OPCodes = [Ordered]@{};
     $Bytes = @();
     $Variables = @{};
     $Output = @();
     $SyntaxPattern = $null;
-    $Pass = 0;
+    [PassType]$Pass = [PassType]::Preparation;
+    $MacroPass = 0;
     $Macros = @{};
     [UInt16]$Address;
     [UInt16]$StartingAddress;
     $InMacro = $false;
     $Errors = @();
     $VerboseLST = $false;
+    $LastLabel = "";
 
     # For Report
     $StartDTM = [DateTime]::Now;
@@ -65,26 +75,37 @@ class AssemblerV3 {
         return $parsedItems;
     }
     [uint16] EvaluateExpression($Expression, $Line) {
-        $expressionVariables = @();
-        ([RegEx]'[$]?\w+').Matches($Expression -replace '''.''', '') | ForEach-Object {
-            if (-not (($_.Value.StartsWith('$')) -or ($_.Value -match '^[0-9]*$'))) {
-                if (-not $this.ReservedVariableNames.Contains($_.Value)) {
-                    if (-not $expressionVariables.Contains($_.Value)) { $expressionVariables += $_.Value; }
+        $expressionVariables = @{};
+        ([RegEx]'[$]?[\w.]+').Matches($Expression -replace '''.''', '') | ForEach-Object {
+            $variableName = $_.Value;
+            if (-not (($variableName.StartsWith('$')) -or ($variableName -match '^[0-9]*$'))) {
+                if (-not $this.ReservedVariableNames.Contains($variableName)) {
+                    if ($variableName.StartsWith('.')) { 
+                        $variableName = $this.LastLabel + $variableName;
+                    }
+                    if (-not $expressionVariables.Contains($variableName)) { 
+                        $expressionVariables.Add($variableName, $_.Value);
+                    }
                 }
             }
         }
-        $expressionVariables | Sort-Object { $_.Length } -Descending | ForEach-Object {
-            if ($this.Variables.ContainsKey($_)) { $Expression = $Expression.Replace($_, $this.Variables[$_]); }
-            else {
-                switch ($_) {
-                    "ORG" { $Expression = $Expression.Replace($_, $this.StartingAddress); }
-                    "CURADDR" { $Expression = $Expression.Replace($_, $this.Address); }
-                    "BYTESLEN" { $Expression = $Expression.Replace($_, $this.Bytes.Length); }
-                    "BYTES" { $Expression = $Expression.Replace($_, 'this.Bytes'); }
+        $expressionVariables.Keys | Sort-Object { $_.Length } -Descending | ForEach-Object {
+            $variableName = $_;
+            $replacementText = $expressionVariables[$_];
+
+            if ($this.Variables.ContainsKey($variableName)) {
+                $this.Variables[$variableName].ReferenceCount += 1;
+                $Expression = $Expression.Replace($replacementText, $this.Variables[$variableName].Value); 
+            } else {
+                switch ($variableName) {
+                    "ORG" { $Expression = $Expression.Replace($variableName, $this.StartingAddress); }
+                    "CURADDR" { $Expression = $Expression.Replace($variableName, $this.Address); }
+                    "BYTESLEN" { $Expression = $Expression.Replace($variableName, $this.Bytes.Length); }
+                    "BYTES" { $Expression = $Expression.Replace($variableName, 'this.Bytes'); }
                     default {
-                        $Expression = $Expression.Replace($_, ''); 
-                        $this.Output += @{ Line = "   Variable not found: '$($_)'"; Type = "Error"; Source = "" }
-                        $this.Errors += @{ Message = "   Variable not found: '$($_)'"; Line = $Line }
+                        $Expression = $Expression.Replace($variableName, ''); 
+                        $this.Output += @{ Line = "   Variable not found: '$($variableName)'"; Type = "Error"; Source = "" }
+                        $this.Errors += @{ Message = "   Variable not found: '$($variableName)'"; Line = $Line }
                     }
                 }
             }
@@ -115,7 +136,7 @@ class AssemblerV3 {
     }
     [array] ExpandMacros($Lines) {
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Expanding Macros Pass #$($this.Pass)"
-        $this.Pass += 1;
+        $this.MacroPass += 1;
 
         $processedLines = @();
         $this.InMacro = $false;
@@ -209,13 +230,13 @@ class AssemblerV3 {
         Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Starting Assembly..."
         $lines = $this.LoadFile($FileName);
         $this.LoadedLines = $lines.Count;
-        $this.Pass = 1;
+        $this.MacroPass = 1;
         $lines = $this.ExpandMacros($lines);
 
-        $this.Pass = 1;
+        $this.Pass = [PassType]::Collection;
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
         $lines | ForEach-Object { $this.Assemble($_); }
-        $this.Pass = 2;
+        $this.Pass = [PassType]::Assembly;
         $this.Address = 0;
         $this.AssembledLines = 0;
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
@@ -234,8 +255,12 @@ class AssemblerV3 {
             $out | ForEach-Object { Add-Content -Value ([byte]$_) -Path $FileName -AsByteStream } # PowerShell 6.x AsByteStream
         }
     }
-    [void] UpsertVariable($Name, $Value) {
-        $this.TernaryVoid($this.Variables.ContainsKey($Name), { }, { $this.Variables.Add($Name, $Value); });
+    [void] UpsertVariable($Name, $Value, $Type) {
+        if ($this.Variables.ContainsKey($Name)) {
+
+        } else {
+            $this.Variables.Add($Name, @{ Value = $Value; Type = $Type; ReferenceCount = 0; }); 
+        }
     }
     [void] Assemble($CurrentLine) {
         $this.AssembledLines += 1;
@@ -247,7 +272,13 @@ class AssemblerV3 {
         $skipOutput = $false;
 
         if ($parsedSyntax.Label -ne $null) {
-            $this.UpsertVariable($parsedSyntax.Label, $this.Address);
+            $label = $parsedSyntax.Label;
+            if ($label.StartsWith('.')) {
+                $label = $this.LastLabel + $label;
+            } else {
+                $this.LastLabel = $label;
+            }
+            $this.UpsertVariable($label, $this.Address, "Label");
         }
         
         if ($parsedSyntax.Left -ne $null) {
@@ -257,7 +288,7 @@ class AssemblerV3 {
                 $this.Address = $value;
                 $this.StartingAddress = $value;
             } else {
-                $this.UpsertVariable($parsedSyntax.Left, $value);
+                $this.UpsertVariable($parsedSyntax.Left, $value, "Variable");
             }
         }
         if ($parsedSyntax.Command -ne $null) {
@@ -277,7 +308,7 @@ class AssemblerV3 {
                         }
                     }
                     "ASSERT" {
-                        if ($this.Pass -ne 1) {
+                        if ($this.Pass -eq [PassType]::Assembly) {
                             if ($this.EvaluateExpression($parsedSyntax.Parameters, $currentLine) -eq 0) {
                                 $this.Output += @{ Line = "   Failed assertion ($($parsedSyntax.Parameters))"; Type = "Error"; Source = "" }
                                 $this.Errors += @{ Message = "   Failed assertion ($($parsedSyntax.Parameters))"; Line = $CurrentLine; }                            
@@ -295,7 +326,7 @@ class AssemblerV3 {
                 if ($operation.Opcode -ne '') { $codes += [byte]$operation.Opcode }
 
                 if ($operation.AddressingMode -eq 'Relative') {
-                    if ($this.Pass -eq 1) {
+                    if ($this.Pass -eq [PassType]::Collection) {
                         $codes += [byte]0x00;
                     } else {
                         $offset = $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine) - ($this.Address + 2);
@@ -314,24 +345,24 @@ class AssemblerV3 {
                     $dataOffset = $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine);
                 } else {
                     if ($operation.Bytes -eq 1) {
-                        $value = if ($this.Pass -eq 1) { 0; } else { $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine); }
+                        $value = if ($this.Pass -eq [PassType]::Collection) { 0; } else { $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine); }
                         $codes += [byte]$value;
                         $details = $operation.Format.Replace('[d8]', '$'+ $value.ToString('X2'));
                     }
                     if ($operation.Bytes -eq 2) {
-                        $value = if ($this.Pass -eq 1) { 0; } else { $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine); }
+                        $value = if ($this.Pass -eq [PassType]::Collection) { 0; } else { $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine); }
                         $codes += ($this.WordToByteArray($value))
                         $details = $details.Replace('[a16]', '$'+ $value.ToString('X4'));
                     }
                 }
             } else {
-                if ($this.Pass -ne 1) {
+                if ($this.Pass -eq [PassType]::Assembly) {
                     $this.Output += @{ Line = "   Parsing Error.."; Type = "Error"; Source = "" }
                     $this.Errors += @{ Message = "   Parsing Error..."; Line = $CurrentLine; }
                 }
             }
         }
-        if ($this.Pass -ne 1 -and -not $skipOutput) {
+        if ($this.Pass -eq [PassType]::Assembly -and -not $skipOutput) {
             $line = "$($this.Address.ToString('X4')) | ";
             for ($index = 0; $index -lt 3; $index += 1) {
                 if ($index -lt $codes.Count) { $line += "$($codes[$index].ToString('X2')) "; } else { $line += "   "; }
@@ -372,8 +403,20 @@ if ($GenerateLST) {
 $assembler.Report();
 
 if ($DumpVariables) {
+    Write-Host -ForegroundColor Yellow "Variables:"
     $assembler.Variables.Keys | Sort-Object | ForEach-Object {
-        "   $($_) = `$$($assembler.Variables[$_].ToString('X4'))"
+        if ($assembler.Variables[$_].Type -eq "Variable") {
+            "   $($_) = `$$($assembler.Variables[$_].Value.ToString('X4')): $($assembler.Variables[$_].ReferenceCount)";
+        }
+    }
+}
+
+if ($DumpLabels) {
+    Write-Host -ForegroundColor Yellow "Labels:"
+    $assembler.Variables.Keys | Sort-Object | ForEach-Object {
+        if ($assembler.Variables[$_].Type -eq "Label") {
+            "   $($_) = `$$($assembler.Variables[$_].Value.ToString('X4')) : $($assembler.Variables[$_].ReferenceCount)";
+        }
     }
 }
 
