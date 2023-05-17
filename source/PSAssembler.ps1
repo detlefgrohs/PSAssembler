@@ -34,12 +34,16 @@ class AssemblerV3 {
     $Errors = @();
     $VerboseLST = $false;
     $LastLabel = "";
+    $Stats = [System.Collections.ArrayList]@();
+    $CycleTime = 1 / 1020000;
 
     # For Report
     $StartDTM = [DateTime]::Now;
     $EndDTM = [DateTime]::Now;
     $LoadedLines = 0;
     $AssembledLines = 0;
+
+    $MainAssemblyFileName
 
     $ReservedVariableNames = @( "if", "else", "lt", "gt", "eq", "ne", "not", "and", "or")
 
@@ -226,6 +230,8 @@ class AssemblerV3 {
         return @(($Word -band 0x00FF), (( $Word -band 0xFF00 ) -shr 8));
     }
     [void] AssembleFile($FileName) {
+        $this.MainAssemblyFileName = $FileName;
+
         $this.StartDTM = [DateTime]::Now;
         Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Starting Assembly..."
         $lines = $this.LoadFile($FileName);
@@ -236,9 +242,12 @@ class AssemblerV3 {
         $this.Pass = [PassType]::Collection;
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
         $lines | ForEach-Object { $this.Assemble($_); }
+
         $this.Pass = [PassType]::Assembly;
         $this.Address = 0;
         $this.AssembledLines = 0;
+        $this.Stats.Add(@{ Bytes = 0; MinCycles = 0; MaxCycles = 0; });
+
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
         $lines | ForEach-Object { $this.Assemble($_); }
         Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Completed Assembly..."
@@ -294,6 +303,58 @@ class AssemblerV3 {
         if ($parsedSyntax.Command -ne $null) {
             #if ($this.Pass -ne 1) {
                 switch ($parsedSyntax.Command) {
+                    "STATS" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $currentStats = $this.Stats[$this.Stats.Count - 1];
+                            $this.Output += @{ Line = "                              | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
+                                               Type = "Stats"; Source = "" }
+                            $skipOutput = $true;
+                        }
+                    }
+                    "STATS.DETAIL" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $currentStats = $this.Stats[$this.Stats.Count - 1];
+                            $this.Output += @{ Line = "                              | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
+                                               Type = "Stats"; Source = "" }
+                            $minCycleTime = $currentStats.MinCycles * $this.CycleTime;
+                            $maxCycleTime = $currentStats.MaxCycles * $this.CycleTime;
+                            $this.Output += @{ Line = "                              | ;          MinCycleTime: $(($minCycleTime * 1000).ToString('#,#.00')) mSec   MaxCycleTime: $(($maxCycleTime * 1000).ToString('#,#.00')) mSec"; 
+                                               Type = "Stats"; Source = "" }
+                            $this.Output += @{ Line = "                              | ;          Max FPS: $((1 / $minCycleTime).ToString('#,#.00'))   Min FPS: $((1 / $maxCycleTime).ToString('#,#.00'))"; 
+                                               Type = "Stats"; Source = "" }
+                            $skipOutput = $true;
+                        }
+                    }
+                    "STATS.PUSH" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $this.Stats.Add(@{ Bytes = 0; MinCycles = 0; MaxCycles = 0; });
+                            $skipOutput = $true;
+                        }
+                    }
+                    "STATS.POP" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            if ($this.Stats.Count -ge 2) {
+                                $currentStats = $this.Stats[$this.Stats.Count - 2];
+                                $lastStats = $this.Stats[$this.Stats.Count - 1];
+
+                                $currentStats.Bytes += $lastStats.Bytes;
+                                $currentStats.MinCycles += $lastStats.MinCycles;
+                                $currentStats.MaxCycles += $lastStats.MaxCycles;
+
+                                $this.Stats.RemoveAt($this.Stats.Count - 1);
+                                $skipOutput = $true;
+                            }
+                        }
+                    }
+                    "STATS.LOOP" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $loop = $this.EvaluateExpression($parsedSyntax.Parameters, $currentLine);
+                            $currentStats = $this.Stats[$this.Stats.Count - 1];
+                            $currentStats.MinCycles *= $loop;
+                            $currentStats.MaxCycles *= $loop;
+                            $skipOutput = $true;
+                        }
+                    }
                     "TEXT" {
                         if ($parsedSyntax.Parameters -match '"(.*)"') {
                             $this.Output += @{ Line = ("$($this.Address.ToString('X4')) |          " + "| " + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line; 
@@ -315,6 +376,22 @@ class AssemblerV3 {
                             } 
                         }
                     }
+                    "LOADBINARY" {
+                        $binaryFileName = [IO.Path]::Combine([IO.Path]::GetDirectoryName($this.MainAssemblyFileName), $parsedSyntax.Parameters);
+                        $binaryBytes = @()
+                        if ((Get-Host).Version.Major -lt 6) {
+                            $binaryBytes = Get-Content -Encoding Byte -Path $binaryFileName  # PowerShell 5.x -Encoding Byte
+                        } else {
+                            $binaryBytes = Get-Content -AsByteStream -Path $binaryFileName # PowerShell 6.x AsByteStream
+                        }
+
+                        $dataOffset = $binaryBytes.Count;
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $this.Bytes += $binaryBytes;
+                            $this.Output += @{ Line = "                              | ; '$($binaryFileName)' : $($dataOffset) bytes"; Type = "BinaryFile"; Source = "" }
+                        }
+                        $skipOutput = $true;
+                    }
                 }
             #}
         } elseif ($parsedSyntax.Mnemonic -ne $null) {
@@ -324,6 +401,14 @@ class AssemblerV3 {
                 $details = $operation.Format;
                 
                 if ($operation.Opcode -ne '') { $codes += [byte]$operation.Opcode }
+
+                if ($this.Pass -eq [PassType]::Assembly) {
+                    $currentStats = $this.Stats[$this.Stats.Count - 1];
+                    $currentStats.Bytes += $operation.Bytes;
+                    $currentStats.Bytes += 1;   # Weird. When I try and add 1 above doesn't add right...
+                    $currentStats.MinCycles += $operation.MinCycles;
+                    $currentStats.MaxCycles += $operation.MaxCycles;
+                }
 
                 if ($operation.AddressingMode -eq 'Relative') {
                     if ($this.Pass -eq [PassType]::Collection) {
@@ -342,7 +427,14 @@ class AssemblerV3 {
                         $details = $details.Replace('[r8]', '$' + $value.ToString('X2'));   
                     }
                 } elseif ($operation.AddressingMode -eq 'Data') {
-                    $dataOffset = $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine);
+                    $fillBytes = $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine);
+                    if ($parsedSyntax.Mnemonic -eq 'PAD') {
+                        for ($index = 0; $index -lt $fillBytes; $index += 1) {
+                            $codes += [byte]0xEA    # NOP
+                        }
+                    } else {
+                        $dataOffset = $fillBytes;
+                    }
                 } else {
                     if ($operation.Bytes -eq 1) {
                         $value = if ($this.Pass -eq [PassType]::Collection) { 0; } else { $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine); }
@@ -479,5 +571,8 @@ if ($GeneratePRG -or $ExecutePRG) {
 
     [ ] Tests
         With Assertions
+
+    [ ] Load Binary
+        Charsets/Sprites
 
 #>
