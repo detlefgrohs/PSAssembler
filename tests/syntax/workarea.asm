@@ -1,59 +1,44 @@
-* = $0801
 
-#MACRO ASSERT_LAST_BYTE(BYTE0)
-        #ASSERT         BYTES[BYTESLEN - 1] -eq @BYTE0
+VICII_SCREEN_RAM            = $0400
+VICII_COLOR_RAM             = $D800
+
+VICII_SCREEN_TEXT_WIDTH     = 40
+VICII_SCREEN_TEXT_HEIGHT    = 25
+
+#MACRO VICII_SCREEN_TEXT_LINE(LineNumber)
+VICII_SCREEN_RAM + ( VICII_SCREEN_TEXT_WIDTH * @LineNumber )
 #ENDM
 
-#MACRO ASSERT_LAST_TWO_BYTES(BYTE0,BYTE1)
-        #ASSERT         BYTES[BYTESLEN - 1] -eq @BYTE0
+#MACRO VICII_SCREEN_COLOR_LINE(LineNumber)
+VICII_COLOR_RAM + ( VICII_SCREEN_TEXT_WIDTH * @LineNumber )
 #ENDM
 
-#MACRO ASSERT_LAST_THREE_BYTES(BYTE0,BYTE1,BYTE2)
-        #ASSERT         (BYTES[BYTESLEN - 3] -eq @BYTE0) -and (BYTES[BYTESLEN - 2] -eq @BYTE1) -and (BYTES[BYTESLEN - 1] -eq @BYTE2)
+#MACRO LO(VALUE)
+((@VALUE) & $00FF)
 #ENDM
 
-START:  LDA.#           $FF
-        LDA.#           $AA
+#MACRO HI(VALUE)
+(((@VALUE) & $FF00 ) >> 8)
+#ENDM
 
-MSG:    #TEXT "0123456789"
+#MACRO SET_WORD(ADDRESS,VALUE)
+            LDA.#   @LO(@VALUE)
+            STA     @ADDRESS
+            LDA.#   @HI(@VALUE)
+            STA     @ADDRESS+1
+#ENDM
 
-        LDA             MSG
-        LDA             ORG
-        LDA             MSG-ORG
-
-LDA     CURADDR
-#ASSERT         BYTES[MSG-ORG] -eq '0'
-
-STAGE = $D800
-
-        LDA.# STAGE & $00FF 
-        
-LABEL:  #TEXT "HELLO WORLD!"
+#MACRO X(Item)
+        @Item + $0100
+#ENDM
 
 
-        DATA.b          $11
-        @ASSERT_LAST_BYTE($11)
+LABEL:
+        LDA             @VICII_SCREEN_TEXT_LINE(0)
 
-        LDA             LABEL
-        @ASSERT_LAST_THREE_BYTES($AD,$1D,$08)
-        
-#STOP
-        ; #ASSERT                 0
-        ; #ASSERT                 1
+        @SET_WORD($FFFE,@VICII_SCREEN_TEXT_LINE(0))
 
-        ; #ASSERT         LABEL -eq $0002
-        ; #ASSERT         LABEL -eq $1000
 
-MSG2:    #TEXT "0123456789"
+        LDA             @X(@X(@X($4000)))
 
-        LDA.#           BYTESLEN
-        LDA.#           BYTES[BYTESLEN - 1]
-        LDA.#           BYTES[0]
-        DATA.b          $11
-
-        LDA             MSG2
-        LDA             ORG
-        LDA             MSG2-ORG
-
-        #ASSERT         BYTES[LABEL] -eq 'H'
-        #ASSERT         BYTES[MSG2 - ORG] -eq '0'
+        @SET_WORD(@X(@X(@X($4000))),@VICII_SCREEN_TEXT_LINE(0))

@@ -5,6 +5,7 @@
     [Switch]$ExecutePRG,
     [Switch]$DumpVariables,
     [Switch]$DumpLabels,
+    [Switch]$DumpMacros,
     [Switch]$IncludeHFilesInOutput,
     [Switch]$GenerateLST,
     [Switch]$VerboseLST
@@ -139,7 +140,7 @@ class AssemblerV3 {
         if ($Test) { return &$T; } else { return &$F; }
     }
     [array] ExpandMacros($Lines) {
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Expanding Macros Pass #$($this.Pass)"
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Expanding Macros Pass #$($this.MacroPass)"
         $this.MacroPass += 1;
 
         $processedLines = @();
@@ -157,7 +158,7 @@ class AssemblerV3 {
                     $this.Macros.Add($Matches['macroname'], @{ Replacement = @(); Parameters = @(); });
                     $Matches['parameters'] -split ',' | ForEach-Object { $this.Macros[$CurrentMacroName].Parameters += $_; }
                 } else {
-                    if (($currentLine.Line -replace ';.*', '') -match '@(?<macroname>[a-z_]*)\((?<parameters>[^)]*)\)') {
+                    if (($currentLine.Line -replace ';.*', '') -match '@(?<macroname>[a-z_]*)\((?<parameters>.*)\)') {
                         $replacementCode = @();
 
                         if ($this.Macros.ContainsKey($Matches['macroname'])) {
@@ -273,7 +274,6 @@ class AssemblerV3 {
     }
     [void] Assemble($CurrentLine) {
         $this.AssembledLines += 1;
-
         $codes = @();
         $details = "";
         $dataOffset = 0;
@@ -509,6 +509,22 @@ if ($DumpLabels) {
         if ($assembler.Variables[$_].Type -eq "Label") {
             "   $($_) = `$$($assembler.Variables[$_].Value.ToString('X4')) : $($assembler.Variables[$_].ReferenceCount)";
         }
+    }
+}
+
+if ($DumpMacros) {
+    Write-Host -ForegroundColor Yellow "Macros:"
+    $assembler.Macros.Keys | Sort-Object | ForEach-Object {
+        $macro = $assembler.Macros[$_];
+        $parameters = $macro.Parameters -Join ','
+        "   $($_)($($parameters))"
+        $macro.Replacement | ForEach-Object {
+            "   => $($_)"
+        }
+
+        # if ($assembler.Variables[$_].Type -eq "Label") {
+        #     "   $($_) = `$$($assembler.Variables[$_].Value.ToString('X4')) : $($assembler.Variables[$_].ReferenceCount)";
+        # }
     }
 }
 

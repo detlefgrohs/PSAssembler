@@ -153,5 +153,5 @@
     "SBC,X" : { "OpCode" : "0xfd", "AddressingMode": "AbsoluteX", "Format": "SBC [a16],X", "Bytes": "2", "MinCycles": "4", "MaxCycles": "5" },
     "INC,X" : { "OpCode" : "0xfe", "AddressingMode": "AbsoluteX", "Format": "INC [a16],X", "Bytes": "2", "MinCycles": "4", "MaxCycles": "5" },
     "DATA" : { "OpCode" : "", "AddressingMode": "", "Format": "", "Bytes": "2", "MinCycles": "", "MaxCycles": "" },
-    "DATA.b" : { "OpCode" : "", "AddressingMode": "", "Format": "", "Bytes": "1", "MinCycles": "", "MaxCycles": "" },
+    "DATA.b" : { "OpCode" : "", "AddressingMode": "", "Format": "", "Bytes": "1", "MinCycles": "", "MaxCycles": "" }
 }

@@ -59,6 +59,7 @@ ZP_TEMP_BYTE        =   $FF
 ; 24    Status Bar
 
 
+#STOP
 #STATS.PUSH
 VERTICALSCROLL:
             ; Populate x lines on the screen
@@ -114,7 +115,8 @@ VERTICALSCROLL:
 
 .TEMP1:     DATA.b      $00
 .TEMP2:     DATA.b      $00
-#STOP
+
+#CONTINUE
 ; This moves a letter across the bottom of the screen and scrolls the screen up
 ; Should be an approximate FPS of about 40... Need to Verify somehow...
 LETTERSCROLL:   
@@ -131,6 +133,7 @@ LETTERSCROLL:
             STA         .1 + 1
 
             JMP         LETTERSCROLL
+#STOP
 
 ; This repeatedly prints Hello World! in colors until the screen scrolls...
 HELLOWORLDSCROLL:      ;LDA         TEXT.FGCOLOR
