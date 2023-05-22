@@ -15,9 +15,10 @@ $Global:AssemblerPath = [System.IO.Path]::GetDirectoryName($myInvocation.MyComma
 
 enum PassType {
     Preparation = 0
-    Collection = 1 
-    Optmization = 2
-    Assembly = 3
+    Collection = 1
+    PreOptimization = 2
+    Optmization = 3
+    Assembly = 4
 }
 
 class AssemblerV3 {
@@ -37,6 +38,8 @@ class AssemblerV3 {
     $LastLabel = "";
     $Stats = [System.Collections.ArrayList]@();
     $CycleTime = 1 / 1020000;
+    $Regions = @{};
+    $CurrentRegion = '<root>'
 
     # For Report
     $StartDTM = [DateTime]::Now;
@@ -100,6 +103,9 @@ class AssemblerV3 {
 
             if ($this.Variables.ContainsKey($variableName)) {
                 $this.Variables[$variableName].ReferenceCount += 1;
+                if (-not $this.Variables[$variableName].CalledFromRegion.Contains($this.CurrentRegion)) {
+                    $this.Variables[$variableName].CalledFromRegion += $this.CurrentRegion;
+                }
                 $Expression = $Expression.Replace($replacementText, $this.Variables[$variableName].Value); 
             } else {
                 switch ($variableName) {
@@ -244,6 +250,14 @@ class AssemblerV3 {
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
         $lines | ForEach-Object { $this.Assemble($_); }
 
+        $this.Pass = [PassType]::PreOptimization;
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
+        #$lines | ForEach-Object { $this.Assemble($_); }
+
+        $this.Pass = [PassType]::Optmization;
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
+        #$lines | ForEach-Object { $this.Assemble($_); }
+
         $this.Pass = [PassType]::Assembly;
         $this.Address = 0;
         $this.AssembledLines = 0;
@@ -267,9 +281,10 @@ class AssemblerV3 {
     }
     [void] UpsertVariable($Name, $Value, $Type) {
         if ($this.Variables.ContainsKey($Name)) {
-
+            # ToDo - Handle changes because they will change later base on optimization...
         } else {
-            $this.Variables.Add($Name, @{ Value = $Value; Type = $Type; ReferenceCount = 0; }); 
+            $this.Variables.Add($Name, @{ Value = $Value; Type = $Type; ReferenceCount = 0; 
+                                          Region = $this.CurrentRegion; CalledFromRegion = @(); }); 
         }
     }
     [void] Assemble($CurrentLine) {
@@ -303,6 +318,23 @@ class AssemblerV3 {
         if ($parsedSyntax.Command -ne $null) {
             #if ($this.Pass -ne 1) {
                 switch ($parsedSyntax.Command) {
+                    "REGION" {
+                        $this.CurrentRegion = $parsedSyntax.Parameters;
+                        if ($this.Pass -eq [PassType]::Collection) {
+                            $this.Regions.Add($this.CurrentRegion, @{
+                                Region = $this.CurrentRegion;
+                                StartAddress = $this.Address;
+                                EndAddress = 0;
+                                ReferenceCount = 0;
+                            });
+                        }
+                    }
+                    "ENDR" {
+                        if ($this.Pass -eq [PassType]::Collection) {
+                            $this.Regions[$this.CurrentRegion].EndAddress = $this.Address - 1;
+                        }
+                        $this.CurrentRegion = '<root>';
+                    }
                     "STATS" {
                         if ($this.Pass -eq [PassType]::Assembly) {
                             $currentStats = $this.Stats[$this.Stats.Count - 1];
@@ -507,9 +539,15 @@ if ($DumpLabels) {
     Write-Host -ForegroundColor Yellow "Labels:"
     $assembler.Variables.Keys | Sort-Object | ForEach-Object {
         if ($assembler.Variables[$_].Type -eq "Label") {
-            "   $($_) = `$$($assembler.Variables[$_].Value.ToString('X4')) : $($assembler.Variables[$_].ReferenceCount)";
+            "   $($_) = `$$($assembler.Variables[$_].Value.ToString('X4')) : $($assembler.Variables[$_].ReferenceCount) => $($assembler.Variables[$_].Region) ; $($assembler.Variables[$_].CalledFromRegion -join ',')";
         }
     }
+}
+
+Write-Host -ForegroundColor Yellow "Regions:"
+$assembler.Regions.Keys | Sort-Object | ForEach-Object {
+    "   $($_) = `$$($assembler.Regions[$_].StartAddress.ToString('X4')) - `$$($assembler.Regions[$_].EndAddress.ToString('X4'))";
+    #$assembler.Regions[$_]
 }
 
 if ($DumpMacros) {
