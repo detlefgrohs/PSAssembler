@@ -66,8 +66,8 @@ VERTICALSCROLL:
             LDY.#       0
 #STATS.PUSH
 .1:         TYA
-            STA,Y       VICII_SCREEN_TEXT_LINE_00
-            STA,Y       VICII_SCREEN_COLOR_LINE_00
+            STA,Y       @VICII_SCREEN_TEXT_LINE(00)
+            STA,Y       @VICII_SCREEN_COLOR_LINE(00)
             INY
             CPY.#       VICII_SCREEN_TEXT_WIDTH
             BNE         .1
@@ -77,20 +77,20 @@ VERTICALSCROLL:
             ; Now rotate the chars left to right...
             ; 0 => T, 1 => 0, ... T => 39
 .LINELOOP:  LDY.#       0
-            LDA,Y       VICII_SCREEN_TEXT_LINE_00
+            LDA,Y       @VICII_SCREEN_TEXT_LINE(00)
             STA         .TEMP1
-            LDA,Y       VICII_SCREEN_COLOR_LINE_00
+            LDA,Y       @VICII_SCREEN_COLOR_LINE(00)
             STA         .TEMP2
 
 #STATS.PUSH
 .CHARLOOP:  INY
-            LDA,Y       VICII_SCREEN_TEXT_LINE_00
+            LDA,Y       @VICII_SCREEN_TEXT_LINE(00)
             DEY
-            STA,Y       VICII_SCREEN_TEXT_LINE_00
+            STA,Y       @VICII_SCREEN_TEXT_LINE(00)
             INY            
-            LDA,Y       VICII_SCREEN_COLOR_LINE_00
+            LDA,Y       @VICII_SCREEN_COLOR_LINE(00)
             DEY
-            STA,Y       VICII_SCREEN_COLOR_LINE_00
+            STA,Y       @VICII_SCREEN_COLOR_LINE(00)
             INY
             CPY.#       VICII_SCREEN_TEXT_WIDTH
             BNE         .CHARLOOP
@@ -101,9 +101,9 @@ VERTICALSCROLL:
 #STATS.POP
             DEY
             LDA         .TEMP1
-            STA,Y       VICII_SCREEN_TEXT_LINE_00
+            STA,Y       @VICII_SCREEN_TEXT_LINE(00)
             LDA         .TEMP2
-            STA,Y       VICII_SCREEN_COLOR_LINE_00
+            STA,Y       @VICII_SCREEN_COLOR_LINE(00)
 
 .SPACECHECK:LDA         $DC01
             CMP.#       $EF
@@ -313,14 +313,14 @@ TEXT.CLEAR:
 
 .3:         @ADD_ZP_WORD(ZP_PTR_A,125)
             JMP         .1
-
+#CONTINUE
 ; =========================================================================
 #STATS.PUSH
 TEXT.SCROLL_UP:  
-            @SET_WORD(.TT+1,VICII_SCREEN_TEXT_LINE_00)
-            @SET_WORD(.TS+1,VICII_SCREEN_TEXT_LINE_01)
-            @SET_WORD(.CT+1,VICII_SCREEN_COLOR_LINE_00)
-            @SET_WORD(.CS+1,VICII_SCREEN_COLOR_LINE_01)
+            @SET_WORD(.TT+1,@VICII_SCREEN_TEXT_LINE(00))
+            @SET_WORD(.TS+1,@VICII_SCREEN_TEXT_LINE(01))
+            @SET_WORD(.CT+1,@VICII_SCREEN_COLOR_LINE(00))
+            @SET_WORD(.CS+1,@VICII_SCREEN_COLOR_LINE(01))
             LDX.#       VICII_SCREEN_TEXT_HEIGHT - 1
 #STATS.PUSH
 .1:         LDY.#       VICII_SCREEN_TEXT_WIDTH - 1
@@ -338,7 +338,7 @@ TEXT.SCROLL_UP:
 #STATS.LOOP     VICII_SCREEN_TEXT_HEIGHT - 1
 #STATS.POP
             ; Clear Bottom Line
-            @SET_WORD(.4+1,VICII_SCREEN_TEXT_LINE_24)
+            @SET_WORD(.4+1,@VICII_SCREEN_TEXT_LINE(24))
             ;@SET_ZP_WORD(ZP_PTR_B,VICII_SCREEN_COLOR_LINE_24)
             
             LDY.#       VICII_SCREEN_TEXT_WIDTH - 1
@@ -365,6 +365,7 @@ TEXT.SCROLL_UP:
 ; Lines x Chars x Operations x Cycles 
 #STATS.DETAIL
 #STATS.POP
+#STOP
 ; ===========================================================================
 TEXT.PRINT:
             LDY.#       0
@@ -424,5 +425,5 @@ TEXT.PRINTCHAR:
 #STATS.DETAIL
 #STATS.POP
 ; ===========================================================================
-TEXT.PRINTCHAR:
+;TEXT.PRINTCHAR:
 

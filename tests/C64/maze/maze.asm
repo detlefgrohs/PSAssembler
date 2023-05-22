@@ -15,14 +15,14 @@ START:      LDX.#       VICII_SCREEN_TEXT_WIDTH
             JMP         .3
 
 .2:         LDA.#       $4E
-.3:         STA,X       VICII_SCREEN_TEXT_LINE_24
+.3:         STA,X       @VICII_SCREEN_TEXT_LINE(24)
             DEX
             BPL         .1
             JSR         SCROLL_UP
             JMP         START
 
-SCROLL_UP:  @SET_ZP_WORD(TARGET_PTR,VICII_SCREEN_TEXT_LINE_00)
-            @SET_ZP_WORD(SOURCE_PTR,VICII_SCREEN_TEXT_LINE_01)
+SCROLL_UP:  @SET_ZP_WORD(TARGET_PTR,@VICII_SCREEN_TEXT_LINE(00))
+            @SET_ZP_WORD(SOURCE_PTR,@VICII_SCREEN_TEXT_LINE(01))
 
             LDX.#       VICII_SCREEN_TEXT_HEIGHT - 1
 .1:         LDY.#       VICII_SCREEN_TEXT_WIDTH - 1

@@ -20,16 +20,16 @@ CHAR_LOOP:  JSR         RAND    ;@RAND()     ; A will have a random byte
 
             BPL         RAND1_HIGH
             LDA.#       $69
-            STA,X       VICII_SCREEN_TEXT_LINE_24
+            STA,X       @VICII_SCREEN_TEXT_LINE(24)
             LDA.#       VICII_COLOR_LIGHT_GREY
-            STA,X       VICII_SCREEN_COLOR_LINE_24
+            STA,X       @VICII_SCREEN_COLOR_LINE(24)
             
             JMP         CONT1
 
 RAND1_HIGH: LDA.#       $5F
-            STA,X       VICII_SCREEN_TEXT_LINE_24
+            STA,X       @VICII_SCREEN_TEXT_LINE(24)
             LDA.#       VICII_COLOR_DARK_GREY
-            STA,X       VICII_SCREEN_COLOR_LINE_24
+            STA,X       @VICII_SCREEN_COLOR_LINE(24)
 
 CONT1:      DEX
 
@@ -37,16 +37,16 @@ CONT1:      DEX
 
             BPL         RAND2_HIGH
             LDA.#       $E9
-            STA,X       VICII_SCREEN_TEXT_LINE_24
+            STA,X       @VICII_SCREEN_TEXT_LINE(24)
             LDA.#       VICII_COLOR_LIGHT_GREY
-            STA,X       VICII_SCREEN_COLOR_LINE_24
+            STA,X       @VICII_SCREEN_COLOR_LINE(24)
             
             JMP         CONT2
 
 RAND2_HIGH: LDA.#       $DF
-            STA,X       VICII_SCREEN_TEXT_LINE_24
+            STA,X       @VICII_SCREEN_TEXT_LINE(24)
             LDA.#       VICII_COLOR_DARK_GREY
-            STA,X       VICII_SCREEN_COLOR_LINE_24
+            STA,X       @VICII_SCREEN_COLOR_LINE(24)
 
 CONT2:      DEX
 
@@ -59,16 +59,16 @@ CHAR2_LOOP: JSR         RAND    ;@RAND()     ; A will have a random byte
 
             BPL         RAND3_HIGH
             LDA.#       $E9
-            STA,X       VICII_SCREEN_TEXT_LINE_24
+            STA,X       @VICII_SCREEN_TEXT_LINE(24)
             LDA.#       VICII_COLOR_LIGHT_GREY
-            STA,X       VICII_SCREEN_COLOR_LINE_24
+            STA,X       @VICII_SCREEN_COLOR_LINE(24)
             
             JMP         CONT3
 
 RAND3_HIGH: LDA.#       $DF
-            STA,X       VICII_SCREEN_TEXT_LINE_24
+            STA,X       @VICII_SCREEN_TEXT_LINE(24)
             LDA.#       VICII_COLOR_DARK_GREY
-            STA,X       VICII_SCREEN_COLOR_LINE_24
+            STA,X       @VICII_SCREEN_COLOR_LINE(24)
 
 CONT3:      DEX
 
@@ -76,16 +76,16 @@ CONT3:      DEX
 
             BPL         RAND4_HIGH
             LDA.#       $69
-            STA,X       VICII_SCREEN_TEXT_LINE_24
+            STA,X       @VICII_SCREEN_TEXT_LINE(24)
             LDA.#       VICII_COLOR_LIGHT_GREY
-            STA,X       VICII_SCREEN_COLOR_LINE_24
+            STA,X       @VICII_SCREEN_COLOR_LINE(24)
             
             JMP         CONT4
 
 RAND4_HIGH: LDA.#       $5F
-            STA,X       VICII_SCREEN_TEXT_LINE_24
+            STA,X       @VICII_SCREEN_TEXT_LINE(24)
             LDA.#       VICII_COLOR_DARK_GREY
-            STA,X       VICII_SCREEN_COLOR_LINE_24
+            STA,X       @VICII_SCREEN_COLOR_LINE(24)
 
 CONT4:      DEX
 
@@ -157,10 +157,10 @@ SPACECHECK: LDA         $DC01
 
 ; =========================================================================
 TEXT.SCROLL_UP:  
-            @SET_WORD(.TT+1,VICII_SCREEN_TEXT_LINE_00)
-            @SET_WORD(.TS+1,VICII_SCREEN_TEXT_LINE_01)
-            @SET_WORD(.CT+1,VICII_SCREEN_COLOR_LINE_00)
-            @SET_WORD(.CS+1,VICII_SCREEN_COLOR_LINE_01)
+            @SET_WORD(.TT+1,@VICII_SCREEN_TEXT_LINE(00))
+            @SET_WORD(.TS+1,@VICII_SCREEN_TEXT_LINE(01))
+            @SET_WORD(.CT+1,@VICII_SCREEN_COLOR_LINE(00))
+            @SET_WORD(.CS+1,@VICII_SCREEN_COLOR_LINE(01))
             
             LDX.#       VICII_SCREEN_TEXT_HEIGHT - 1
 .1:         LDY.#       VICII_SCREEN_TEXT_WIDTH - 1
@@ -174,8 +174,8 @@ TEXT.SCROLL_UP:
             @DEX_BNE(.3)        ; Line--
 
             ; Clear Bottom Line
-            @SET_ZP_WORD(ZP_PTR_A,VICII_SCREEN_TEXT_LINE_24)
-            ;@SET_ZP_WORD(ZP_PTR_B,VICII_SCREEN_COLOR_LINE_24)
+            @SET_ZP_WORD(ZP_PTR_A,@VICII_SCREEN_TEXT_LINE(24))
+            ;@SET_ZP_WORD(ZP_PTR_B,@VICII_SCREEN_COLOR_LINE(24))
             
             LDY.#       VICII_SCREEN_TEXT_WIDTH - 1
             LDA.#       32

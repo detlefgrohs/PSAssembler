@@ -285,7 +285,8 @@ class AssemblerV3 {
         $includingLines = $true;
         $optimizedLines = @();
         $Lines | ForEach-Object {
-            $parsedSyntax = $this.ParseSyntax($_.Line);
+            $currentLine = $_;
+            $parsedSyntax = $this.ParseSyntax($currentLine.Line);
             if ($parsedSyntax.Command -ne $null) {
                 switch ($parsedSyntax.Command) {
                     "REGION" {
@@ -298,10 +299,10 @@ class AssemblerV3 {
                     "ENDR" {
                         $includingLines = $true;
                     }
-                    default { if ($includingLines ) { $optimizedLines += $_; } }
+                    default { if ($includingLines) { $optimizedLines += $currentLine; } }
                 }
             } else {
-                if ($includingLines ) { $optimizedLines += $_; }
+                if ($includingLines ) { $optimizedLines += $currentLine; }
             }
         }
         return $optimizedLines;
@@ -420,7 +421,7 @@ class AssemblerV3 {
                         if ($this.Pass -eq [PassType]::Assembly) {
                             $currentStats = $this.Stats[$this.Stats.Count - 1];
                             $this.Output += @{ Line = "                              | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
-                                               Type = "Stats"; Source = "" }
+                                               Type = "Stats"; Source = "Stats" }
                             $skipOutput = $true;
                         }
                     }
@@ -428,13 +429,13 @@ class AssemblerV3 {
                         if ($this.Pass -eq [PassType]::Assembly) {
                             $currentStats = $this.Stats[$this.Stats.Count - 1];
                             $this.Output += @{ Line = "                              | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
-                                               Type = "Stats"; Source = "" }
+                                               Type = "Stats"; Source = "Stats" }
                             $minCycleTime = $currentStats.MinCycles * $this.CycleTime;
                             $maxCycleTime = $currentStats.MaxCycles * $this.CycleTime;
                             $this.Output += @{ Line = "                              | ;          MinCycleTime: $(($minCycleTime * 1000).ToString('#,#.00')) mSec   MaxCycleTime: $(($maxCycleTime * 1000).ToString('#,#.00')) mSec"; 
-                                               Type = "Stats"; Source = "" }
+                                               Type = "Stats"; Source = "Stats" }
                             $this.Output += @{ Line = "                              | ;          Max FPS: $((1 / $minCycleTime).ToString('#,#.00'))   Min FPS: $((1 / $maxCycleTime).ToString('#,#.00'))"; 
-                                               Type = "Stats"; Source = "" }
+                                               Type = "Stats"; Source = "Stats" }
                             $skipOutput = $true;
                         }
                     }

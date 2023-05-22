@@ -36,10 +36,16 @@ LETTERSCROLL:
 #REGION TEXT.SCROLL_UP
 #STATS.PUSH
 TEXT.SCROLL_UP:  
-            @SET_WORD(.TT+1,VICII_SCREEN_TEXT_LINE_00)
-            @SET_WORD(.TS+1,VICII_SCREEN_TEXT_LINE_01)
-            @SET_WORD(.CT+1,VICII_SCREEN_COLOR_LINE_00)
-            @SET_WORD(.CS+1,VICII_SCREEN_COLOR_LINE_01)
+            ; @SET_WORD(.TT+1,VICII_SCREEN_TEXT_LINE_00)
+            ; @SET_WORD(.TS+1,VICII_SCREEN_TEXT_LINE_01)
+            @SET_WORD(.TT+1,@VICII_SCREEN_TEXT_LINE(00))
+            @SET_WORD(.TS+1,@VICII_SCREEN_TEXT_LINE(01))
+            
+            ; @SET_WORD(.CT+1,VICII_SCREEN_COLOR_LINE_00)
+            ; @SET_WORD(.CS+1,VICII_SCREEN_COLOR_LINE_01)
+            @SET_WORD(.CT+1,@VICII_SCREEN_COLOR_LINE(00))
+            @SET_WORD(.CS+1,@VICII_SCREEN_COLOR_LINE(01))
+
             LDX.#       VICII_SCREEN_TEXT_HEIGHT - 1
 #STATS.PUSH
 .1:         LDY.#       VICII_SCREEN_TEXT_WIDTH - 1
@@ -57,7 +63,9 @@ TEXT.SCROLL_UP:
 #STATS.LOOP     VICII_SCREEN_TEXT_HEIGHT - 1
 #STATS.POP
             ; Clear Bottom Line
-            @SET_WORD(.4+1,VICII_SCREEN_TEXT_LINE_24)
+            ;@SET_WORD(.4+1,VICII_SCREEN_TEXT_LINE_24)
+            @SET_WORD(.4+1,@VICII_SCREEN_TEXT_LINE(24))
+            
             ;@SET_ZP_WORD(ZP_PTR_B,VICII_SCREEN_COLOR_LINE_24)
             
             LDY.#       VICII_SCREEN_TEXT_WIDTH - 1
@@ -85,3 +93,23 @@ TEXT.SCROLL_UP:
 #STATS.DETAIL
 #STATS.POP
 #ENDR
+
+
+; Main Loop
+;    24 x 40 x 4 x 4 => 15,360 Cycles
+;    24 x 40 x 2 x 2 =>  3,840 Cycles
+;                    => 19,200 Cycles
+; Lines x Chars x Operations x Cycles 
+
+; Unwrapped
+; STATS => Bytes: 307   MinCycles: 15,684   MaxCycles: 19,623
+;          MinCycleTime: 15.38 mSec   MaxCycleTime: 19.24 mSec
+;          Max FPS: 65.03   Min FPS: 51.98
+; Absolute Indexing....
+; STATS => Bytes: 154   MinCycles: 21,452   MaxCycles: 27,233
+;          MinCycleTime: 21.03 mSec   MaxCycleTime: 26.70 mSec
+;          Max FPS: 47.55   Min FPS: 37.45
+; With ZP
+; STATS => Bytes: 115   MinCycles: 28,336   MaxCycles: 30,526
+;          MinCycleTime: 27.78 mSec   MaxCycleTime: 29.93 mSec
+;          Max FPS: 36.00   Min FPS: 33.41
