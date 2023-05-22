@@ -15,6 +15,11 @@ LABELB:
 .2:         BCC     .2
 #ENDR
 
+; Test Blank Lines
+
+
+
+; Test
 
 START:      LDA     $0801
             STA     $0801

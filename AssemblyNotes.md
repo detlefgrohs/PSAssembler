@@ -27,3 +27,61 @@ Assembly Phases
             Assembly
                 Will final assemble the remaining lines into an array of bytes
 
+
+
+
+## Next Steps
+Organize Libraries
+    Text
+        Text.ScrollUp
+            Calls Text.ClearLine
+
+        Text.ClearScreen
+            Calls Text.ClearLine
+        
+        Text.ClearLine
+
+        Text.Print
+            Calls Text.PrintChar
+        Text.PrintByte
+            Calls Text.PrintChar
+        Text.PrintHexDigit
+            Calls Text.PrintChar
+        Text.PrintWord
+            Calls Text.PrintChar
+
+        Text.PrintChar
+            Calls Text.CRLF
+
+        Text.CRLF
+
+        Text.SET_PTRS
+
+
+    Math
+        Math.Random
+        Math.
+
+    Heap
+        Heap.?
+            Get from TSRE
+
+
+Graphics Demos
+    All from TSRE
+
+
+
+Pester Support
+
+
+Syntax thoughts
+    ASL.A could just be ASL...
+
+
+When do I run this? During or before expand macros? When are variables assigned?
+
+#CODE
+    Anything like @word will be replaced with the value of the variable...
+#ENDC
+

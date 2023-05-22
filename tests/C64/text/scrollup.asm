@@ -12,20 +12,28 @@ ZP_TEMP_BYTE        =   $FF
 ; Should be an approximate FPS of about 40... Need to Verify somehow...
 LETTERSCROLL:   
             LDA.#       $01
+            STA.zp      ZP_TEMP_BYTE
+
+.LOOP:      LDA.zp      ZP_TEMP_BYTE
 .1:         STA         $07C0
+.2:         STA         $DBC0
+            INC.zp      ZP_TEMP_BYTE
             JSR         TEXT.SCROLL_UP
 
+            INC         .2 + 1
             INC         .1 + 1
             LDA         .1 + 1
             CMP.#       $c0 + 40
-            BNE         LETTERSCROLL
+            BNE         .LOOP
 
             LDA.#       $C0
             STA         .1 + 1
+            STA         .2 + 1
 
             JMP         LETTERSCROLL
 
 ; =========================================================================
+#REGION TEXT.SCROLL_UP
 #STATS.PUSH
 TEXT.SCROLL_UP:  
             @SET_WORD(.TT+1,VICII_SCREEN_TEXT_LINE_00)
@@ -76,3 +84,4 @@ TEXT.SCROLL_UP:
 ; Lines x Chars x Operations x Cycles 
 #STATS.DETAIL
 #STATS.POP
+#ENDR

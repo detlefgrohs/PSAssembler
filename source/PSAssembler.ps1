@@ -8,17 +8,18 @@
     [Switch]$DumpMacros,
     [Switch]$IncludeHFilesInOutput,
     [Switch]$GenerateLST,
-    [Switch]$VerboseLST
+    [Switch]$VerboseLST,
+    [Switch]$DumpRegions
 )
 
 $Global:AssemblerPath = [System.IO.Path]::GetDirectoryName($myInvocation.MyCommand.Definition);
 
 enum PassType {
-    Preparation = 0
     Collection = 1
-    PreOptimization = 2
-    Optmization = 3
-    Assembly = 4
+    Allocation = 2
+    Optimization = 3
+    Relocation = 4
+    Assembly = 5
 }
 
 class AssemblerV3 {
@@ -27,7 +28,7 @@ class AssemblerV3 {
     $Variables = @{};
     $Output = @();
     $SyntaxPattern = $null;
-    [PassType]$Pass = [PassType]::Preparation;
+    [PassType]$Pass = [PassType]::Collection;
     $MacroPass = 0;
     $Macros = @{};
     [UInt16]$Address;
@@ -102,7 +103,9 @@ class AssemblerV3 {
             $replacementText = $expressionVariables[$_];
 
             if ($this.Variables.ContainsKey($variableName)) {
-                $this.Variables[$variableName].ReferenceCount += 1;
+                if ($this.Pass -eq [PassType]::Allocation) {
+                    $this.Variables[$variableName].ReferenceCount += 1;
+                }
                 if (-not $this.Variables[$variableName].CalledFromRegion.Contains($this.CurrentRegion)) {
                     $this.Variables[$variableName].CalledFromRegion += $this.CurrentRegion;
                 }
@@ -236,6 +239,73 @@ class AssemblerV3 {
     [array] WordToByteArray($Word) {
         return @(($Word -band 0x00FF), (( $Word -band 0xFF00 ) -shr 8));
     }
+    [array] FindRegionsToInclude($RegionsToInclude) {
+        $newRegionFound = $false;
+    
+        $RegionsToInclude | ForEach-Object {
+            $regionToFind = $_;
+
+            $this.Variables.Keys | ForEach-Object {
+                if ($this.Variables[$_].CalledFromRegion.Contains($regionToFind)) {
+                    if (-not $RegionsToInclude.Contains($this.Variables[$_].Region)) {
+                        $RegionsToInclude += $this.Variables[$_].Region;
+                        $newRegionFound = $true;
+                    }
+                }
+            }
+        }
+        if ($newRegionFound) { return $this.FindRegionsToInclude($RegionsToInclude); }
+        return $RegionsToInclude;
+    }
+    [array] EmptyLineReduction($Lines) {
+        $cleanedLines = @();
+        $lastLineWasEmpty = $false;
+
+        $lines | ForEach-Object {
+            if ($_.Line -ne $null -and $_.Line.Trim() -eq '') {
+                if (-not $lastLineWasEmpty) {
+                    $cleanedLines += $_;
+                }
+                $lastLineWasEmpty = $true;
+            } else {
+                $cleanedLines += $_;
+                $lastLineWasEmpty = $false;
+            }
+        }
+        return $cleanedLines;
+    }
+    [array] Optimize($Lines) {
+        $regionsToInclude = $this.FindRegionsToInclude(@('<root>'));
+
+        $regionsToInclude | ForEach-Object {
+            if ($this.Regions.ContainsKey($_)) {
+                $this.Regions[$_].ReferenceCount = 1;
+            }
+        }
+        $includingLines = $true;
+        $optimizedLines = @();
+        $Lines | ForEach-Object {
+            $parsedSyntax = $this.ParseSyntax($_.Line);
+            if ($parsedSyntax.Command -ne $null) {
+                switch ($parsedSyntax.Command) {
+                    "REGION" {
+                        $region = $parsedSyntax.Parameters;
+                        if (-not $regionsToInclude.Contains($region)) {
+                            Write-Host "   Removing Region '$($region)'"
+                            $includingLines = $false;
+                        }
+                    }
+                    "ENDR" {
+                        $includingLines = $true;
+                    }
+                    default { if ($includingLines ) { $optimizedLines += $_; } }
+                }
+            } else {
+                if ($includingLines ) { $optimizedLines += $_; }
+            }
+        }
+        return $optimizedLines;
+    }
     [void] AssembleFile($FileName) {
         $this.MainAssemblyFileName = $FileName;
 
@@ -250,13 +320,19 @@ class AssemblerV3 {
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
         $lines | ForEach-Object { $this.Assemble($_); }
 
-        $this.Pass = [PassType]::PreOptimization;
+        $this.Pass = [PassType]::Allocation;
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
-        #$lines | ForEach-Object { $this.Assemble($_); }
+        $lines | ForEach-Object { $this.Assemble($_); }
 
-        $this.Pass = [PassType]::Optmization;
+        $this.Pass = [PassType]::Optimization;
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
-        #$lines | ForEach-Object { $this.Assemble($_); }
+        $lines = $this.Optimize($lines);
+
+        $this.Pass = [PassType]::Relocation;
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
+        $lines | ForEach-Object { $this.Assemble($_); }
+
+        $lines = $this.EmptyLineReduction($lines);
 
         $this.Pass = [PassType]::Assembly;
         $this.Address = 0;
@@ -282,6 +358,11 @@ class AssemblerV3 {
     [void] UpsertVariable($Name, $Value, $Type) {
         if ($this.Variables.ContainsKey($Name)) {
             # ToDo - Handle changes because they will change later base on optimization...
+            $oldValue = $this.Variables[$Name].Value;
+            if ($oldValue -ne $Value) {
+                Write-Host "   $($Name) Relocated from '$($oldValue.ToString('X4'))' to '$($Value.ToString('X4'))'"
+                $this.Variables[$Name].Value = $Value;
+            }
         } else {
             $this.Variables.Add($Name, @{ Value = $Value; Type = $Type; ReferenceCount = 0; 
                                           Region = $this.CurrentRegion; CalledFromRegion = @(); }); 
@@ -504,11 +585,20 @@ class AssemblerV3 {
         $elapsed = $this.EndDTM - $this.StartDTM;
         Write-Host -ForegroundColor Cyan "   Elapsed Seconds : $($elapsed.TotalSeconds.ToString('0.00'))"
 
-        Write-Host -ForegroundColor Cyan "   Loaded Lines    : $($this.LoadedLines.ToString('#,#'))"
-        Write-Host -ForegroundColor Cyan "   Assembled Lines : $($this.AssembledLines.ToString('#,#'))"
-        Write-Host -ForegroundColor Cyan "   Assembled Bytes : $($this.Bytes.Count.ToString('#,#'))"
-        Write-Host -ForegroundColor Cyan "   Labels/Variables: $($this.Variables.Count.ToString('#,#'))"
-        Write-Host -ForegroundColor Cyan "   Macros          : $($this.Macros.Count.ToString('#,#'))"
+        Write-Host -ForegroundColor Cyan "   Loaded Lines    : $($this.LoadedLines.ToString('#,0'))"
+        Write-Host -ForegroundColor Cyan "   Assembled Lines : $($this.AssembledLines.ToString('#,0'))"
+        Write-Host -ForegroundColor Cyan "   Assembled Bytes : $($this.Bytes.Count.ToString('#,0'))"
+        Write-Host -ForegroundColor Cyan "   Labels/Variables: $($this.Variables.Count.ToString('#,0'))"
+        Write-Host -ForegroundColor Cyan "   Macros          : $($this.Macros.Count.ToString('#,0'))"
+
+        $optimizedBytes = 0;
+        $this.Regions.Keys | ForEach-Object {
+            if ($this.Regions[$_].ReferenceCount -eq 0) {
+                $size = ($assembler.Regions[$_].EndAddress - $assembler.Regions[$_].StartAddress) + 1;
+                $optimizedBytes += $size;
+            }
+        }
+        Write-Host -ForegroundColor Cyan "   Optimized Out   : $($optimizedBytes.ToString('#,0'))"
     }
 }
 
@@ -518,7 +608,7 @@ $assembler.AssembleFile([IO.Path]::Combine($Global:ScriptRoot, $FileName));
 
 if ($GenerateLST) {
     $assembler.Output | ForEach-Object {
-        if ($IncludeHFilesInOutput -or (-not $_.Source.EndsWith('.h'))) {
+        if ($IncludeHFilesInOutput -or ($_.Source -ne $null -and -not $_.Source.EndsWith('.h'))) {
             $_.Line
         }
     }
@@ -544,10 +634,12 @@ if ($DumpLabels) {
     }
 }
 
-Write-Host -ForegroundColor Yellow "Regions:"
-$assembler.Regions.Keys | Sort-Object | ForEach-Object {
-    "   $($_) = `$$($assembler.Regions[$_].StartAddress.ToString('X4')) - `$$($assembler.Regions[$_].EndAddress.ToString('X4'))";
-    #$assembler.Regions[$_]
+if ($DumpRegions) {
+    Write-Host -ForegroundColor Yellow "Regions:"
+    $assembler.Regions.Keys | Sort-Object | ForEach-Object {
+        $size = ($assembler.Regions[$_].EndAddress - $assembler.Regions[$_].StartAddress) + 1;
+        "   $($_) = `$$($assembler.Regions[$_].StartAddress.ToString('X4')) - `$$($assembler.Regions[$_].EndAddress.ToString('X4')) Size $($size): $($assembler.Regions[$_].ReferenceCount)";
+    }
 }
 
 if ($DumpMacros) {
