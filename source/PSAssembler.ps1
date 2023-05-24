@@ -181,6 +181,7 @@ class AssemblerV3 {
                                     if ($parameterIndex -lt $this.Macros[$Matches['macroname']].Parameters.Count) {
                                         $parameterName = $this.Macros[$Matches['macroname']].Parameters[$parameterIndex];
                                         $replacementLine = $replacementLine.Replace('@' + $parameterName, $_);
+                                        $replacementLine = $replacementLine.Replace('~' + $parameterName + '~', $_);
                                     }
                                     $parameterIndex += 1;
                                 }

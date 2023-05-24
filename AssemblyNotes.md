@@ -129,3 +129,64 @@ When do I run this? During or before expand macros? When are variables assigned?
         Charsets/Sprites
 
 #>
+
+
+
+## 
+
+ML
+Assembly
+Macros
+Higher Level Constructs
+
+
+
+for(indexY = 0; indexY < 16 ; indexY++ ) {
+            LDA.#           0
+            STA             .indexY
+
+.loop
+            {}
+
+            CLC
+.indexY_    LDA.#           $00
+            ADC.#           1
+            STA             .indexY
+
+            CMP.#           16
+            BNE             .loop
+.indexY = .indexY_ + 1
+}
+
+@LOOP_START(IndexA, 0)
+
+@LOOP_INCREMENT(IndexA)
+@LOOP_ADD(IndexA, 2)
+@LOOP_NEXT(IndexA, 16)
+
+Need in MacroExpression to create labels:
+
+    @Index = IndexA
+
+    .@Index => .IndexA
+    .@Index_ => .IndexA_
+    .@Index_Loop => .IndexA_Loop
+
+
+
+#MACRO LOOP_START(IndexName, StartValue)
+            LDA.#           @StartValue
+            STA             '.'@StartValue  ; New macro functionality
+.@IndexName_Loop:
+#ENDM
+
+#MACRO LOOP_INCREMENT(IndexName)
+            INC             '.'@IndexName
+#ENDM
+
+#MACRO LOOP_NEXT(IndexName, Limit)
+            LDA             '.'@IndexName
+            CMP.#           @Limit
+            BNE             .@IndexName_Loop
+#ENDM
+

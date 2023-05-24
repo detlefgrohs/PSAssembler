@@ -47,4 +47,25 @@ ADDRESS = $ABCD
 
             @SET_WORD($ABCD,$1234)
 
+* = $0801
+; New Functionality
+START:
 
+#MACRO LOOP_START(IndexName,StartValue)
+            LDA.#       @StartValue
+            STA         .~IndexName~
+            JMP         .~IndexName~_Loop
+.~IndexName~:   DATA.b  $00
+.~IndexName~_Loop:            
+#ENDM
+
+#MACRO LOOP_NEXT(IndexName,Limit)
+            INC             .~IndexName~
+            LDA             .~IndexName~
+            CMP.#           @Limit
+            BNE             .~IndexName~_Loop
+#ENDM
+
+@LOOP_START(IndexA, 0)
+
+@LOOP_NEXT(IndexA, 16)
