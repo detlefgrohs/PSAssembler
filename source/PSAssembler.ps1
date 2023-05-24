@@ -50,13 +50,13 @@ class AssemblerV3 {
 
     $MainAssemblyFileName
 
-    $ReservedVariableNames = @( "if", "else", "lt", "gt", "eq", "ne", "not", "and", "or")
+    $ReservedVariableNames = @( "if", "else", "lt", "gt", "eq", "ne", "not", "and", "or" )
 
     AssemblerV3([string]$CPU = '6502') {
         (Get-Content -Path "$($Global:AssemblerPath)\Opcodes.$($CPU).json" | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $this.OPCodes.Add($_.Name, $_.Value); }
         $this.CreateSyntaxPattern();
     }
-    [void]CreateSyntaxPattern() {
+    [void] CreateSyntaxPattern() {
         $patterns = [ordered]@{ directive = '\s*((?<label>[^\s]*):)?\s*#(?<command>[^\s]*)(?<parameters>[^;]*)?';
                                 equation =  '\s*(?<left>[^\s]*)\s*=\s*(?<right>.*)?';
                                 code =      '\s*((?<label>[^\s]*):)?\s*(?<mnemonic>[^\s]*)\s*(?<operand>.*)\s*';
@@ -106,8 +106,10 @@ class AssemblerV3 {
                 if ($this.Pass -eq [PassType]::Allocation) {
                     $this.Variables[$variableName].ReferenceCount += 1;
                 }
-                if (-not $this.Variables[$variableName].CalledFromRegion.Contains($this.CurrentRegion)) {
-                    $this.Variables[$variableName].CalledFromRegion += $this.CurrentRegion;
+                if ($this.Pass -eq [PassType]::Allocation) {
+                    if (-not $this.Variables[$variableName].CalledFromRegion.Contains($this.CurrentRegion)) {
+                        $this.Variables[$variableName].CalledFromRegion += $this.CurrentRegion;
+                    }
                 }
                 $Expression = $Expression.Replace($replacementText, $this.Variables[$variableName].Value); 
             } else {
@@ -208,9 +210,8 @@ class AssemblerV3 {
                 }
             }
         }
-        if ($macroExpansionOccured) { # Keep processing until no macro expansions...
-            $processedLines = $this.ExpandMacros($processedLines);
-        }
+        # Keep processing until no macro expansions...
+        if ($macroExpansionOccured) { return $this.ExpandMacros($processedLines); }
         return $processedLines;
     }
     [array] LoadFile($FileName) {
@@ -262,7 +263,7 @@ class AssemblerV3 {
         $lastLineWasEmpty = $false;
 
         $lines | ForEach-Object {
-            if ($_.Line -ne $null -and $_.Line.Trim() -eq '') {
+            if ($null -ne $_.Line -and $_.Line.Trim() -eq '') {
                 if (-not $lastLineWasEmpty) {
                     $cleanedLines += $_;
                 }
@@ -287,7 +288,7 @@ class AssemblerV3 {
         $Lines | ForEach-Object {
             $currentLine = $_;
             $parsedSyntax = $this.ParseSyntax($currentLine.Line);
-            if ($parsedSyntax.Command -ne $null) {
+            if ($null -ne $parsedSyntax.Command) {
                 switch ($parsedSyntax.Command) {
                     "REGION" {
                         $region = $parsedSyntax.Parameters;
@@ -318,19 +319,19 @@ class AssemblerV3 {
         $lines = $this.ExpandMacros($lines);
 
         $this.Pass = [PassType]::Collection;
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
         $lines | ForEach-Object { $this.Assemble($_); }
 
         $this.Pass = [PassType]::Allocation;
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
         $lines | ForEach-Object { $this.Assemble($_); }
 
         $this.Pass = [PassType]::Optimization;
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
         $lines = $this.Optimize($lines);
 
         $this.Pass = [PassType]::Relocation;
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
         $lines | ForEach-Object { $this.Assemble($_); }
 
         $lines = $this.EmptyLineReduction($lines);
@@ -340,7 +341,7 @@ class AssemblerV3 {
         $this.AssembledLines = 0;
         $this.Stats.Add(@{ Bytes = 0; MinCycles = 0; MaxCycles = 0; });
 
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass #$($this.Pass)"
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
         $lines | ForEach-Object { $this.Assemble($_); }
         Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Completed Assembly..."
         $this.EndDTM = [DateTime]::Now;
@@ -370,14 +371,13 @@ class AssemblerV3 {
         }
     }
     [void] Assemble($CurrentLine) {
-        $this.AssembledLines += 1;
         $codes = @();
         $details = "";
         $dataOffset = 0;
         $parsedSyntax = $this.ParseSyntax($CurrentLine.Line);
         $skipOutput = $false;
 
-        if ($parsedSyntax.Label -ne $null) {
+        if ($null -ne $parsedSyntax.Label) {
             $label = $parsedSyntax.Label;
             if ($label.StartsWith('.')) {
                 $label = $this.LastLabel + $label;
@@ -387,7 +387,7 @@ class AssemblerV3 {
             $this.UpsertVariable($label, $this.Address, "Label");
         }
         
-        if ($parsedSyntax.Left -ne $null) {
+        if ($null -ne $parsedSyntax.Left) {
             $value = $this.EvaluateExpression($parsedSyntax.Right, $CurrentLine);
 
             if ($parsedSyntax.Left -eq '*') {
@@ -397,7 +397,7 @@ class AssemblerV3 {
                 $this.UpsertVariable($parsedSyntax.Left, $value, "Variable");
             }
         }
-        if ($parsedSyntax.Command -ne $null) {
+        if ($null -ne $parsedSyntax.Command) {
             #if ($this.Pass -ne 1) {
                 switch ($parsedSyntax.Command) {
                     "REGION" {
@@ -469,17 +469,21 @@ class AssemblerV3 {
                             $skipOutput = $true;
                         }
                     }
-                    "TEXT" {
+                    { $_ -eq "TEXT" -or $_ -eq "TEXTZ" } {
                         if ($parsedSyntax.Parameters -match '"(.*)"') {
-                            $this.Output += @{ Line = ("$($this.Address.ToString('X4')) |          " + "| " + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line; 
-                                       Type = "Code"; Source = $CurrentLine.Source; }
+                            if ($this.Pass -eq [PassType]::Assembly) {
+                                $this.Output += @{ Line = ("$($this.Address.ToString('X4')) |          " + "| ;" + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line; 
+                                                   Type = "Code"; Source = $CurrentLine.Source; }
+                            }
                             for($index = 0; $index -lt $Matches[1].Length; $index += 1) {
                                 $charValue = [byte]$Matches[1][$index];
                                 if ($charValue -ge 64 -and $charValue -le 95) { $charValue -= 64; } 
                                 $this.Assemble(@{ Line = "   DATA.b `$$($charValue.ToString('X2'))"; Source = $CurrentLine.Source; LineNumber = $CurrentLine.LineNumber });
                             }
+                            if ($_ -eq "TEXTZ") {
+                                $this.Assemble(@{ Line = "   DATA.b `$00"; Source = $CurrentLine.Source; LineNumber = $CurrentLine.LineNumber });
+                            }
                             $skipOutput = $true;
-                            #$dataOffset = $Matches[1].Length;   # Advance current by size of message...
                         }
                     }
                     "ASSERT" {
@@ -508,10 +512,11 @@ class AssemblerV3 {
                     }
                 }
             #}
-        } elseif ($parsedSyntax.Mnemonic -ne $null) {
+        } elseif ($null -ne $parsedSyntax.Mnemonic) {
+            $this.AssembledLines += 1;
             $operation = $this.OPCodes[$parsedSyntax.Mnemonic];
 
-            if ($operation -ne $null) {
+            if ($null -ne $operation) {
                 $details = $operation.Format;
                 
                 if ($operation.Opcode -ne '') { $codes += [byte]$operation.Opcode }
@@ -585,7 +590,6 @@ class AssemblerV3 {
         Write-Host -ForegroundColor Cyan "   Assembly End    : $($this.EndDTM.ToString())"
         $elapsed = $this.EndDTM - $this.StartDTM;
         Write-Host -ForegroundColor Cyan "   Elapsed Seconds : $($elapsed.TotalSeconds.ToString('0.00'))"
-
         Write-Host -ForegroundColor Cyan "   Loaded Lines    : $($this.LoadedLines.ToString('#,0'))"
         Write-Host -ForegroundColor Cyan "   Assembled Lines : $($this.AssembledLines.ToString('#,0'))"
         Write-Host -ForegroundColor Cyan "   Assembled Bytes : $($this.Bytes.Count.ToString('#,0'))"
@@ -652,10 +656,6 @@ if ($DumpMacros) {
         $macro.Replacement | ForEach-Object {
             "   => $($_)"
         }
-
-        # if ($assembler.Variables[$_].Type -eq "Label") {
-        #     "   $($_) = `$$($assembler.Variables[$_].Value.ToString('X4')) : $($assembler.Variables[$_].ReferenceCount)";
-        # }
     }
 }
 
@@ -682,44 +682,3 @@ if ($GeneratePRG -or $ExecutePRG) {
         (. "C:\Program Files\GTK3VICE-3.7-win64\bin\x64sc.exe" $prgFileName) | Out-Null
     }
 }
-
-<#
-
-    [x] Assembly Stats
-
-    [ ] MultiByte DATA.b
-
-    [ ] Examples
-        [x] ScrollUp with Color
-            [ ] Optimize
-        [x] NewMaze
-            [ ] Optimize
-            [ ] Smooth scrolling
-        [ ] Text Routine
-            [ ] Struct for x,y etc...
-            [ ] ScrollUp copied
-            [ ] byte, word, fp to string...
-
-        [ ] Math Routines - In Assembly
-
-
-    [x] Assertions
-        [ ] formatting
-
-    [ ] New Directives
-        [ ] #PRINT
-        [ ] 
-
-    [ ] Keywords
-        [ ] 2 Types Reserved for PS Syntax
-        [ ] Reserved Variables
-
-    [ ] Reassigning labels or variables?
-
-    [ ] Tests
-        With Assertions
-
-    [ ] Load Binary
-        Charsets/Sprites
-
-#>

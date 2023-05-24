@@ -85,3 +85,47 @@ When do I run this? During or before expand macros? When are variables assigned?
     Anything like @word will be replaced with the value of the variable...
 #ENDC
 
+
+
+
+
+<#
+
+    [x] Assembly Stats
+
+    [ ] MultiByte DATA.b
+
+    [ ] Examples
+        [x] ScrollUp with Color
+            [ ] Optimize
+        [x] NewMaze
+            [ ] Optimize
+            [ ] Smooth scrolling
+        [ ] Text Routine
+            [ ] Struct for x,y etc...
+            [ ] ScrollUp copied
+            [ ] byte, word, fp to string...
+
+        [ ] Math Routines - In Assembly
+
+
+    [x] Assertions
+        [ ] formatting
+
+    [ ] New Directives
+        [ ] #PRINT
+        [ ] 
+
+    [ ] Keywords
+        [ ] 2 Types Reserved for PS Syntax
+        [ ] Reserved Variables
+
+    [ ] Reassigning labels or variables?
+
+    [ ] Tests
+        With Assertions
+
+    [ ] Load Binary
+        Charsets/Sprites
+
+#>
