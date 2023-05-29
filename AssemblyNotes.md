@@ -190,3 +190,46 @@ Need in MacroExpression to create labels:
             BNE             .@IndexName_Loop
 #ENDM
 
+
+
+
+
+3 Fizz
+
+5 Buzz
+
+
+
+
+
+; Translate A into hexadecimal digits in A (bit 7-4) and X (bit 3-0)
+hex_digits
+        pha
+        and #$0f
+        cmp #$0a
+        bcs +
+        adc #$3a
++       sbc #$09
+        tax
+        pla
+        lsr
+        lsr
+        lsr
+        lsr
+        cmp #$0a
+        bcs +
+        adc #$3a
++       sbc #$09
+        rts
+
+
+http://unusedino.de/ec64/technical/aay/c64/basromma.htm
+
+LDX #LOW BYTE
+LDA #HIGH BYTE
+JSR $BDCD
+RTS 
+
+https://www.chibiakumas.com/6502/c64.php
+
+

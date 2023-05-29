@@ -52,6 +52,7 @@ ADDRESS = $ABCD
 START:
 
 #MACRO LOOP_START(IndexName,StartValue)
+; FOR (~IndexName~ = ~StartValue~ ; 
             LDA.#       @StartValue
             STA         .~IndexName~
             JMP         .~IndexName~_Loop
@@ -60,6 +61,7 @@ START:
 #ENDM
 
 #MACRO LOOP_NEXT(IndexName,Limit)
+; ~IndexName~ < ~Limit~ ; ~IndexName~++)
             INC             .~IndexName~
             LDA             .~IndexName~
             CMP.#           @Limit
@@ -67,5 +69,23 @@ START:
 #ENDM
 
 @LOOP_START(IndexA, 0)
-
+            LDA         .IndexA
 @LOOP_NEXT(IndexA, 16)
+
+
+
+@LOOP_START(Y,0)
+@LOOP_START(X,0)
+
+            ; A  = (Y << 4) + X
+            LDA         .Y
+            ROL.A
+            ROL.A
+            ROL.A
+            ROL.A
+            CLC
+            ADC         .X
+
+@LOOP_NEXT(X,16)
+@LOOP_NEXT(Y,16)
+
