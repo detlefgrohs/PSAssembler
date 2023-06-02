@@ -98,3 +98,17 @@
 #ENDM
 
 
+#MACRO          INC_WORD_BY_ONE(ADDRESS)
+                INC         @ADDRESS
+                BNE         CURADDR + 5
+                INC         @ADDRESS + 1
+#ENDM
+
+#MACRO          CMP_WORD(ADDRESS,VALUE,LOOP)
+                LDA         @ADDRESS + 1
+                CMP.#       @HI(@VALUE)
+                BNE         @LOOP
+                LDA         @ADDRESS
+                CMP.#       @LO(@VALUE)
+                BNE         @LOOP
+#ENDM

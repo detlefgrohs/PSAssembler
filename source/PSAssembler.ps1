@@ -531,7 +531,7 @@ class AssemblerV3 {
                 }
 
                 if ($operation.AddressingMode -eq 'Relative') {
-                    if ($this.Pass -eq [PassType]::Collection) {
+                    if ($this.Pass -ne [PassType]::Assembly) {
                         $codes += [byte]0x00;
                     } else {
                         $offset = $this.EvaluateExpression($parsedSyntax.Operand, $CurrentLine) - ($this.Address + 2);
