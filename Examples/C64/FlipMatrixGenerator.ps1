@@ -1,5 +1,5 @@
 ﻿
-$size = 5;
+$size = 20;
 
 $generated = @();
 
@@ -50,3 +50,19 @@ for ($index = 0; $index -lt $generated.Count; $index += 1) {
     }
 
 }
+
+$generated.Count
+$destination = "flipdata.bin"
+Remove-Item -Path $destination -Force -ErrorAction SilentlyContinue
+if ((Get-Host).Version.Major -lt 6) {
+    $generated | ForEach-Object { 
+        Write-Host "$($_.ToString('X2')) " -NoNewline
+        Add-Content -Value ([byte]$_) -Path $destination -Encoding Byte 
+    } # PowerShell 5.x -Encoding Byte
+} else {
+    $generated | ForEach-Object { 
+        Write-Host "$($_.ToString('X2')) " -NoNewline
+        Add-Content -Value ([byte]$_) -Path $destination -AsByteStream 
+    } # PowerShell 6.x AsByteStream
+}
+Write-Host
