@@ -41,6 +41,7 @@ class AssemblerV3 {
     $CycleTime = 1 / 1020000;
     $Regions = @{};
     $CurrentRegion = '<root>'
+    $LoadedBinary = 0;
 
     # For Report
     $StartDTM = [DateTime]::Now;
@@ -352,22 +353,22 @@ class AssemblerV3 {
         $this.EndDTM = [DateTime]::Now;
     }
     [void] Export($FileName, $PrePendStartingAddress) {
+        $exportStartDTM = [DateTime]::Now
         $out = $this.Bytes;
         if ($PrePendStartingAddress) { $out = $this.WordToByteArray($this.StartingAddress) + $this.Bytes; }
 
         Remove-Item -Path $FileName -Force -ErrorAction SilentlyContinue
-        if ((Get-Host).Version.Major -lt 6) {
-            $out | ForEach-Object { Add-Content -Value ([byte]$_) -Path $FileName -Encoding Byte } # PowerShell 5.x -Encoding Byte
-        } else {
-            $out | ForEach-Object { Add-Content -Value ([byte]$_) -Path $FileName -AsByteStream } # PowerShell 6.x AsByteStream
-        }
+        [System.IO.File]::WriteAllBytes("$($PWD)\$($FileName)", $out);
+
+        $elapsed = [DateTime]::Now - $exportStartDTM;
+        Write-Host "   Wrote to '$($FileName)' in $($elapsed.TotalSeconds) seconds."
     }
     [void] UpsertVariable($Name, $Value, $Type) {
         if ($this.Variables.ContainsKey($Name)) {
             # ToDo - Handle changes because they will change later base on optimization...
             $oldValue = $this.Variables[$Name].Value;
             if ($oldValue -ne $Value) {
-                Write-Host "   $($Name) Relocated from '$($oldValue.ToString('X4'))' to '$($Value.ToString('X4'))'"
+                Write-Host "   $($Name) Relocated from '`$$($oldValue.ToString('X4'))' to '`$$($Value.ToString('X4'))'"
                 $this.Variables[$Name].Value = $Value;
             }
         } else {
@@ -502,15 +503,11 @@ class AssemblerV3 {
                         }
                         "LOADBINARY" {
                             $binaryFileName = [IO.Path]::Combine([IO.Path]::GetDirectoryName($this.MainAssemblyFileName), $parsedSyntax.Parameters);
-                            $binaryBytes = @()
-                            if ((Get-Host).Version.Major -lt 6) {
-                                $binaryBytes = Get-Content -Encoding Byte -Path $binaryFileName  # PowerShell 5.x -Encoding Byte
-                            } else {
-                                $binaryBytes = Get-Content -AsByteStream -Path $binaryFileName # PowerShell 6.x AsByteStream
-                            }
+                            $binaryBytes = [System.IO.File]::ReadAllBytes("$($PWD)\$($binaryFileName)");
 
                             $dataOffset = $binaryBytes.Count;
                             if ($this.Pass -eq [PassType]::Assembly) {
+                                $this.LoadedBinary += $binaryBytes.Count;
                                 $this.Bytes += $binaryBytes;
                                 $this.Output += @{ Line = "                              | ; '$($binaryFileName)' : $($dataOffset) bytes"; Type = "BinaryFile"; Source = "" }
                             }
@@ -623,8 +620,11 @@ class AssemblerV3 {
         $elapsed = $this.EndDTM - $this.StartDTM;
         Write-Host -ForegroundColor Cyan "   Elapsed Seconds : $($elapsed.TotalSeconds.ToString('0.00'))"
         Write-Host -ForegroundColor Cyan "   Loaded Lines    : $($this.LoadedLines.ToString('#,0'))"
+        Write-Host -ForegroundColor Cyan "   Loaded Bytes    : $($this.LoadedBinary.ToString('#,0'))"
         Write-Host -ForegroundColor Cyan "   Assembled Lines : $($this.AssembledLines.ToString('#,0'))"
-        Write-Host -ForegroundColor Cyan "   Assembled Bytes : $($this.Bytes.Count.ToString('#,0'))"
+        $assembledBytes = $this.Bytes.Count - $this.LoadedBinary;
+        Write-Host -ForegroundColor Cyan "   Assembled Bytes : $($assembledBytes.ToString('#,0'))"
+        Write-Host -ForegroundColor Cyan "   Total Bytes     : $($this.Bytes.Count.ToString('#,0'))"
         Write-Host -ForegroundColor Cyan "   Labels/Variables: $($this.Variables.Count.ToString('#,0'))"
         Write-Host -ForegroundColor Cyan "   Macros          : $($this.Macros.Count.ToString('#,0'))"
 

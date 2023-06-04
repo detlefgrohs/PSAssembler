@@ -2,23 +2,39 @@ param (
     $FileName,
     [Switch]$Color,
     [Switch]$Verbose,
-    [Switch]$Verify
+    [Switch]$Verify,
+    [Switch]$Force
 )
 
-if ((Get-Host).Version.Major -lt 6) {
-    $binary = Get-Content -Encoding Byte -Path $FileName
-} else {
-    $binary = Get-Content -AsByteStream -Path $FileName
+$destination = $FileName + 'c'
+
+Write-Host -ForegroundColor Green "Compressing '$($FileName)' to '$($destination)'"
+
+if (-not (Test-Path -Path $FileName)) {
+    Write-Host -ForegroundColor Red "   File '$($FileName)' does not exist..."
+    return;
 }
 
-"Loaded $($binary.Length) bytes from '$($FileName)'"
+if ((Test-Path -Path $destination)) {
+    $sourceLastWriteTime = (Get-Item -Path $FileName).LastWriteTime
+    $targetLastWriteTime = (Get-Item -Path $destination -ErrorAction SilentlyContinue).LastWriteTime
+    
+    if ($targetLastWriteTime -gt $sourceLastWriteTime -and -not $Force) {
+        Write-Host -ForegroundColor Yellow "   Skipping because generated file is older than source file..."   
+        return;
+    }    
+}
+
+$binary = [System.IO.File]::ReadAllBytes("$($PWD)\$($FileName)");
+
+"   Loaded $($binary.Length) bytes from '$($FileName)'"
 if ($Color) {
     $newBinary = @()
     for($index = 0; $index -lt $binary.Length; $index += 2) {
         $newBinary += ($binary[$index] -shl 4) -bor $binary[$index + 1];
     }
     $binary = $newBinary;
-    "Color Stacked to $($binary.Length)"
+    "   Color Stacked to $($binary.Length)"
 }
 
 if ($Verbose) {
@@ -119,7 +135,7 @@ while (-not $done) {
     $index += 1;
 }
 
-"Compressed to $($output.Length) bytes"
+"   Compressed to $($output.Length) bytes"
     if ($Verbose) {
     $output | ForEach-Object {
         Write-Host "$($_.ToString('X2')) " -NoNewline
@@ -175,25 +191,12 @@ if ($Verify) {
         $equal = $false;
     }
 
-    if ($equal) { "Are Equal"} else { "Not Equal" }
+    if ($equal) { "      Are Equal"} else { "      Not Equal" }
 }
 
-$destination = $FileName + 'c'
+$startDTM = [DateTime]::Now
+
 Remove-Item -Path $destination -Force -ErrorAction SilentlyContinue
-if ((Get-Host).Version.Major -lt 6) {
-    $output | ForEach-Object { 
-        if ($Verbose) {
-            Write-Host "$($_.ToString('X2')) " -NoNewline
-        }Add-Content -Value ([byte]$_) -Path $destination -Encoding Byte 
-    } # PowerShell 5.x -Encoding Byte
-} else {
-    $output | ForEach-Object {
-        if ($Verbose) {
-            Write-Host "$($_.ToString('X2')) " -NoNewline
-        }
-        Add-Content -Value ([byte]$_) -Path $destination -AsByteStream 
-    } # PowerShell 6.x AsByteStream
-}
-if ($Verbose) { Write-Host }
-
-"Wrote to '$($destination)'"
+[System.IO.File]::WriteAllBytes("$($PWD)\$($destination)", $output);
+$elapsed = [DateTime]::Now - $startDTM
+"   Wrote to '$($destination)' in $($elapsed.TotalSeconds) seconds."
