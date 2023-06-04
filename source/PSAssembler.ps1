@@ -139,8 +139,10 @@ class AssemblerV3 {
 
         try { return [uint16]$(Invoke-Expression $Expression); }
         catch {
-            $this.Output += @{ Line = "   Error in Expression: '$($expression)'"; Type = "Error"; Source = "" }
-            $this.Errors += @{ Message = "   Error in Expression: '$($expression)'"; Line = $Line }
+            if ($this.Pass -eq [PassType]::Assembly) {
+                $this.Output += @{ Line = "   Error in Expression: '$($expression)'"; Type = "Error"; Source = "" }
+                $this.Errors += @{ Message = "   Error in Expression: '$($expression)'"; Line = $Line }
+            }
             return [uint16]0; 
         }
     }
