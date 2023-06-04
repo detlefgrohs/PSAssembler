@@ -6,6 +6,11 @@
 ((@VALUE) & $FF00) >> 8
 #ENDM
 
+#MACRO SET_BYTE(ADDRESS,VALUE)
+            LDA.#   @VALUE
+            STA     @ADDRESS
+#ENDM
+
 #MACRO SET_WORD(ADDRESS,VALUE)
             LDA.#   @LO(@VALUE)
             STA     @ADDRESS
@@ -45,6 +50,26 @@
             STA         @ADDRESS
             LDA         @ADDRESS+1
             ADC.#       $00
+            STA         @ADDRESS+1
+#ENDM
+
+
+#MACRO ADD_MWORD(ADDRESS,MADDRESS)
+                CLC
+                LDA             @ADDRESS
+                ADC             @MADDRESS
+                STA             @ADDRESS
+                BCC             CURADDR + 5     ; 2 BCC  3 INC
+                INC             @ADDRESS + 1
+#ENDM
+
+#MACRO SUBTRACT_WORD(ADDRESS,VALUE)
+            SEC
+            LDA         @ADDRESS
+            SBC.#       @VALUE
+            STA         @ADDRESS
+            LDA         @ADDRESS+1
+            SBC.#       $00
             STA         @ADDRESS+1
 #ENDM
 

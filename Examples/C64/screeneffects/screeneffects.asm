@@ -36,12 +36,9 @@ START:          ; Unpack Screen Text and Color to Temp Location
                 ; @SET_WORD(MEMORY_COPY_SCREEN.COLOR_TARGET, VICII_COLOR_RAM);
                 ; JSR         MEMORY_COPY_SCREEN
 
-                LDA.#       0
-                STA         .LINE_INDEX
-.OUTER_LOOP:
-                LDX.#       39
-                STX         .COLUMN_INDEX
-.INNER_LOOP:          
+                @SET_BYTE(.LINE_INDEX, 0)
+.OUTER_LOOP:    @SET_BYTE(.COLUMN_INDEX, (VICII_SCREEN_TEXT_WIDTH - 1))
+.INNER_LOOP:    LDX         .COLUMN_INDEX
 .FD:            LDA,X       FLIPDATA
                 BMI         .BLANK_COLUMN
 
@@ -62,15 +59,16 @@ START:          ; Unpack Screen Text and Color to Temp Location
                 @SET_WORD(COLUMN_CLEAR.TARGET_COLOR, VICII_COLOR_RAM);
                 JSR         COLUMN_CLEAR
 
-.CONTINUE:
-                DEC         .COLUMN_INDEX
-                LDX         .COLUMN_INDEX
+.CONTINUE:      DEC         .COLUMN_INDEX
                 BPL         .INNER_LOOP
 
 .SPACECHECK:    LDA         $DC01
                 CMP.#       $EF
                 BEQ         .SPACECHECK
 
+                ; We allow the change direction to go beyond so
+                ; that we can simplify the code but I am not sure I
+                ; like it maybe rewrite it...
                 LDA         .DIRECTION
                 BNE         .DIR_DOWN
 
@@ -83,24 +81,14 @@ START:          ; Unpack Screen Text and Color to Temp Location
                 JMP         .OUTER_LOOP
 
 .CHANGE_DIR_DOWN:
-                LDA.#       $FF
-                STA         .DIRECTION
+                @SET_BYTE(.DIRECTION, $FF)
 
-.DIR_DOWN:      SEC
-                LDA         .FD + 1
-                SBC.#       40
-                STA         .FD + 1
-                LDA         .FD + 2
-                SBC.#       0
-                STA         .FD + 2
-
+.DIR_DOWN:      @SUBTRACT_WORD(.FD + 1, 40)
                 DEC         .LINE_INDEX
-                LDA         .LINE_INDEX
                 BMI         .CHANGE_DIR_UP
                 JMP         .OUTER_LOOP
 
-.CHANGE_DIR_UP: LDA.#       $00
-                STA         .DIRECTION
+.CHANGE_DIR_UP: @SET_BYTE(.DIRECTION, $00)
                 JMP         .DIR_UP
 
                 RTS
@@ -141,20 +129,9 @@ START:          ; Unpack Screen Text and Color to Temp Location
                 ; RTS
 
 #REGION COLUMN_CLEAR
-COLUMN_CLEAR:   CLC
-                LDA             COLUMN_CLEAR.TARGET
-                ADC             .COLUMN
-                STA             COLUMN_CLEAR.TARGET
-                BCC             .1
-                INC             COLUMN_CLEAR.TARGET + 1
-.1:
-                CLC
-                LDA             COLUMN_CLEAR.TARGET_COLOR
-                ADC             .COLUMN
-                STA             COLUMN_CLEAR.TARGET_COLOR
-                BCC             .2
-                INC             COLUMN_CLEAR.TARGET_COLOR + 1
-.2:             
+COLUMN_CLEAR:   @ADD_MWORD(COLUMN_CLEAR.TARGET, .COLUMN)
+                @ADD_MWORD(COLUMN_CLEAR.TARGET_COLOR, .COLUMN)
+
                 LDY.#           5
 .OUTER_LOOP:    LDX.#           $00
 .INNER_LOOP:    LDA.#           $20
@@ -184,34 +161,11 @@ COLUMN_CLEAR.TARGET_COLOR = .STC + 1
 #ENDR
 
 #REGION COLUMN_COPY
-COLUMN_COPY:    CLC
-                LDA             COLUMN_COPY.SOURCE
-                ADC             .SOURCE_COLUMN
-                STA             COLUMN_COPY.SOURCE
-                BCC             .1
-                INC             COLUMN_COPY.SOURCE + 1
-.1:
-                CLC
-                LDA             COLUMN_COPY.SOURCE_COLOR
-                ADC             .SOURCE_COLUMN
-                STA             COLUMN_COPY.SOURCE_COLOR
-                BCC             .2
-                INC             COLUMN_COPY.SOURCE_COLOR + 1
-.2:
-                CLC
-                LDA             COLUMN_COPY.TARGET
-                ADC             .TARGET_COLUMN
-                STA             COLUMN_COPY.TARGET
-                BCC             .3
-                INC             COLUMN_COPY.TARGET + 1
-.3:
-                CLC
-                LDA             COLUMN_COPY.TARGET_COLOR
-                ADC             .TARGET_COLUMN
-                STA             COLUMN_COPY.TARGET_COLOR
-                BCC             .4
-                INC             COLUMN_COPY.TARGET_COLOR + 1
-.4:             
+COLUMN_COPY:    @ADD_MWORD(COLUMN_COPY.SOURCE, .SOURCE_COLUMN)
+                @ADD_MWORD(COLUMN_COPY.SOURCE_COLOR, .SOURCE_COLUMN)
+                @ADD_MWORD(COLUMN_COPY.TARGET, .TARGET_COLUMN)
+                @ADD_MWORD(COLUMN_COPY.TARGET_COLOR, .TARGET_COLUMN)
+
                 LDY.#           5
 .OUTER_LOOP:    LDX.#           $00
 .INNER_LOOP:
@@ -220,14 +174,14 @@ COLUMN_COPY:    CLC
 .LDC:           LDA,X           $0000
 .STC:           STA,X           $0000
 
-                TXA
-                BMI             .CONTINUE
-                CLC
-                ADC.#           40
-                TAX
-                JMP             .INNER_LOOP
-.CONTINUE:
-                @ADD_WORD(.LD + 1, 200)
+                TXA                         ; Add 40 to X until we
+                BMI             .CONTINUE   ; go past 160
+                CLC                         ; so 120 then 160 then stop
+                ADC.#           40          ; so the 1st where N is set okay
+                TAX                         ; the next is not, that is why we
+                JMP             .INNER_LOOP ; check for BMI before we increment
+                                            ; again...
+.CONTINUE:      @ADD_WORD(.LD + 1, 200)
                 @ADD_WORD(.ST + 1, 200)
                 @ADD_WORD(.LDC + 1, 200)
                 @ADD_WORD(.STC + 1, 200)
