@@ -149,6 +149,41 @@ class AssemblerV3 {
             return [uint16]0; 
         }
     }
+    [array] ExecuteCode($Lines) {
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Executing Code"
+        
+        $processedLines = @();
+        $inCodeBlock = $false;
+        $codeLines = @();
+        $macroLine = $null;
+
+        $Lines | ForEach-Object {
+            $currentLine = $_;
+
+            if ($inCodeBlock) {
+                if ($currentLine.Line -match '#ENDC') {
+                    try {
+                        Invoke-Expression ($codeBlock = $codeLines -join "`r`n") | ForEach-Object {
+                            $processedLines += @{ Line = $_; Source =  $currentLine.Source + '.Code'; LineNumber = $macroLine.LineNumber; };
+                        }
+                        } catch {
+                        $this.Errors += @{ Message = "   Code Exception '$($_)'"; Line = $macroLine; }
+                    }
+                    $inCodeBlock = $false;
+                } else {
+                    $codeLines += $currentLine.Line;
+                }
+            } else {
+                if ($currentLine.Line -match '#CODE') {
+                    $inCodeBlock = $true;
+                    $macroLine = $currentLine;
+                } else {
+                    $processedLines += $currentLine;
+                }
+            }
+        }
+        return $processedLines;
+    }
     [array] ExpandMacros($Lines) {
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Expanding Macros Pass #$($this.MacroPass)"
         $this.MacroPass += 1;
@@ -208,7 +243,7 @@ class AssemblerV3 {
                                 $processedLines += @{ Line = $replacementCode[$index]; Source = $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
                             }
                         }
-                    } else { # Nothing to do so pass-tru
+                    } else { # Nothing to do so pass-thru
                         $processedLines += $currentLine
                     }
                 }
@@ -319,6 +354,9 @@ class AssemblerV3 {
         Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Starting Assembly..."
         $lines = $this.LoadFile($FileName);
         $this.LoadedLines = $lines.Count;
+
+        $lines = $this.ExecuteCode($lines);
+
         $this.MacroPass = 1;
         $lines = $this.ExpandMacros($lines);
 
