@@ -172,7 +172,7 @@ class AssemblerV3 {
                     $this.InMacro = $true;
                     $CurrentMacroName = $Matches['macroname']
                     $this.Macros.Add($Matches['macroname'], @{ Replacement = @(); Parameters = @(); });
-                    $Matches['parameters'] -split ',' | ForEach-Object { $this.Macros[$CurrentMacroName].Parameters += $_; }
+                    $Matches['parameters'] -split ',' | ForEach-Object { $this.Macros[$CurrentMacroName].Parameters += $_.Trim(); }
                 } else {
                     if (($currentLine.Line -replace ';.*', '') -match '@(?<macroname>[a-z_]*)\((?<parameters>.*)\)') {
                         $replacementCode = @();
@@ -185,8 +185,8 @@ class AssemblerV3 {
                                 $Matches['parameters'] -split ',' | ForEach-Object {
                                     if ($parameterIndex -lt $this.Macros[$Matches['macroname']].Parameters.Count) {
                                         $parameterName = $this.Macros[$Matches['macroname']].Parameters[$parameterIndex];
-                                        $replacementLine = $replacementLine.Replace('@' + $parameterName, $_);
-                                        $replacementLine = $replacementLine.Replace('~' + $parameterName + '~', $_);
+                                        $replacementLine = $replacementLine.Replace('@' + $parameterName, $_.Trim());
+                                        $replacementLine = $replacementLine.Replace('~' + $parameterName + '~', $_.Trim());
                                     }
                                     $parameterIndex += 1;
                                 }

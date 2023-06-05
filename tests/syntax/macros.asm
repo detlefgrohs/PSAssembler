@@ -89,3 +89,14 @@ START:
 @LOOP_NEXT(X,16)
 @LOOP_NEXT(Y,16)
 
+; Testing Spaces in Macro Definition
+#MACRO TEST( VarA , VarB )
+        LDA     @VarA
+        STA     @VarB
+    ; '@VarA' => '@VarB'
+#ENDM
+
+X:      DATA.b  $00
+Y:      DATA.b  $00
+
+        @TEST( X , Y )
