@@ -319,6 +319,7 @@ SET_CELL:       ; screenLocation := $4400 + offset;
 
 
 ; ===========================================================================
+#STATS.PUSH
 SET_CELL_NO_COLOR:       ; bitmapLocation := $6000 + (offset * 8);
                 LDA     .OFFSET
                 STA     .BMP_ST + 1
@@ -352,14 +353,19 @@ SET_CELL_NO_COLOR:       ; bitmapLocation := $6000 + (offset * 8);
                 STA     .TL_LD + 2
 
                 LDX     .LOOP_COUNT
+#STATS.PUSH
 .LOOP:          ; FOR bitmapIndex := 0 TO 8 DO
                 ; 	bitmapLocation[bitmapIndex] := tileLocation[bitmapIndex];
 .TL_LD:         LDA,X   $0000
 .BMP_ST:        STA,X   $0000
                 DEX
                 BPL     .LOOP
-
+#STATS.LOOP (5 * 8) - 1
+#STATS.DETAIL
+#STATS.POP
                 RTS
+#STATS.DETAIL
+#STATS.POP
 
 .OFFSET:        DATA    $0000
 .TILE_NUMBER:   DATA    $0000

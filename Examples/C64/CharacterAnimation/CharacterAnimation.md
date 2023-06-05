@@ -15,5 +15,5 @@ No Color Set	79	121	 7,623 	70%
 So went from 10,962 Clock Cycles to 4,095 Clock Cycles by optimizations....
 
 
-
+So 5 Lines => 
 
