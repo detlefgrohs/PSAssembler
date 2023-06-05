@@ -158,6 +158,15 @@ CLEAR_SCREEN:
                 STA     .INDEX
                 STA     .INDEX + 1
 
+                LDA.#   0
+                STA     SET_CELL.TILE_NUMBER
+                LDA.#   VICII_COLOR_WHITE
+                STA     SET_CELL.COLOR_1
+                LDA.#   VICII_COLOR_BLACK
+                STA     SET_CELL.COLOR_2
+                LDA.#   VICII_COLOR_LIGHT_GREY
+                STA     SET_CELL.COLOR_3
+
                 ; BEGIN
 .LOOP:          ; SetCell(offsetIndex, #CharacterTileSet, 0, Screen_BG_Col, Black, Black);
                 LDA     .INDEX
@@ -165,12 +174,6 @@ CLEAR_SCREEN:
                 LDA     .INDEX + 1
                 STA     SET_CELL.OFFSET + 1
 
-                LDA.#   0
-                STA     SET_CELL.TILE_NUMBER
-                STA     SET_CELL.COLOR_2
-                STA     SET_CELL.COLOR_3
-                LDA.#   $3
-                STA     SET_CELL.COLOR_1
                 JSR     SET_CELL
 
                 @INC_WORD_BY_ONE(.INDEX)            ; 	Inc(offsetIndex);		
@@ -200,125 +203,117 @@ ANIMATE:        LDA     .IDLE_INDEX
 
 DRAW_CHAR:      ; ToDo: Calculate offset by row and column
                 LDA.#   8
-                STA     SET_CELL.OFFSET
+                STA     SET_CELL_NO_COLOR.OFFSET
                 LDA.#   0
-                STA     SET_CELL.OFFSET + 1
+                STA     SET_CELL_NO_COLOR.OFFSET + 1
 
                 LDA    .CHAR_NUMBER
-                STA     SET_CELL.TILE_NUMBER
+                STA     SET_CELL_NO_COLOR.TILE_NUMBER
                 LDA.#   0
-                STA     SET_CELL.TILE_NUMBER + 1
+                STA     SET_CELL_NO_COLOR.TILE_NUMBER + 1
 
 .CONTINUE:
-                LDA.#   VICII_COLOR_WHITE
-                STA     SET_CELL.COLOR_1
-                LDA.#   VICII_COLOR_BLACK
-                STA     SET_CELL.COLOR_2
-                LDA.#   VICII_COLOR_LIGHT_GREY
-                STA     SET_CELL.COLOR_3
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                @ADD_WORD(SET_CELL_NO_COLOR.OFFSET, 40 - 4)
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                @ADD_WORD(SET_CELL.OFFSET, 40 - 4)
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                @ADD_WORD(SET_CELL_NO_COLOR.OFFSET, 40 - 4)
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                @ADD_WORD(SET_CELL.OFFSET, 40 - 4)
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                @ADD_WORD(SET_CELL_NO_COLOR.OFFSET, 40 - 4)
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                @ADD_WORD(SET_CELL.OFFSET, 40 - 4)
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                @ADD_WORD(SET_CELL_NO_COLOR.OFFSET, 40 - 4)
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                @ADD_WORD(SET_CELL.OFFSET, 40 - 4)
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
-
-                INC     SET_CELL.OFFSET
-                INC     SET_CELL.TILE_NUMBER
-                JSR     SET_CELL
+                INC     SET_CELL_NO_COLOR.OFFSET
+                INC     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
 
                 RTS
 
 .CHAR_NUMBER:   DATA.b  $00
 
-
+; ===========================================================================
 SET_CELL:       ; screenLocation := $4400 + offset;
                 @SET_WORD(.SL_ST + 1, $4400)
                 CLC
@@ -397,6 +392,54 @@ SET_CELL:       ; screenLocation := $4400 + offset;
 .COLOR_1:       DATA.b  $00
 .COLOR_2:       DATA.b  $00
 .COLOR_3:       DATA.b  $00
+
+
+; ===========================================================================
+SET_CELL_NO_COLOR:       ; bitmapLocation := $6000 + (offset * 8);
+                LDA     .OFFSET
+                STA     .BMP_ST + 1
+                LDA     .OFFSET + 1
+                STA     .BMP_ST + 2
+                @ROL_WORD(.BMP_ST + 1)
+                @ROL_WORD(.BMP_ST + 1)
+                @ROL_WORD(.BMP_ST + 1)
+                CLC
+                LDA     .BMP_ST + 1
+                ADC.#   @LO($6000)
+                STA     .BMP_ST + 1
+                LDA     .BMP_ST + 2
+                ADC.#   @HI($6000)
+                STA     .BMP_ST + 2
+
+                ; tileLocation := tilesetLocation + (tileNumber << 3);
+                LDA     .TILE_NUMBER
+                STA     .TL_LD + 1
+                LDA.#   0
+                STA     .TL_LD + 2
+                @ROL_WORD(.TL_LD + 1)
+                @ROL_WORD(.TL_LD + 1)
+                @ROL_WORD(.TL_LD + 1)
+                CLC
+                LDA     .TL_LD + 1
+                ADC.#   @LO(CHARDATA)
+                STA     .TL_LD + 1
+                LDA     .TL_LD + 2
+                ADC.#   @HI(CHARDATA)
+                STA     .TL_LD + 2
+
+                LDX.#   7
+.LOOP:          ; FOR bitmapIndex := 0 TO 8 DO
+                ; 	bitmapLocation[bitmapIndex] := tileLocation[bitmapIndex];
+.TL_LD:         LDA,X   $0000
+.BMP_ST:        STA,X   $0000
+                DEX
+                BPL     .LOOP
+
+                RTS
+
+.OFFSET:        DATA    $0000
+.TILE_NUMBER:   DATA    $0000
+
 
 WAIT_FOR_RASTER_LINE: ; Only works for Rasters < 256
                 LDA.#   $80
