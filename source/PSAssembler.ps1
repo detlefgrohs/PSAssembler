@@ -33,11 +33,11 @@ class AssemblerV3 {
     $Macros = @{};
     [UInt16]$Address;
     [UInt16]$StartingAddress;
-    $InMacro = $false;
     $Errors = @();
     $VerboseLST = $false;
     $LastLabel = "";
     $Stats = [System.Collections.ArrayList]@();
+    $NamedStats = @{};
     $CycleTime = 1 / 1020000;
     $Regions = @{};
     $CurrentRegion = '<root>'
@@ -149,27 +149,25 @@ class AssemblerV3 {
             return [uint16]0; 
         }
     }
-    [void]TernaryVoid($Test, [ScriptBlock] $T, [ScriptBlock] $F) {
-        if ($Test) { &$T; } else { &$F; }
-    }
-    [object]TernaryObject($Test, [ScriptBlock] $T, [ScriptBlock] $F) {
-        if ($Test) { return &$T; } else { return &$F; }
-    }
     [array] ExpandMacros($Lines) {
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Expanding Macros Pass #$($this.MacroPass)"
         $this.MacroPass += 1;
 
         $processedLines = @();
-        $this.InMacro = $false;
+        $inMacro = $false;
         $macroExpansionOccured = $false;
 
         $Lines | ForEach-Object {
             $currentLine = $_;
-            if ($this.InMacro) {
-                $this.TernaryVoid($currentLine.Line -match '#ENDM', { $this.InMacro = $false; }, { $this.Macros[$CurrentMacroName].Replacement += $currentLine.Line; });
+            if ($inMacro) {
+                if ($currentLine.Line -match '#ENDM') {
+                    $inMacro = $false;
+                } else {
+                    $this.Macros[$CurrentMacroName].Replacement += $currentLine.Line;
+                }
             } else {
                 if ($currentLine.Line -match '#MACRO\s+(?<macroname>[a-z_]*)\((?<parameters>[^\)]*)\)') { # Check for a Macro 
-                    $this.InMacro = $true;
+                    $inMacro = $true;
                     $CurrentMacroName = $Matches['macroname']
                     $this.Macros.Add($Matches['macroname'], @{ Replacement = @(); Parameters = @(); });
                     $Matches['parameters'] -split ',' | ForEach-Object { $this.Macros[$CurrentMacroName].Parameters += $_.Trim(); }
@@ -476,6 +474,12 @@ class AssemblerV3 {
                                 $skipOutput = $true;
                             }
                         }
+                        "STATS.SAVE" {
+                            if ($this.Pass -eq [PassType]::Assembly) {
+                                $name = $parsedSyntax.Parameters.Trim();
+                                $this.NamedStats.Add($name, $this.Stats[$this.Stats.Count - 1]);
+                            }
+                        }
                         { $_ -eq "TEXT" -or $_ -eq "TEXTZ" } {
                             if ($parsedSyntax.Parameters -match '"(.*)"') {
                                 if ($this.Pass -eq [PassType]::Assembly) {
@@ -544,7 +548,9 @@ class AssemblerV3 {
                                 $offset = [byte]0;
                             }
 
-                            $value = $this.TernaryObject($offset -lt 0, { $offset + 0x100 }, { $offset });
+                            $value = $offset;
+                            if ($offset -lt 0) { $value += 0x100; }
+
                             $codes += [byte]$value;
                             $details = $details.Replace('[r8]', '$' + $value.ToString('X2'));   
                         }
@@ -636,6 +642,18 @@ class AssemblerV3 {
             }
         }
         Write-Host -ForegroundColor Cyan "   Optimized Out   : $($optimizedBytes.ToString('#,0'))"
+
+        if ($this.NamedStats.Length -gt 0) {
+            $this.NamedStats.Keys | ForEach-Object {
+                $currentStats = $this.NamedStats[$_];
+                Write-Host -ForegroundColor Cyan "Stat: '$($_)'"
+                Write-Host -ForegroundColor Cyan "   Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"
+                $minCycleTime = $currentStats.MinCycles * $this.CycleTime;
+                $maxCycleTime = $currentStats.MaxCycles * $this.CycleTime;
+                Write-Host -ForegroundColor Cyan "   MinCycleTime: $(($minCycleTime * 1000).ToString('#,#.00')) mSec   MaxCycleTime: $(($maxCycleTime * 1000).ToString('#,#.00')) mSec"
+                Write-Host -ForegroundColor Cyan "   Max FPS: $((1 / $minCycleTime).ToString('#,#.00'))   Min FPS: $((1 / $maxCycleTime).ToString('#,#.00'))"; 
+            }
+        }
     }
 }
 

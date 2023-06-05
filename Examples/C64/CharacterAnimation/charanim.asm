@@ -365,6 +365,7 @@ SET_CELL_NO_COLOR:       ; bitmapLocation := $6000 + (offset * 8);
 #STATS.POP
                 RTS
 #STATS.DETAIL
+#STATS.SAVE SET_CELL_NO_COLOR
 #STATS.POP
 
 .OFFSET:        DATA    $0000
