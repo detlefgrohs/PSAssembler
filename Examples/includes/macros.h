@@ -137,3 +137,9 @@
                 CMP.#       @LO(@VALUE)
                 BNE         @LOOP
 #ENDM
+
+#MACRO ROL_WORD(ADDRESS)
+                ASL     @ADDRESS
+                ;BCC     CURADDR + 5
+                ROL     @ADDRESS + 1
+#ENDM
