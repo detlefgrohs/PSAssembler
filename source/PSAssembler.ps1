@@ -155,7 +155,7 @@ class AssemblerV3 {
         $processedLines = @();
         $inCodeBlock = $false;
         $codeLines = @();
-        $macroLine = $null;
+        $codeLineRef = $null;
 
         $Lines | ForEach-Object {
             $currentLine = $_;
@@ -167,16 +167,17 @@ class AssemblerV3 {
                             $processedLines += @{ Line = $_; Source =  $currentLine.Source + '.Code'; LineNumber = $macroLine.LineNumber; };
                         }
                         } catch {
-                        $this.Errors += @{ Message = "   Code Exception '$($_)'"; Line = $macroLine; }
+                        $this.Errors += @{ Message = "   Code Exception '$($_)'"; Line = $codeLineRef; }
                     }
                     $inCodeBlock = $false;
+                    $codeLines = @();
                 } else {
                     $codeLines += $currentLine.Line;
                 }
             } else {
                 if ($currentLine.Line -match '#CODE') {
                     $inCodeBlock = $true;
-                    $macroLine = $currentLine;
+                    $codeLineRef = $currentLine;
                 } else {
                     $processedLines += $currentLine;
                 }
@@ -201,13 +202,13 @@ class AssemblerV3 {
                     $this.Macros[$CurrentMacroName].Replacement += $currentLine.Line;
                 }
             } else {
-                if ($currentLine.Line -match '#MACRO\s+(?<macroname>[a-z_]*)\((?<parameters>[^\)]*)\)') { # Check for a Macro 
+                if ($currentLine.Line -match '#MACRO\s+(?<macroname>[a-z_][a-z0-9_]*)\((?<parameters>[^\)]*)\)') { # Check for a Macro 
                     $inMacro = $true;
                     $CurrentMacroName = $Matches['macroname']
                     $this.Macros.Add($Matches['macroname'], @{ Replacement = @(); Parameters = @(); });
                     $Matches['parameters'] -split ',' | ForEach-Object { $this.Macros[$CurrentMacroName].Parameters += $_.Trim(); }
                 } else {
-                    if (($currentLine.Line -replace ';.*', '') -match '@(?<macroname>[a-z_]*)\((?<parameters>.*)\)') {
+                    if (($currentLine.Line -replace ';.*', '') -match '@(?<macroname>[a-z_][a-z0-9_]*)\((?<parameters>.*)\)') {
                         $replacementCode = @();
 
                         if ($this.Macros.ContainsKey($Matches['macroname'])) {
@@ -566,14 +567,6 @@ class AssemblerV3 {
                     
                     if ($operation.Opcode -ne '') { $codes += [byte]$operation.Opcode }
 
-                    if ($this.Pass -eq [PassType]::Assembly) {
-                        $currentStats = $this.Stats[$this.Stats.Count - 1];
-                        $currentStats.Bytes += $operation.Bytes;
-                        $currentStats.Bytes += 1;   # Weird. When I try and add 1 above doesn't add right...
-                        $currentStats.MinCycles += $operation.MinCycles;
-                        $currentStats.MaxCycles += $operation.MaxCycles;
-                    }
-
                     if ($operation.AddressingMode -eq 'Relative') {
                         if ($this.Pass -ne [PassType]::Assembly) {
                             $codes += [byte]0x00;
@@ -633,6 +626,17 @@ class AssemblerV3 {
                             $details = $details.Replace('[a16]', '$'+ $value.ToString('X4'));
                         }
                     }
+
+                    if ($this.Pass -eq [PassType]::Assembly) {
+                        $currentStats = $this.Stats[$this.Stats.Count - 1];
+                        $currentStats.Bytes += $codes.Count + $dataOffset;
+                        # $currentStats.Bytes += $operation.Bytes;
+                        # if ($operation.AddressingMode -ne 'Data') {
+                        #     $currentStats.Bytes += 1;   # Weird. When I try and add 1 above doesn't add right...
+                        # }
+                        $currentStats.MinCycles += $operation.MinCycles;
+                        $currentStats.MaxCycles += $operation.MaxCycles;
+                    }
                 } else {
                     if ($this.Pass -eq [PassType]::Assembly) {
                         $this.Output += @{ Line = "   Parsing Error.."; Type = "Error"; Source = "" }
@@ -669,6 +673,8 @@ class AssemblerV3 {
         $assembledBytes = $this.Bytes.Count - $this.LoadedBinary;
         Write-Host -ForegroundColor Cyan "   Assembled Bytes : $($assembledBytes.ToString('#,0'))"
         Write-Host -ForegroundColor Cyan "   Total Bytes     : $($this.Bytes.Count.ToString('#,0'))"
+        Write-Host -ForegroundColor Cyan "   Starting Address: `$$($this.StartingAddress.ToString('X4'))"
+        Write-Host -ForegroundColor Cyan "   Ending Address  : `$$(($this.StartingAddress + $this.Bytes.Count).ToString('X4'))"
         Write-Host -ForegroundColor Cyan "   Labels/Variables: $($this.Variables.Count.ToString('#,0'))"
         Write-Host -ForegroundColor Cyan "   Macros          : $($this.Macros.Count.ToString('#,0'))"
 
