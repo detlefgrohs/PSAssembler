@@ -100,3 +100,24 @@ X:      DATA.b  $00
 Y:      DATA.b  $00
 
         @TEST( X , Y )
+
+
+#MACRO CHECK2VALUE(ADDRESS,RESULT,VALUEA,VALUEB)
+                LDA     .NEIGHBORS
+                AND.#   %00100000
+                BNE     CURADDR + 2 + 2 + 3
+                LDA.#   @VALUEA
+                JMP     CURADDR + 3 + 2
+                LDA.#   @VALUEB
+                STA,X   @RESULT
+                INX
+#ENDM
+
+TEST_ROUTINE:
+            @CHECK2VALUE(.NEIGHBORS,.TILE_VALUE,$00,$10)
+
+
+.VALUE:      DATA.b $00
+.CURRENT:       DATA.b  $00
+.NEIGHBORS:     DATA.b  $00
+.TILE_VALUE:    PAD     10

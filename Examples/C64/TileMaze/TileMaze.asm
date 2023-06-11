@@ -1,26 +1,7 @@
 * = $0801
 
-
-#MACRO SET_CELL(OFFSET,TILE_NUMBER,C1,C2,C3)
-                LDA.#   @LO(@OFFSET)
-                STA     SET_CELL.OFFSET
-                LDA.#   @HI(@OFFSET)
-                STA     SET_CELL.OFFSET + 1
-
-                LDA.#   @TILE_NUMBER
-                STA     SET_CELL.TILE_NUMBER
-
-                LDA.#   @C1
-                STA     SET_CELL.COLOR_1
-                LDA.#   @C2
-                STA     SET_CELL.COLOR_2
-                LDA.#   @C3
-                STA     SET_CELL.COLOR_3
-
-                JSR     SET_CELL
-#ENDM
-
 #INCLUDE ..\..\includes\includes.h
+#INCLUDE macros.h
 
                 @BASICSTUB()
 
@@ -35,9 +16,160 @@ START:
                 STA     $DC0D
                 STA     $DD0D
 
+                LDA.#   1
+                STA     GENERATE_TILE.CURRENT
+                LDA.#   %11111111
+                STA     GENERATE_TILE.NEIGHBORS
+                JSR     GENERATE_TILE
+
+                LDA.#   0
+                STA     DRAW_TILE.OFFSET
+                STA     DRAW_TILE.OFFSET + 1
+
+                LDA.#   10
+                STA     .COL_INDEX
+.ROW_LOOP:      
+.COL_LOOP:
+                JSR     DRAW_TILE
+                @ADD_WORD(DRAW_TILE.OFFSET, 4)
+
+                DEC     .COL_INDEX
+                BNE     .COL_LOOP
+
+                INC     .ROW_INDEX
+                LDA     .ROW_INDEX
+                AND.#   %00000001
+                BNE     .ODD_ROW
+
+                LDA.#   10
+                STA     .COL_INDEX
+                @ADD_WORD(DRAW_TILE.OFFSET,2)
+                JMP     .CONTINUE
+
+.ODD_ROW:       LDA.#   9
+                STA     .COL_INDEX
+                @ADD_WORD(DRAW_TILE.OFFSET,2)
+
+.CONTINUE:      LDA     .ROW_INDEX
+                CMP.#   24
+                BNE     .ROW_LOOP
+
+                LDA.#   0
+                STA     GENERATE_TILE.CURRENT
+                LDA.#   %11111111
+                STA     GENERATE_TILE.NEIGHBORS
+
+.ANIMATE_LOOP:  LDY.#   0
+                JSR     WAIT_FOR_RASTER_LINE
+                
+                LDA.#   VICII_COLOR_BLACK
+                STA     VICII_BORDER_COLOR
+
+                LDY.#   50
+                JSR     WAIT_FOR_RASTER_LINE
+
+                LDX.#   5
+.NOP_LOOP:      NOP
+                DEX
+                BPL     .NOP_LOOP
+
+                LDA.#   VICII_COLOR_WHITE
+                STA     VICII_BORDER_COLOR
+
+                JSR     GENERATE_TILE
+
+                @SET_WORD(DRAW_TILE.OFFSET,180)
+                JSR     DRAW_TILE
+
+                @SET_WORD(DRAW_TILE.OFFSET,180 - 16)
+                JSR     DRAW_TILE
+
+                @SET_WORD(DRAW_TILE.OFFSET,180 + 240)
+                JSR     DRAW_TILE
+
+                @SET_WORD(DRAW_TILE.OFFSET,180 + 240 - 16)
+                JSR     DRAW_TILE
+
+                LDA.#   VICII_COLOR_RED
+                STA     VICII_BORDER_COLOR
+
+                LDA     GENERATE_TILE.CURRENT
+                BEQ     .SET
+
+                LDA.#   0
+                STA     GENERATE_TILE.CURRENT
+                JMP     .ANIMATE_LOOP
+
+.SET:           LDA.#   1
+                STA     GENERATE_TILE.CURRENT
+                JMP     .ANIMATE_LOOP
 
                 JMP     CURADDR
 
+.COL_INDEX:         DATA.b  $00
+.ROW_INDEX:         DATA.b  $00
+
+WAIT_FOR_RASTER_LINE: ; Only works for Rasters < 256
+                LDA.#   $80
+.LOOP:          CPY     VICII_RASTER
+                BNE     .LOOP
+                AND     VICII_CONTROL_1
+                BNE     .LOOP
+
+                RTS
+
+DRAW_TILE:      LDA     .OFFSET
+                STA     SET_CELL_NO_COLOR.OFFSET
+                LDA     .OFFSET + 1
+                STA     SET_CELL_NO_COLOR.OFFSET + 1
+
+                LDA.#   0
+                STA     .INDEX
+
+.LOOP1:         LDX     .INDEX
+                LDA,X   GENERATE_TILE.TILE_VALUE
+                STA     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
+
+                @INC_WORD_BY_ONE(SET_CELL_NO_COLOR.OFFSET)
+                INC     .INDEX
+                LDA     .INDEX
+                CMP.#   4
+                BNE     .LOOP1
+
+                @ADD_WORD(SET_CELL_NO_COLOR.OFFSET,36)
+
+.LOOP2:         LDX     .INDEX
+                LDA,X   GENERATE_TILE.TILE_VALUE
+                STA     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
+
+                @INC_WORD_BY_ONE(SET_CELL_NO_COLOR.OFFSET)
+                INC     .INDEX
+                LDA     .INDEX
+                CMP.#   8
+                BNE     .LOOP2
+
+                @ADD_WORD(SET_CELL_NO_COLOR.OFFSET,37)
+
+.LOOP3:         LDX     .INDEX
+                LDA,X   GENERATE_TILE.TILE_VALUE
+                STA     SET_CELL_NO_COLOR.TILE_NUMBER
+                JSR     SET_CELL_NO_COLOR
+
+                @INC_WORD_BY_ONE(SET_CELL_NO_COLOR.OFFSET)
+                INC     .INDEX
+                LDA     .INDEX
+                CMP.#   10
+                BNE     .LOOP3
+
+                RTS
+
+.INDEX:         DATA.b  $00
+.OFFSET:        DATA    $0000
+
+
+; ===========================================================================
 INITIALIZE:
 	            ; jiffyTime := $A0;
 		
@@ -77,12 +209,14 @@ INITIALIZE:
 
                 RTS
 
+; ===========================================================================
 SCREEN_OFF:     LDA     $D011
                 AND.#   %01101111
                 STA     $D011
 
                 RTS
 
+; ===========================================================================
 SCREEN_ON:      LDA     $D011
                 ORA.#   %00010000
                 AND.#   %01111111
@@ -90,6 +224,7 @@ SCREEN_ON:      LDA     $D011
                 
                 RTS
 
+; ===========================================================================
 DRAW_SCREEN:
                 JSR     CLEAR_SCREEN
 
@@ -119,8 +254,7 @@ DRAW_SCREEN:
 
                 RTS
 
-.MAP_POINTER:
-
+; ===========================================================================
 CLEAR_SCREEN:
                 ; offsetIndex := 0;
                 LDA.#   $00
@@ -152,135 +286,15 @@ CLEAR_SCREEN:
 
 .INDEX:         DATA    $0000
 
-; ===========================================================================
-SET_CELL:       ; screenLocation := $4400 + offset;
-                @SET_WORD(.SL_ST + 1, $4400)
-                CLC
-                LDA     .SL_ST + 1
-                ADC     .OFFSET
-                STA     .SL_ST + 1
-                LDA     .SL_ST + 2
-                ADC     .OFFSET + 1
-                STA     .SL_ST + 2
-                ; colorLocation := $D800 + offset;
-                @SET_WORD(.CL_ST + 1, $D800)
-                CLC
-                LDA     .CL_ST + 1
-                ADC     .OFFSET
-                STA     .CL_ST + 1
-                LDA     .CL_ST + 2
-                ADC     .OFFSET + 1
-                STA     .CL_ST + 2
-
-                ; bitmapLocation := $6000 + (offset * 8);
-                LDA     .OFFSET
-                STA     .BMP_ST + 1
-                LDA     .OFFSET + 1
-                STA     .BMP_ST + 2
-                @ROL_WORD(.BMP_ST + 1)
-                @ROL_WORD(.BMP_ST + 1)
-                @ROL_WORD(.BMP_ST + 1)
-                CLC
-                LDA     .BMP_ST + 1
-                ADC.#   @LO($6000)
-                STA     .BMP_ST + 1
-                LDA     .BMP_ST + 2
-                ADC.#   @HI($6000)
-                STA     .BMP_ST + 2
-
-                ; tileLocation := tilesetLocation + (tileNumber << 3);
-                LDA     .TILE_NUMBER
-                STA     .TL_LD + 1
-                LDA.#   0
-                STA     .TL_LD + 2
-                @ROL_WORD(.TL_LD + 1)
-                @ROL_WORD(.TL_LD + 1)
-                @ROL_WORD(.TL_LD + 1)
-                CLC
-                LDA     .TL_LD + 1
-                ADC.#   @LO(CHARDATA)
-                STA     .TL_LD + 1
-                LDA     .TL_LD + 2
-                ADC.#   @HI(CHARDATA)
-                STA     .TL_LD + 2
-
-                LDX.#   7
-.LOOP:          ; FOR bitmapIndex := 0 TO 8 DO
-                ; 	bitmapLocation[bitmapIndex] := tileLocation[bitmapIndex];
-.TL_LD:         LDA,X   $0000
-.BMP_ST:        STA,X   $0000
-                DEX
-                BPL     .LOOP
-
-                ; colorLocation[0] := c1;
-                LDA     .COLOR_1
-.CL_ST:         STA     $0000
-                ; screenLocation[0] := (c2 << 4) | c3;
-                LDA     .COLOR_2
-                ASL.A
-                ASL.A
-                ASL.A
-                ASL.A
-                ORA     .COLOR_3
-.SL_ST:         STA     $0000
-
-                RTS
-
-.OFFSET:        DATA    $0000
-.TILE_NUMBER:   DATA    $0000
-.COLOR_1:       DATA.b  $00
-.COLOR_2:       DATA.b  $00
-.COLOR_3:       DATA.b  $00
 
 ; ===========================================================================
-SET_CELL_NO_COLOR:       ; bitmapLocation := $6000 + (offset * 8);
-                LDA     .OFFSET
-                STA     .BMP_ST + 1
-                LDA     .OFFSET + 1
-                STA     .BMP_ST + 2
-                @ROL_WORD(.BMP_ST + 1)
-                @ROL_WORD(.BMP_ST + 1)
-                @ROL_WORD(.BMP_ST + 1)
-                CLC
-                LDA     .BMP_ST + 1
-                ADC.#   @LO($6000)
-                STA     .BMP_ST + 1
-                LDA     .BMP_ST + 2
-                ADC.#   @HI($6000)
-                STA     .BMP_ST + 2
+#INCLUDE setcell.asm
 
-                ; tileLocation := tilesetLocation + (tileNumber << 3);
-                LDA     .TILE_NUMBER
-                STA     .TL_LD + 1
-                LDA.#   0
-                STA     .TL_LD + 2
-                @ROL_WORD(.TL_LD + 1)
-                @ROL_WORD(.TL_LD + 1)
-                @ROL_WORD(.TL_LD + 1)
-                CLC
-                LDA     .TL_LD + 1
-                ADC.#   @LO(CHARDATA)
-                STA     .TL_LD + 1
-                LDA     .TL_LD + 2
-                ADC.#   @HI(CHARDATA)
-                STA     .TL_LD + 2
-
-                LDX     .LOOP_COUNT
-
-.LOOP:          ; FOR bitmapIndex := 0 TO 8 DO
-                ; 	bitmapLocation[bitmapIndex] := tileLocation[bitmapIndex];
-.TL_LD:         LDA,X   $0000
-.BMP_ST:        STA,X   $0000
-                DEX
-                BPL     .LOOP
-
-                RTS
-
-.OFFSET:        DATA    $0000
-.TILE_NUMBER:   DATA    $0000
-.LOOP_COUNT:    DATA.b  7
+#INCLUDE generatetile.asm
 
 ; ===========================================================================
-CHARDATA:       #LOADBINARY     TileMaze-Chars.bin
-MAPDATA:        #LOADBINARY     TileMaze-Map.bin
+CHARDATA:       
+                #LOADBINARY     TileMaze-Chars.bin
+MAPDATA:        
+                #LOADBINARY     TileMaze-Map.bin
 MAPEND:
