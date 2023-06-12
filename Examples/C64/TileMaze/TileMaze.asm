@@ -298,3 +298,7 @@ CHARDATA:
 MAPDATA:        
                 #LOADBINARY     TileMaze-Map.bin
 MAPEND:
+
+TILEDATA:       #LOADBINARY     TileMaze-TileData.bin
+SCROFFSETLO:    #LOADBINARY     TileMaze-ScrOffsetLo.bin
+SCROFFSETHI:    #LOADBINARY     TileMaze-ScrOffsetHi.bin
