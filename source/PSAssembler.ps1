@@ -519,7 +519,7 @@ class AssemblerV3 {
                                 $this.NamedStats.Add($name, $this.Stats[$this.Stats.Count - 1]);
                             }
                         }
-                        { $_ -eq "TEXT" -or $_ -eq "TEXTZ" } {
+                        { $_ -eq "TEXT" -or $_ -eq "TEXTZ" -or $_ -eq "ASCII" -or $_ -eq "ASCIIZ" } {
                             if ($parsedSyntax.Parameters -match '"(.*)"') {
                                 if ($this.Pass -eq [PassType]::Assembly) {
                                     $this.Output += @{ Line = ("$($this.Address.ToString('X4')) |          " + "| ;" + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line; 
@@ -527,10 +527,12 @@ class AssemblerV3 {
                                 }
                                 for($index = 0; $index -lt $Matches[1].Length; $index += 1) {
                                     $charValue = [byte]$Matches[1][$index];
-                                    if ($charValue -ge 64 -and $charValue -le 95) { $charValue -= 64; } 
+                                    if ($_ -eq "TEXT" -or $_ -eq "TEXTZ") {
+                                        if ($charValue -ge 64 -and $charValue -le 95) { $charValue -= 64; } 
+                                    }
                                     $this.Assemble(@{ Line = "   DATA.b `$$($charValue.ToString('X2'))"; Source = $CurrentLine.Source; LineNumber = $CurrentLine.LineNumber });
                                 }
-                                if ($_ -eq "TEXTZ") {
+                                if ($_ -eq "TEXTZ" -or $_ -eq "ASCIIZ") {
                                     $this.Assemble(@{ Line = "   DATA.b `$00"; Source = $CurrentLine.Source; LineNumber = $CurrentLine.LineNumber });
                                 }
                                 $skipOutput = $true;
