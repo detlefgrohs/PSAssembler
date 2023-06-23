@@ -2,6 +2,9 @@
 
 ; Found problem with no * = where the labels only increase since the address counter does not reset...
 
+        LDA     $1000
+
+
 #MACRO WithLabel(A)
             LDA     $1000
             CMP.#   @A
@@ -145,3 +148,8 @@ TEST_ROUTINE:
 .CURRENT:       DATA.b  $00
 .NEIGHBORS:     DATA.b  $00
 .TILE_VALUE:    PAD     10
+
+        #TEXT "ABCD"
+        #TEXTZ "ABCD"
+        #ASCII "ABCD"
+        #ASCIIZ "ABCD"

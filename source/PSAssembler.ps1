@@ -365,37 +365,21 @@ class AssemblerV3 {
         $lines = $this.ExecuteCode($lines);
         $lines = $this.ExpandMacros($lines, 1);
 
-        $this.Pass = [PassType]::Collection;
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
-        $this.Address = 0;
-        $lines | ForEach-Object { $this.Assemble($_); }
-
-        $this.Pass = [PassType]::Allocation;
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
-        $this.Address = 0;
-        $lines | ForEach-Object { $this.Assemble($_); }
+        $this.Assemble([PassType]::Collection, $lines);
+        $this.Assemble([PassType]::Allocation, $lines);
 
         $this.Pass = [PassType]::Optimization;
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
-        $this.Address = 0;
         $lines = $this.Optimize($lines);
 
-        $this.Pass = [PassType]::Relocation;
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
-        $this.Address = 0;
-        $lines | ForEach-Object { $this.Assemble($_); }
+        $this.Assemble([PassType]::Relocation, $lines);
 
-        $this.Address = 0;
         $lines = $this.EmptyLineReduction($lines);
 
-        $this.Pass = [PassType]::Assembly;
-        $this.Address = 0;
         $this.AssembledLines = 0;
         $this.Stats.Add(@{ Bytes = 0; MinCycles = 0; MaxCycles = 0; });
-
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
-        $this.Address = 0;
-        $lines | ForEach-Object { $this.Assemble($_); }
+        $this.Assemble([PassType]::Assembly, $lines);
+        
         Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Completed Assembly..."
         $this.EndDTM = [DateTime]::Now;
     }
@@ -423,7 +407,13 @@ class AssemblerV3 {
                                           Region = $this.CurrentRegion; CalledFromRegion = @(); }); 
         }
     }
-    [void] Assemble($CurrentLine) {
+    [void] Assemble($pass, $lines) {
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($pass)"
+        $this.Address = 0;
+        $this.Pass = $pass;
+        $lines | ForEach-Object { $this.AssembleLine($_); }
+    }
+    [void] AssembleLine($CurrentLine) {
         $codes = @();
         $details = "";
         $dataOffset = 0;
@@ -452,124 +442,121 @@ class AssemblerV3 {
                 }
             }
             if ($null -ne $parsedSyntax.Command) {
-                #if ($this.Pass -ne 1) {
-                    switch ($parsedSyntax.Command) {
-                        "REGION" {
-                            $this.CurrentRegion = $parsedSyntax.Parameters;
-                            if ($this.Pass -eq [PassType]::Collection) {
-                                $this.Regions.Add($this.CurrentRegion, @{
-                                    Region = $this.CurrentRegion;
-                                    StartAddress = $this.Address;
-                                    EndAddress = 0;
-                                    ReferenceCount = 0;
-                                });
-                            }
+                switch ($parsedSyntax.Command) {
+                    "REGION" {
+                        $this.CurrentRegion = $parsedSyntax.Parameters;
+                        if ($this.Pass -eq [PassType]::Collection) {
+                            $this.Regions.Add($this.CurrentRegion, @{
+                                Region = $this.CurrentRegion;
+                                StartAddress = $this.Address;
+                                EndAddress = 0;
+                                ReferenceCount = 0;
+                            });
                         }
-                        "ENDR" {
-                            if ($this.Pass -eq [PassType]::Collection) {
-                                $this.Regions[$this.CurrentRegion].EndAddress = $this.Address - 1;
-                            }
-                            $this.CurrentRegion = '<root>';
+                    }
+                    "ENDR" {
+                        if ($this.Pass -eq [PassType]::Collection) {
+                            $this.Regions[$this.CurrentRegion].EndAddress = $this.Address - 1;
                         }
-                        "STATS" {
-                            if ($this.Pass -eq [PassType]::Assembly) {
-                                $currentStats = $this.Stats[$this.Stats.Count - 1];
-                                $this.Output += @{ Line = "                              | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
-                                                Type = "Stats"; Source = "Stats" }
-                                $skipOutput = $true;
-                            }
+                        $this.CurrentRegion = '<root>';
+                    }
+                    "STATS" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $currentStats = $this.Stats[$this.Stats.Count - 1];
+                            $this.Output += @{ Line = "                              | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
+                                            Type = "Stats"; Source = "Stats" }
+                            $skipOutput = $true;
                         }
-                        "STATS.DETAIL" {
-                            if ($this.Pass -eq [PassType]::Assembly) {
-                                $currentStats = $this.Stats[$this.Stats.Count - 1];
-                                $this.Output += @{ Line = "                              | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
-                                                Type = "Stats"; Source = "Stats" }
-                                $minCycleTime = $currentStats.MinCycles * $this.CycleTime;
-                                $maxCycleTime = $currentStats.MaxCycles * $this.CycleTime;
-                                $this.Output += @{ Line = "                              | ;          MinCycleTime: $(($minCycleTime * 1000).ToString('#,#.00')) mSec   MaxCycleTime: $(($maxCycleTime * 1000).ToString('#,#.00')) mSec"; 
-                                                Type = "Stats"; Source = "Stats" }
-                                $this.Output += @{ Line = "                              | ;          Max FPS: $((1 / $minCycleTime).ToString('#,#.00'))   Min FPS: $((1 / $maxCycleTime).ToString('#,#.00'))"; 
-                                                Type = "Stats"; Source = "Stats" }
-                                $skipOutput = $true;
-                            }
+                    }
+                    "STATS.DETAIL" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $currentStats = $this.Stats[$this.Stats.Count - 1];
+                            $this.Output += @{ Line = "                              | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
+                                            Type = "Stats"; Source = "Stats" }
+                            $minCycleTime = $currentStats.MinCycles * $this.CycleTime;
+                            $maxCycleTime = $currentStats.MaxCycles * $this.CycleTime;
+                            $this.Output += @{ Line = "                              | ;          MinCycleTime: $(($minCycleTime * 1000).ToString('#,#.00')) mSec   MaxCycleTime: $(($maxCycleTime * 1000).ToString('#,#.00')) mSec"; 
+                                            Type = "Stats"; Source = "Stats" }
+                            $this.Output += @{ Line = "                              | ;          Max FPS: $((1 / $minCycleTime).ToString('#,#.00'))   Min FPS: $((1 / $maxCycleTime).ToString('#,#.00'))"; 
+                                            Type = "Stats"; Source = "Stats" }
+                            $skipOutput = $true;
                         }
-                        "STATS.PUSH" {
-                            if ($this.Pass -eq [PassType]::Assembly) {
-                                $this.Stats.Add(@{ Bytes = 0; MinCycles = 0; MaxCycles = 0; });
-                                $skipOutput = $true;
-                            }
+                    }
+                    "STATS.PUSH" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $this.Stats.Add(@{ Bytes = 0; MinCycles = 0; MaxCycles = 0; });
+                            $skipOutput = $true;
                         }
-                        "STATS.POP" {
-                            if ($this.Pass -eq [PassType]::Assembly) {
-                                if ($this.Stats.Count -ge 2) {
-                                    $currentStats = $this.Stats[$this.Stats.Count - 2];
-                                    $lastStats = $this.Stats[$this.Stats.Count - 1];
+                    }
+                    "STATS.POP" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            if ($this.Stats.Count -ge 2) {
+                                $currentStats = $this.Stats[$this.Stats.Count - 2];
+                                $lastStats = $this.Stats[$this.Stats.Count - 1];
 
-                                    $currentStats.Bytes += $lastStats.Bytes;
-                                    $currentStats.MinCycles += $lastStats.MinCycles;
-                                    $currentStats.MaxCycles += $lastStats.MaxCycles;
+                                $currentStats.Bytes += $lastStats.Bytes;
+                                $currentStats.MinCycles += $lastStats.MinCycles;
+                                $currentStats.MaxCycles += $lastStats.MaxCycles;
 
-                                    $this.Stats.RemoveAt($this.Stats.Count - 1);
-                                    $skipOutput = $true;
-                                }
-                            }
-                        }
-                        "STATS.LOOP" {
-                            if ($this.Pass -eq [PassType]::Assembly) {
-                                $loop = $this.EvaluateExpression($parsedSyntax.Parameters, $currentLine);
-                                $currentStats = $this.Stats[$this.Stats.Count - 1];
-                                $currentStats.MinCycles *= $loop;
-                                $currentStats.MaxCycles *= $loop;
+                                $this.Stats.RemoveAt($this.Stats.Count - 1);
                                 $skipOutput = $true;
                             }
                         }
-                        "STATS.SAVE" {
-                            if ($this.Pass -eq [PassType]::Assembly) {
-                                $name = $parsedSyntax.Parameters.Trim();
-                                $this.NamedStats.Add($name, $this.Stats[$this.Stats.Count - 1]);
-                            }
+                    }
+                    "STATS.LOOP" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $loop = $this.EvaluateExpression($parsedSyntax.Parameters, $currentLine);
+                            $currentStats = $this.Stats[$this.Stats.Count - 1];
+                            $currentStats.MinCycles *= $loop;
+                            $currentStats.MaxCycles *= $loop;
+                            $skipOutput = $true;
                         }
-                        { $_ -eq "TEXT" -or $_ -eq "TEXTZ" -or $_ -eq "ASCII" -or $_ -eq "ASCIIZ" } {
-                            if ($parsedSyntax.Parameters -match '"(.*)"') {
-                                if ($this.Pass -eq [PassType]::Assembly) {
-                                    $this.Output += @{ Line = ("$($this.Address.ToString('X4')) |          " + "| ;" + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line; 
-                                                    Type = "Code"; Source = $CurrentLine.Source; }
-                                }
-                                for($index = 0; $index -lt $Matches[1].Length; $index += 1) {
-                                    $charValue = [byte]$Matches[1][$index];
-                                    if ($_ -eq "TEXT" -or $_ -eq "TEXTZ") {
-                                        if ($charValue -ge 64 -and $charValue -le 95) { $charValue -= 64; } 
-                                    }
-                                    $this.Assemble(@{ Line = "   DATA.b `$$($charValue.ToString('X2'))"; Source = $CurrentLine.Source; LineNumber = $CurrentLine.LineNumber });
-                                }
-                                if ($_ -eq "TEXTZ" -or $_ -eq "ASCIIZ") {
-                                    $this.Assemble(@{ Line = "   DATA.b `$00"; Source = $CurrentLine.Source; LineNumber = $CurrentLine.LineNumber });
-                                }
-                                $skipOutput = $true;
-                            }
+                    }
+                    "STATS.SAVE" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $this.NamedStats.Add($parsedSyntax.Parameters.Trim(), $this.Stats[$this.Stats.Count - 1]);
                         }
-                        "ASSERT" {
+                    }
+                    { $_ -eq "TEXT" -or $_ -eq "TEXTZ" -or $_ -eq "ASCII" -or $_ -eq "ASCIIZ" } {
+                        if ($parsedSyntax.Parameters -match '"(.*)"') {
                             if ($this.Pass -eq [PassType]::Assembly) {
-                                if ($this.EvaluateExpression($parsedSyntax.Parameters, $currentLine) -eq 0) {
-                                    $this.Output += @{ Line = "   Failed assertion ($($parsedSyntax.Parameters))"; Type = "Error"; Source = "" }
-                                    $this.Errors += @{ Message = "   Failed assertion ($($parsedSyntax.Parameters))"; Line = $CurrentLine; }                            
-                                } 
+                                $this.Output += @{ Line = ("$($this.Address.ToString('X4')) |          " + "| ;" + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line; 
+                                                Type = "Code"; Source = $CurrentLine.Source; }
                             }
-                        }
-                        "LOADBINARY" {
-                            $binaryFileName = [IO.Path]::Combine([IO.Path]::GetDirectoryName($this.MainAssemblyFileName), $parsedSyntax.Parameters);
-                            $binaryBytes = [System.IO.File]::ReadAllBytes("$($PWD)\$($binaryFileName)");
-
-                            $dataOffset = $binaryBytes.Count;
-                            if ($this.Pass -eq [PassType]::Assembly) {
-                                $this.LoadedBinary += $binaryBytes.Count;
-                                $this.Bytes += $binaryBytes;
-                                $this.Output += @{ Line = "                              | ; '$($binaryFileName)' : $($dataOffset) bytes"; Type = "BinaryFile"; Source = "" }
+                            for($index = 0; $index -lt $Matches[1].Length; $index += 1) {
+                                $charValue = [byte]$Matches[1][$index];
+                                if ($_ -eq "TEXT" -or $_ -eq "TEXTZ") {
+                                    if ($charValue -ge 64 -and $charValue -le 95) { $charValue -= 64; } 
+                                }
+                                $this.AssembleLine(@{ Line = "   DATA.b `$$($charValue.ToString('X2'))"; Source = $CurrentLine.Source; LineNumber = $CurrentLine.LineNumber });
+                            }
+                            if ($_ -eq "TEXTZ" -or $_ -eq "ASCIIZ") {
+                                $this.AssembleLine(@{ Line = "   DATA.b `$00"; Source = $CurrentLine.Source; LineNumber = $CurrentLine.LineNumber });
                             }
                             $skipOutput = $true;
                         }
                     }
-                #}
+                    "ASSERT" {
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            if ($this.EvaluateExpression($parsedSyntax.Parameters, $currentLine) -eq 0) {
+                                $this.Output += @{ Line = "   Failed assertion ($($parsedSyntax.Parameters))"; Type = "Error"; Source = "" }
+                                $this.Errors += @{ Message = "   Failed assertion ($($parsedSyntax.Parameters))"; Line = $CurrentLine; }                            
+                            } 
+                        }
+                    }
+                    "LOADBINARY" {
+                        $binaryFileName = [IO.Path]::Combine([IO.Path]::GetDirectoryName($this.MainAssemblyFileName), $parsedSyntax.Parameters);
+                        $binaryBytes = [System.IO.File]::ReadAllBytes("$($PWD)\$($binaryFileName)");
+
+                        $dataOffset = $binaryBytes.Count;
+                        if ($this.Pass -eq [PassType]::Assembly) {
+                            $this.LoadedBinary += $binaryBytes.Count;
+                            $this.Bytes += $binaryBytes;
+                            $this.Output += @{ Line = "                              | ; '$($binaryFileName)' : $($dataOffset) bytes"; Type = "BinaryFile"; Source = "" }
+                        }
+                        $skipOutput = $true;
+                    }
+                }
             } elseif ($null -ne $parsedSyntax.Mnemonic) {
                 $this.AssembledLines += 1;
                 $operation = $this.OPCodes[$parsedSyntax.Mnemonic];
@@ -642,10 +629,6 @@ class AssemblerV3 {
                     if ($this.Pass -eq [PassType]::Assembly) {
                         $currentStats = $this.Stats[$this.Stats.Count - 1];
                         $currentStats.Bytes += $codes.Count + $dataOffset;
-                        # $currentStats.Bytes += $operation.Bytes;
-                        # if ($operation.AddressingMode -ne 'Data') {
-                        #     $currentStats.Bytes += 1;   # Weird. When I try and add 1 above doesn't add right...
-                        # }
                         $currentStats.MinCycles += $operation.MinCycles;
                         $currentStats.MaxCycles += $operation.MaxCycles;
                     }
