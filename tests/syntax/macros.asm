@@ -1,13 +1,26 @@
+; * = $0000
 
+; Found problem with no * = where the labels only increase since the address counter does not reset...
+
+#MACRO WithLabel(A)
+            LDA     $1000
+            CMP.#   @A
+            BEQ     @MacroId.1
+            NOP
+            ;JMP     @MacroId.1
+@MacroId.1:
+#ENDM
+
+@WithLabel(100)
+@WithLabel(200)
+@WithLabel(250)
 
 @AfterUse()
 
 
 #MACRO AfterUse()
     ; Worked
-#END
-
-#STOP
+#ENDM
 
 #MACRO EMPTY()
     ; Line 1

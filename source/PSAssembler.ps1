@@ -29,7 +29,6 @@ class AssemblerV3 {
     $Output = @();
     $SyntaxPattern = $null;
     [PassType]$Pass = [PassType]::Collection;
-    $MacroPass = 0;
     $Macros = @{};
     [UInt16]$Address;
     [UInt16]$StartingAddress;
@@ -185,13 +184,12 @@ class AssemblerV3 {
         }
         return $processedLines;
     }
-    [array] ExpandMacros($Lines) {
-        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Expanding Macros Pass #$($this.MacroPass)"
-        $this.MacroPass += 1;
+    [array] ExpandMacros($Lines, $macroPass) {
+        Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Expanding Macros Pass #$($macroPass)"
 
         $processedLines = @();
         $inMacro = $false;
-        $macroExpansionOccured = $false;
+        $continueExpansion = $false;
 
         $Lines | ForEach-Object {
             $currentLine = $_;
@@ -209,16 +207,27 @@ class AssemblerV3 {
                     $Matches['parameters'] -split ',' | ForEach-Object { $this.Macros[$CurrentMacroName].Parameters += $_.Trim(); }
                 } else {
                     if (($currentLine.Line -replace ';.*', '') -match '@(?<macroname>[a-z_][a-z0-9_]*)\((?<parameters>.*)\)') {
-                        $replacementCode = @();
+                        if (-not $this.Macros.ContainsKey($Matches['macroname'])) {
+                            if ($macroPass -eq 1) { # Macro not found on 1st pass so continue...
+                                $continueExpansion = $true;
+                                $processedLines += $currentLine
+                            } else {
+                                $this.Output += @{ Line = "   Macro '$($Matches['macroname'])' not found."; Type = "Error"; Source = "" }
+                                $this.Errors += @{ Message = "   Macro '$($Matches['macroname'])' not found."; Line = $currentLine; }
+                                $processedLines += @{ Line = $currentLine.Line.Replace($Matches[0], '; ' + $Matches[0]); Source =  $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
+                            }    
+                        } else {
+                            $replacementCode = @();
 
-                        if ($this.Macros.ContainsKey($Matches['macroname'])) {
-                            $macroExpansionOccured = $true;
+                            $continueExpansion = $true;
+                            $macroId = 'MacroId' + $currentLine.LineNumber.ToString('000');
                             $this.Macros[$Matches['macroname']].Replacement | ForEach-Object {
                                 $parameterIndex = 0;
                                 $replacementLine = $_;
                                 $Matches['parameters'] -split ',' | ForEach-Object {
                                     if ($parameterIndex -lt $this.Macros[$Matches['macroname']].Parameters.Count) {
                                         $parameterName = $this.Macros[$Matches['macroname']].Parameters[$parameterIndex];
+                                        $replacementLine = $replacementLine.Replace('@MacroId', $macroId);
                                         $replacementLine = $replacementLine.Replace('@' + $parameterName, $_.Trim());
                                         $replacementLine = $replacementLine.Replace('~' + $parameterName + '~', $_.Trim());
                                     }
@@ -226,24 +235,19 @@ class AssemblerV3 {
                                 }
                                 $replacementCode += $replacementLine;
                             }
-                        } else {
-                            $this.Output += @{ Line = "   Macro '$($Matches['macroname'])' not found."; Type = "Error"; Source = "" }
-                            $this.Errors += @{ Message = "   Macro '$($Matches['macroname'])' not found."; Line = $currentLine; }
-                            $replacementCode += '; ' + $Matches[0];
-                        }
-
-                        if ($this.VerboseLST) {
-                            $processedLines += @{ Line = '; ' + $currentLine.Line + ' ; @' + $CurrentMacroName; 
-                                                  Source = $currentLine.Source; LineNumber = $currentLine.LineNumber; }
-                        }
-                        if ($replacementCode.Count -eq 1) {
-                            $processedLines += @{ Line = $currentLine.Line.Replace($Matches[0], $replacementCode[0]); Source =  $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
-                        } else {
-                            $processedLines += @{ Line = $currentLine.Line.Replace($Matches[0], $replacementCode[0]); Source = $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
-                            for($index = 1; $index -lt $replacementCode.Count ; $index += 1) {
-                                $processedLines += @{ Line = $replacementCode[$index]; Source = $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
+                            if ($this.VerboseLST) {
+                                $processedLines += @{ Line = '; ' + $currentLine.Line + ' ; @' + $CurrentMacroName; 
+                                                      Source = $currentLine.Source; LineNumber = $currentLine.LineNumber; }
                             }
-                        }
+                            if ($replacementCode.Count -eq 1) {
+                                $processedLines += @{ Line = $currentLine.Line.Replace($Matches[0], $replacementCode[0]); Source =  $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
+                            } else {
+                                $processedLines += @{ Line = $currentLine.Line.Replace($Matches[0], $replacementCode[0]); Source = $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
+                                for($index = 1; $index -lt $replacementCode.Count ; $index += 1) {
+                                    $processedLines += @{ Line = $replacementCode[$index]; Source = $currentLine.Source + '.Macro'; LineNumber = $currentLine.LineNumber; };
+                                }
+                            }
+                        } 
                     } else { # Nothing to do so pass-thru
                         $processedLines += $currentLine
                     }
@@ -251,7 +255,9 @@ class AssemblerV3 {
             }
         }
         # Keep processing until no macro expansions...
-        if ($macroExpansionOccured) { return $this.ExpandMacros($processedLines); }
+        if ($continueExpansion) {
+            return $this.ExpandMacros($processedLines, $macroPass + 1); 
+        }
         return $processedLines;
     }
     [array] LoadFile($FileName) {
@@ -357,26 +363,29 @@ class AssemblerV3 {
         $this.LoadedLines = $lines.Count;
 
         $lines = $this.ExecuteCode($lines);
-
-        $this.MacroPass = 1;
-        $lines = $this.ExpandMacros($lines);
+        $lines = $this.ExpandMacros($lines, 1);
 
         $this.Pass = [PassType]::Collection;
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
+        $this.Address = 0;
         $lines | ForEach-Object { $this.Assemble($_); }
 
         $this.Pass = [PassType]::Allocation;
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
+        $this.Address = 0;
         $lines | ForEach-Object { $this.Assemble($_); }
 
         $this.Pass = [PassType]::Optimization;
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
+        $this.Address = 0;
         $lines = $this.Optimize($lines);
 
         $this.Pass = [PassType]::Relocation;
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
+        $this.Address = 0;
         $lines | ForEach-Object { $this.Assemble($_); }
 
+        $this.Address = 0;
         $lines = $this.EmptyLineReduction($lines);
 
         $this.Pass = [PassType]::Assembly;
@@ -385,6 +394,7 @@ class AssemblerV3 {
         $this.Stats.Add(@{ Bytes = 0; MinCycles = 0; MaxCycles = 0; });
 
         Write-Host -ForegroundColor Green "$([DateTime]::Now.ToString('HH:mm:ss')) : Assembly Pass => $($this.Pass)"
+        $this.Address = 0;
         $lines | ForEach-Object { $this.Assemble($_); }
         Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Completed Assembly..."
         $this.EndDTM = [DateTime]::Now;
@@ -829,6 +839,12 @@ if ($GeneratePRG -or $ExecutePRG) {
                     Math
 
                     Other
+
+            Optimization
+                ZP via code modification
+
+                Parameters
+                A,X,Y
 
             Assembly Routines Documentation
                 BIN to BCD
