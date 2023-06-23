@@ -66,7 +66,254 @@ KERNEL_PRINT_CHAR = $FFD2
 
                 @BASICSTUB()
 
-START:
+START:          JSR     BINBCD8
+                @SET_BYTE(PRINTHEXBYTES.NUMBYTES,2)
+                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINBCD8.BCD)
+                JSR     PRINTHEXBYTES
+                @PRINT_NEWLINE()
+
+                JSR     BINBCD16
+                @SET_BYTE(PRINTHEXBYTES.NUMBYTES,3)
+                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINBCD16.BCD)
+                JSR     PRINTHEXBYTES
+                @PRINT_NEWLINE()
+
+                JSR     BINBCD24
+                @SET_BYTE(PRINTHEXBYTES.NUMBYTES,4)
+                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINBCD24.BCD)
+                JSR     PRINTHEXBYTES
+                @PRINT_NEWLINE()
+
+                JSR     BINBCD32
+                @SET_BYTE(PRINTHEXBYTES.NUMBYTES,5)
+                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINBCD32.BCD)
+                JSR     PRINTHEXBYTES
+                @PRINT_NEWLINE()
+
+                RTS
+
+
+BINBCD8:        SED		        ; Switch to decimal mode
+		        LDA.#   0		; Ensure the result is clear
+		        STA     .BCD+0
+		        STA     .BCD+1
+		        LDX.#   8		; The number of source bits
+
+.LOOP:		    ASL     .BIN		; Shift out one bit
+		        LDA     .BCD+0	; And add into result
+		        ADC     .BCD+0
+		        STA     .BCD+0
+		        LDA     .BCD+1	; propagating any carry
+		        ADC     .BCD+1
+		        STA     .BCD+1
+		        DEX		; And repeat for next bit
+		        BNE     .LOOP
+		
+                CLD		; Back to binary
+                RTS
+
+.BIN:		    DATA.b  $FF
+.BCD:		    PAD     2
+
+BINBCD16:       SED		        ; Switch to decimal mode
+		        LDA.#   0		; Ensure the result is clear
+		        STA     .BCD+0
+		        STA     .BCD+1
+                STA     .BCD+2
+		        LDX.#   16		; The number of source bits
+
+.LOOP:		    ASL     .BIN		; Shift out one bit
+                ROL     .BIN+1
+		        LDA     .BCD+0	; And add into result
+		        ADC     .BCD+0
+		        STA     .BCD+0
+		        LDA     .BCD+1	; propagating any carry
+		        ADC     .BCD+1
+		        STA     .BCD+1
+                LDA     .BCD+2	; propagating any carry
+		        ADC     .BCD+2
+		        STA     .BCD+2
+		        DEX		; And repeat for next bit
+		        BNE     .LOOP
+		
+                CLD		; Back to binary
+                RTS
+
+.BIN:		    DATA    $FFFF
+.BCD:		    PAD     3
+
+BINBCD24:       SED		        ; Switch to decimal mode
+		        LDA.#   0		; Ensure the result is clear
+		        STA     .BCD+0
+		        STA     .BCD+1
+                STA     .BCD+2
+                STA     .BCD+3
+		        LDX.#   24		; The number of source bits
+
+.LOOP:		    ASL     .BIN		; Shift out one bit
+                ROL     .BIN+1
+                ROL     .BIN+2
+		        LDA     .BCD+0	; And add into result
+		        ADC     .BCD+0
+		        STA     .BCD+0
+		        LDA     .BCD+1	; propagating any carry
+		        ADC     .BCD+1
+		        STA     .BCD+1
+                LDA     .BCD+2	; propagating any carry
+		        ADC     .BCD+2
+		        STA     .BCD+2
+                LDA     .BCD+3	; propagating any carry
+		        ADC     .BCD+3
+		        STA     .BCD+3
+		        DEX		; And repeat for next bit
+		        BNE     .LOOP
+		
+                CLD		; Back to binary
+                RTS
+
+.BIN:		    DATA.b  $FF
+                DATA.b  $FF
+                DATA.b  $FF
+.BCD:		    PAD     4
+
+BINBCD32:       SED		        ; Switch to decimal mode
+		        LDA.#   0		; Ensure the result is clear
+		        STA     .BCD+0
+		        STA     .BCD+1
+                STA     .BCD+2
+                STA     .BCD+3
+                STA     .BCD+4
+		        LDX.#   32		; The number of source bits
+
+.LOOP:		    ASL     .BIN		; Shift out one bit
+                ROL     .BIN+1
+                ROL     .BIN+2
+                ROL     .BIN+3
+		        LDA     .BCD+0	; And add into result
+		        ADC     .BCD+0
+		        STA     .BCD+0
+		        LDA     .BCD+1	; propagating any carry
+		        ADC     .BCD+1
+		        STA     .BCD+1
+                LDA     .BCD+2	; propagating any carry
+		        ADC     .BCD+2
+		        STA     .BCD+2
+                LDA     .BCD+3	; propagating any carry
+		        ADC     .BCD+3
+		        STA     .BCD+3
+                LDA     .BCD+4	; propagating any carry
+		        ADC     .BCD+4
+		        STA     .BCD+4
+		        DEX		; And repeat for next bit
+		        BNE     .LOOP
+		
+                CLD		; Back to binary
+                RTS
+
+.BIN:		    DATA.b  $FF
+                DATA.b  $FF
+                DATA.b  $FF
+                DATA.b  $FF
+.BCD:		    PAD     5
+
+PRINTHEXBYTES:  DEC     .NUMBYTES
+                CLC                     ; Goto the end of byte array
+                LDA     .ADDRESS
+                ADC     .NUMBYTES
+                STA     .ADDRESS
+                BCC     .1
+                INC     .ADDRESS + 1
+
+.1:             INC     .NUMBYTES
+
+.LOOP:          JSR     .LOADBYTE
+                LSR.A
+                LSR.A
+                LSR.A
+                LSR.A
+                CLC
+                ADC.#   $30
+                JSR     KERNEL_PRINT_CHAR
+
+                JSR     .LOADBYTE
+                AND.#   $0F
+                CLC
+                ADC.#   $30
+                JSR     KERNEL_PRINT_CHAR
+
+                SEC                     ; Move back in the byte array
+                LDA     .ADDRESS
+                SBC.#   1
+                STA     .ADDRESS
+                LDA     .ADDRESS + 1
+                SBC.#   0
+                STA     .ADDRESS + 1
+
+                DEC     .NUMBYTES
+                BNE     .LOOP
+
+                RTS
+
+.LOADBYTE:      LDA     $0000           ; Get the current byte
+                RTS
+
+.NUMBYTES:      DATA.b  $00
+PRINTHEXBYTES.ADDRESS =      .LOADBYTE + 1
+
+MULTIPLY_TEST:  LDA.#   255
+                STA     MULTIPLY.BY
+
+                @SET_WORD(MULTIPLY.CURRENTVALUE, 123)
+
+                @PRINT_INTEGER(MULTIPLY.BY)
+
+                JSR PRINT_STRING
+                #ASCIIZ " * "
+
+                @PRINT_INTEGER(MULTIPLY.CURRENTVALUE)
+
+                JSR PRINT_STRING
+                #ASCIIZ " = "
+
+                JSR     MULTIPLY
+
+                @PRINT_INTEGER(MULTIPLY.FINALVALUE)
+                @PRINT_NEWLINE()
+
+                RTS
+
+MULTIPLY:
+
+.LOOP:          LDA     .BY
+                AND.#   %00000001
+                BEQ     .CONT
+
+                CLC
+                LDA     .FINALVALUE
+                ADC     .CURRENTVALUE
+                STA     .FINALVALUE
+                LDA     .FINALVALUE + 1
+                ADC     .CURRENTVALUE + 1
+                STA     .FINALVALUE + 1
+
+.CONT:          ROR     .BY
+                BEQ     .DONE
+
+                ASL     .CURRENTVALUE
+                ROL     .CURRENTVALUE + 1
+
+                JMP     .LOOP
+
+.DONE:
+                RTS
+
+.FINALVALUE:    DATA    $0000
+.CURRENTVALUE:  DATA    $0000
+.BY:            DATA.b  $00
+.ZERO:          DATA.b  $00
+
+
+COMPARE:
                 JSR PRINT_STRING
                 #ASCIIZ "CMP TESTS:"
                 @PRINT_NEWLINE()

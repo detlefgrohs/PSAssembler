@@ -1,3 +1,14 @@
+
+
+@AfterUse()
+
+
+#MACRO AfterUse()
+    ; Worked
+#END
+
+#STOP
+
 #MACRO EMPTY()
     ; Line 1
     ; Line 2
