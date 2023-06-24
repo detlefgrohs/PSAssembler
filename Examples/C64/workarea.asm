@@ -66,155 +66,33 @@ KERNEL_PRINT_CHAR = $FFD2
 
                 @BASICSTUB()
 
-START:          JSR     BINBCD8
+START:          JSR     BINARY_TO_BCD_8
                 @SET_BYTE(PRINTHEXBYTES.NUMBYTES,2)
-                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINBCD8.BCD)
+                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINARY_TO_BCD_8.RESULT)
                 JSR     PRINTHEXBYTES
                 @PRINT_NEWLINE()
 
-                JSR     BINBCD16
+                JSR     BINARY_TO_BCD_16
                 @SET_BYTE(PRINTHEXBYTES.NUMBYTES,3)
-                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINBCD16.BCD)
+                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINARY_TO_BCD_16.RESULT)
                 JSR     PRINTHEXBYTES
                 @PRINT_NEWLINE()
 
-                JSR     BINBCD24
+                JSR     BINARY_TO_BCD_24
                 @SET_BYTE(PRINTHEXBYTES.NUMBYTES,4)
-                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINBCD24.BCD)
+                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINARY_TO_BCD_24.RESULT)
                 JSR     PRINTHEXBYTES
                 @PRINT_NEWLINE()
 
-                JSR     BINBCD32
+                JSR     BINARY_TO_BCD_32
                 @SET_BYTE(PRINTHEXBYTES.NUMBYTES,5)
-                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINBCD32.BCD)
+                @SET_WORD(PRINTHEXBYTES.ADDRESS,BINARY_TO_BCD_32.RESULT)
                 JSR     PRINTHEXBYTES
                 @PRINT_NEWLINE()
 
                 RTS
 
-
-BINBCD8:        SED		        ; Switch to decimal mode
-		        LDA.#   0		; Ensure the result is clear
-		        STA     .BCD+0
-		        STA     .BCD+1
-		        LDX.#   8		; The number of source bits
-
-.LOOP:		    ASL     .BIN		; Shift out one bit
-		        LDA     .BCD+0	; And add into result
-		        ADC     .BCD+0
-		        STA     .BCD+0
-		        LDA     .BCD+1	; propagating any carry
-		        ADC     .BCD+1
-		        STA     .BCD+1
-		        DEX		; And repeat for next bit
-		        BNE     .LOOP
-		
-                CLD		; Back to binary
-                RTS
-
-.BIN:		    DATA.b  $FF
-.BCD:		    PAD     2
-
-BINBCD16:       SED		        ; Switch to decimal mode
-		        LDA.#   0		; Ensure the result is clear
-		        STA     .BCD+0
-		        STA     .BCD+1
-                STA     .BCD+2
-		        LDX.#   16		; The number of source bits
-
-.LOOP:		    ASL     .BIN		; Shift out one bit
-                ROL     .BIN+1
-		        LDA     .BCD+0	; And add into result
-		        ADC     .BCD+0
-		        STA     .BCD+0
-		        LDA     .BCD+1	; propagating any carry
-		        ADC     .BCD+1
-		        STA     .BCD+1
-                LDA     .BCD+2	; propagating any carry
-		        ADC     .BCD+2
-		        STA     .BCD+2
-		        DEX		; And repeat for next bit
-		        BNE     .LOOP
-		
-                CLD		; Back to binary
-                RTS
-
-.BIN:		    DATA    $FFFF
-.BCD:		    PAD     3
-
-BINBCD24:       SED		        ; Switch to decimal mode
-		        LDA.#   0		; Ensure the result is clear
-		        STA     .BCD+0
-		        STA     .BCD+1
-                STA     .BCD+2
-                STA     .BCD+3
-		        LDX.#   24		; The number of source bits
-
-.LOOP:		    ASL     .BIN		; Shift out one bit
-                ROL     .BIN+1
-                ROL     .BIN+2
-		        LDA     .BCD+0	; And add into result
-		        ADC     .BCD+0
-		        STA     .BCD+0
-		        LDA     .BCD+1	; propagating any carry
-		        ADC     .BCD+1
-		        STA     .BCD+1
-                LDA     .BCD+2	; propagating any carry
-		        ADC     .BCD+2
-		        STA     .BCD+2
-                LDA     .BCD+3	; propagating any carry
-		        ADC     .BCD+3
-		        STA     .BCD+3
-		        DEX		; And repeat for next bit
-		        BNE     .LOOP
-		
-                CLD		; Back to binary
-                RTS
-
-.BIN:		    DATA.b  $FF
-                DATA.b  $FF
-                DATA.b  $FF
-.BCD:		    PAD     4
-
-BINBCD32:       SED		        ; Switch to decimal mode
-		        LDA.#   0		; Ensure the result is clear
-		        STA     .BCD+0
-		        STA     .BCD+1
-                STA     .BCD+2
-                STA     .BCD+3
-                STA     .BCD+4
-		        LDX.#   32		; The number of source bits
-
-.LOOP:		    ASL     .BIN		; Shift out one bit
-                ROL     .BIN+1
-                ROL     .BIN+2
-                ROL     .BIN+3
-		        LDA     .BCD+0	; And add into result
-		        ADC     .BCD+0
-		        STA     .BCD+0
-		        LDA     .BCD+1	; propagating any carry
-		        ADC     .BCD+1
-		        STA     .BCD+1
-                LDA     .BCD+2	; propagating any carry
-		        ADC     .BCD+2
-		        STA     .BCD+2
-                LDA     .BCD+3	; propagating any carry
-		        ADC     .BCD+3
-		        STA     .BCD+3
-                LDA     .BCD+4	; propagating any carry
-		        ADC     .BCD+4
-		        STA     .BCD+4
-		        DEX		; And repeat for next bit
-		        BNE     .LOOP
-		
-                CLD		; Back to binary
-                RTS
-
-.BIN:		    DATA.b  $FF
-                DATA.b  $FF
-                DATA.b  $FF
-                DATA.b  $FF
-.BCD:		    PAD     5
+#INCLUDE binary_to_bcd.asm
 
 PRINTHEXBYTES:  DEC     .NUMBYTES
                 CLC                     ; Goto the end of byte array

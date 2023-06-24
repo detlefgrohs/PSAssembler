@@ -100,13 +100,12 @@ class AssemblerV3 {
         }
         $expressionVariables.Keys | Sort-Object { $_.Length } -Descending | ForEach-Object {
             $variableName = $_;
-            $replacementText = $expressionVariables[$_];
+            $replacementText = $expressionVariables[$variableName];
 
             if ($this.Variables.ContainsKey($variableName)) {
                 if ($this.Pass -eq [PassType]::Allocation) {
                     $this.Variables[$variableName].ReferenceCount += 1;
-                }
-                if ($this.Pass -eq [PassType]::Allocation) {
+
                     if (-not $this.Variables[$variableName].CalledFromRegion.Contains($this.CurrentRegion)) {
                         $this.Variables[$variableName].CalledFromRegion += $this.CurrentRegion;
                     }
@@ -165,7 +164,7 @@ class AssemblerV3 {
                         Invoke-Expression ($codeBlock = $codeLines -join "`r`n") | ForEach-Object {
                             $processedLines += @{ Line = $_; Source =  $currentLine.Source + '.Code'; LineNumber = $macroLine.LineNumber; };
                         }
-                        } catch {
+                    } catch {
                         $this.Errors += @{ Message = "   Code Exception '$($_)'"; Line = $codeLineRef; }
                     }
                     $inCodeBlock = $false;
@@ -254,8 +253,7 @@ class AssemblerV3 {
                 }
             }
         }
-        # Keep processing until no macro expansions...
-        if ($continueExpansion) {
+        if ($continueExpansion) {   # Keep processing until no macro expansions...
             return $this.ExpandMacros($processedLines, $macroPass + 1); 
         }
         return $processedLines;
@@ -771,140 +769,3 @@ if ($GeneratePRG -or $ExecutePRG) {
         (. "C:\Program Files\GTK3VICE-3.7-win64\bin\x64sc.exe" $prgFileName) | Out-Null
     }
 }
-
-<#
-    ToDo:
-
-        Documentation
-            Command line
-
-            # commands
-                Macros
-                STATS
-                INCLUDE
-                STOP/Continue
-                CodeSegment
-
-            How the assembler works
-                Loading file(s)
-                Executing CODESEGMENTS
-                Expanding MACROS
-                Assembly Pass
-                    Collection
-                    Allocation
-                    Optmization
-                    Relocation
-                    Assembly
-                Outputting
-
-            Syntax
-                General parsing mode
-                    Remove Comments
-                    Parse Line
-                        Check if label: #COMMAND works...
-
-                Why I did what I did...
-                    ZP is a pain also modifiers are hard sometimes
-                        so addressing mode is part of mnemonic and everything
-                        after is the value, which is either a direct value, expression
-                        or variable
-
-                How the Opcodes.x.json file works
-                6502 commands
-                    Addressing Modes
-                
-                    LD/ST
-
-                    CMP/BR
-
-                    JSR/RTS
-
-                    Math
-
-                    Other
-
-            Optimization
-                ZP via code modification
-
-                Parameters
-                A,X,Y
-
-            Assembly Routines Documentation
-                BIN to BCD
-
-                JSR Parameters
-
-                @BASICSTUB()
-
-            Testing
-                ASSERTIONS
-                RASTERLINE stuff
-
-
-        Enhancements:
-            DATA & DATA.b multi byte/word values
-
-
-
-            WORD    $0000
-            DWORD   $00000000
-            QWORD   $0000000000000000 ; Is this needed
-
-
-
-            STRUCT
-
-            #STRUCT Name
-                .START:     WORD    $0000
-                .END:       WORD    $0000
-                .LENGTH:    BYTE    $00
-            #ENDS
-
-            HEAD:   @Name
-
-            @MACRO with no parameters
-
-
-            Error Handling
-                Still a couple of areas where duplicate errors are generated
-
-            Dump Assembly ps1
-
-            Disassemble.ps1
-
-        To Complete/Documentate
-            MACROS
-                Stack Stuff
-
-                SET Memory
-
-                INC/DEC
-
-                ADD/SBC
-
-                Rotate
-
-                Loops
-
-                IF/THEN
-
-
-
-            C64 Specific Stuff
-                VICII
-                BASIC
-                KERNAL
-
-            Libraries
-                TEXT
-                MATH
-                GRAPHICS
-
-
-        [ ] Book generation PowerShell scripts
-            That could actually be a small book in itself
-            'Write a book in Visual Code and PowerShell'
-
-            What does it take to generate a ebook for Amazon...
-
-#>
