@@ -2,6 +2,20 @@ ZP_PTR_A            =   $FB
 ZP_PTR_B            =   $FD
 ZP_TEMP_BYTE        =   $FF
 
+#MACRO TEXT_SETXY(X,Y)
+                LDX.#       @X
+                LDY.#       @Y
+                JSR         TEXT.SETXY
+#ENDM
+#MACRO TEXT_FGCOLOR(COLOR)
+                LDA.#       @COLOR
+                STA         TEXT.FGCOLOR
+#ENDM
+#MACRO TEXT_PRINTCHAR(CHAR) 
+                LDA.#       @CHAR
+                JSR         TEXT.PRINTCHAR
+#ENDM
+
 #REGION TEXT
 TEXT:
 .FGCOLOR:               DATA.b      VICII_COLOR_GREEN

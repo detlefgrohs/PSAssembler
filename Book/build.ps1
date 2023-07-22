@@ -34,7 +34,7 @@ $pandocParameters = @(
 pandoc $GeneratedMarkdownFileName $pandocParameters
 #$GeneratedMarkdownFileName -o ".\Writing Amazon Books.pdf" --pdf-engine=xelatex --from=markdown-implicit_figures
 
-# & '.\Writing Amazon Books.pdf'
+& '.\Book.pdf'
 
 
 # Changes still to make to this script

@@ -513,6 +513,7 @@ class AssemblerV3 {
                     "STATS.SAVE" {
                         if ($this.Pass -eq [PassType]::Assembly) {
                             $this.NamedStats.Add($parsedSyntax.Parameters.Trim(), $this.Stats[$this.Stats.Count - 1]);
+                            $skipOutput = $true;
                         }
                     }
                     { $_ -eq "TEXT" -or $_ -eq "TEXTZ" -or $_ -eq "ASCII" -or $_ -eq "ASCIIZ" } {
@@ -681,7 +682,7 @@ class AssemblerV3 {
         Write-Host -ForegroundColor Cyan "   Optimized Out   : $($optimizedBytes.ToString('#,0'))"
 
         if ($this.NamedStats.Length -gt 0) {
-            $this.NamedStats.Keys | ForEach-Object {
+            $this.NamedStats.Keys | Sort-Object | ForEach-Object {
                 $currentStats = $this.NamedStats[$_];
                 Write-Host -ForegroundColor Cyan "Stat: '$($_)'"
                 Write-Host -ForegroundColor Cyan "   Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"
@@ -751,7 +752,7 @@ if ($assembler.Errors.Count -gt 0) {
     $assembler.Errors | ForEach-Object {
         Write-Host -ForegroundColor Red "$($_.Line.Source) : $($_.Line.LineNumber) : $($_.Line.Line) => $($_.Message)"
     }
-    return;
+    exit 1;
 }
 
 if ($GenerateOUT) {
@@ -769,3 +770,5 @@ if ($GeneratePRG -or $ExecutePRG) {
         (. "C:\Program Files\GTK3VICE-3.7-win64\bin\x64sc.exe" $prgFileName) | Out-Null
     }
 }
+
+exit 0;

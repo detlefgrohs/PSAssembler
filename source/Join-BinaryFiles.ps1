@@ -1,6 +1,6 @@
 param ($Source1, $Source2,$Destination)
 
-Write-Host -ForegroundColor Green "Joining '$($Source1)' + '$($Source1)' => '$($Destination)'"
+Write-Host -ForegroundColor Green "Joining '$($Source1)' + '$($Source2)' => '$($Destination)'"
 
 Remove-Item -Path $Destination -Force -ErrorAction SilentlyContinue
 
