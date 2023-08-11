@@ -143,3 +143,17 @@
                 ;BCC     CURADDR + 5
                 ROL     @ADDRESS + 1
 #ENDM
+
+#MACRO TURN_INTERRUPTS_OFF()
+                SEI                             ; Turn off Interrupts
+                LDA.#   $7F
+                STA     $DC0D
+                STA     $DD0D
+#ENDM
+
+#MACRO NOP_LOOP(COUNT)
+                LDX.#   @COUNT
+                NOP
+                DEX
+                BPL     CURADDR - 2
+#ENDM

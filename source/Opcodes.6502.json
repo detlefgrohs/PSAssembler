@@ -151,7 +151,7 @@
     "SED" : { "OpCode" : "0xf8", "AddressingMode": "Implied", "Format": "SED", "Bytes": "0", "MinCycles": "2", "MaxCycles": "2" },
     "SBC,Y" : { "OpCode" : "0xf9", "AddressingMode": "AbsoluteY", "Format": "SBC [a16],Y", "Bytes": "2", "MinCycles": "4", "MaxCycles": "5" },
     "SBC,X" : { "OpCode" : "0xfd", "AddressingMode": "AbsoluteX", "Format": "SBC [a16],X", "Bytes": "2", "MinCycles": "4", "MaxCycles": "5" },
-    "INC,X" : { "OpCode" : "0xfe", "AddressingMode": "AbsoluteX", "Format": "INC [a16],X", "Bytes": "2", "MinCycles": "4", "MaxCycles": "5" },
+    "INC,X" : { "OpCode" : "0xfe", "AddressingMode": "AbsoluteX", "Format": "INC [a16],X", "Bytes": "2", "MinCycles": "7", "MaxCycles": "8" },
     "DATA" : { "OpCode" : "", "AddressingMode": "", "Format": "", "Bytes": "2", "MinCycles": "", "MaxCycles": "" },
     "DATA.b" : { "OpCode" : "", "AddressingMode": "", "Format": "", "Bytes": "1", "MinCycles": "", "MaxCycles": "" }
 }

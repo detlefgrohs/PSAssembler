@@ -135,6 +135,8 @@ for ($rowIndex = 0; $rowIndex -lt 23; $rowIndex += 1) {
     Write-Host
 }
 
+return;
+
 $out = @();
 for ($rowIndex = 0; $rowIndex -lt 23; $rowIndex += 1) {
     for ($colIndex = 0; $colIndex -lt 23; $colIndex += 1) {

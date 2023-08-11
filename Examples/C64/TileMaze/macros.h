@@ -52,3 +52,16 @@
                 JSR     SET_CELL
 #ENDM
 
+#MACRO CHECK_NEIGHBOR(NEIGHBOR,MASK)
+
+                    LDX.#   @NEIGHBOR
+                    JSR     .GET_NEIGHBOR
+
+                    AND.#   %00000001
+                    BEQ     CURADDR + 2 + 3 + 2 + 3
+
+                    LDA     $0000
+                    ORA.#   @MASK
+                    STA     $0000
+                    
+#ENDM

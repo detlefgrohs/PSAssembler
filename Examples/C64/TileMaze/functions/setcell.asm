@@ -112,7 +112,8 @@ SET_CELL_NO_COLOR:       ; bitmapLocation := $6000 + (offset * 8);
                 ADC.#   @HI(CHARDATA)
                 STA     .TL_LD + 2
 
-                LDX     .LOOP_COUNT
+                ; LDX     .LOOP_COUNT
+                LDX.#   7
 
 .LOOP:          ; FOR bitmapIndex := 0 TO 8 DO
                 ; 	bitmapLocation[bitmapIndex] := tileLocation[bitmapIndex];
@@ -125,4 +126,4 @@ SET_CELL_NO_COLOR:       ; bitmapLocation := $6000 + (offset * 8);
 
 .OFFSET:        DATA    $0000
 .TILE_NUMBER:   DATA    $0000
-.LOOP_COUNT:    DATA.b  7
+;.LOOP_COUNT:    DATA.b  7

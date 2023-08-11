@@ -23,3 +23,16 @@
     LDA.#       (@NEW_IRQ & $FF00) >> 8    ; >{2}
     STA         $FFFF
 #ENDM
+
+#MACRO SCREEN_OFF()
+                LDA     $D011
+                AND.#   %01101111
+                STA     $D011
+#ENDM
+
+#MACRO SCREEN_ON()
+                LDA     $D011
+                ORA.#   %00010000
+                AND.#   %01111111
+                STA     $D011
+#ENDM

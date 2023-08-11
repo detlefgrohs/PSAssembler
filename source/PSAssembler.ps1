@@ -9,7 +9,8 @@
     [Switch]$IncludeHFilesInOutput,
     [Switch]$GenerateLST,
     [Switch]$VerboseLST,
-    [Switch]$DumpRegions
+    [Switch]$DumpRegions,
+    [Switch]$C128
 )
 
 $Global:AssemblerPath = [System.IO.Path]::GetDirectoryName($myInvocation.MyCommand.Definition);
@@ -272,7 +273,7 @@ class AssemblerV3 {
                 }
             } else {
                 $lines += @{  Line = $_; LineNumber = $lineNumber; Source = $FileName; }
-                if ($_ -match '.*#INCLUDE\s+([^\s]*).*') {
+                if (($_ -replace ';.*', '') -match '.*#INCLUDE\s+([^\s]*).*') {
                     $includeFileName = $Matches[1];
                     $this.LoadFile([IO.Path]::Combine([IO.Path]::GetDirectoryName($FileName), $includeFileName)) | ForEach-Object { $lines += $_; }
                 }
@@ -519,8 +520,7 @@ class AssemblerV3 {
                     { $_ -eq "TEXT" -or $_ -eq "TEXTZ" -or $_ -eq "ASCII" -or $_ -eq "ASCIIZ" } {
                         if ($parsedSyntax.Parameters -match '"(.*)"') {
                             if ($this.Pass -eq [PassType]::Assembly) {
-                                $this.Output += @{ Line = ("$($this.Address.ToString('X4')) |          " + "| ;" + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line; 
-                                                Type = "Code"; Source = $CurrentLine.Source; }
+                                $this.Output += @{ Line = ("$($this.Address.ToString('X4')) [      ]             | " + $details).PadRight(26, ' ') + $CurrentLine.Line; Type = "Code"; Source = $CurrentLine.Source; }
                             }
                             for($index = 0; $index -lt $Matches[1].Length; $index += 1) {
                                 $charValue = [byte]$Matches[1][$index];
@@ -551,7 +551,8 @@ class AssemblerV3 {
                         if ($this.Pass -eq [PassType]::Assembly) {
                             $this.LoadedBinary += $binaryBytes.Count;
                             $this.Bytes += $binaryBytes;
-                            $this.Output += @{ Line = "                              | ; '$($binaryFileName)' : $($dataOffset) bytes"; Type = "BinaryFile"; Source = "" }
+                            $this.Output += @{ Line = ("$($this.Address.ToString('X4')) [      ]             | " + $details).PadRight(26, ' ') + $CurrentLine.Line; Type = "Code"; Source = $CurrentLine.Source; }
+                            $this.Output += @{ Line = "$($this.Address.ToString('X4')) [      ]             | ; '$($binaryFileName)' : $($dataOffset) bytes"; Type = "BinaryFile"; Source = "" }
                         }
                         $skipOutput = $true;
                     }
@@ -645,11 +646,11 @@ class AssemblerV3 {
             }
         }
         if ($this.Pass -eq [PassType]::Assembly -and -not $skipOutput) {
-            $line = "$($this.Address.ToString('X4')) | ";
+            $line = "$($this.Address.ToString('X4')) [";
             for ($index = 0; $index -lt 3; $index += 1) {
-                if ($index -lt $codes.Count) { $line += "$($codes[$index].ToString('X2')) "; } else { $line += "   "; }
+                if ($index -lt $codes.Count) { $line += "$($codes[$index].ToString('X2'))"; } else { $line += "  "; }
             }
-            $this.Output += @{ Line = ($line + "| " + $details).PadRight(30, ' ') + "| " + $CurrentLine.Line; 
+            $this.Output += @{ Line = ($line + "] " + $details).PadRight(26, ' ') + "| " + $CurrentLine.Line; 
                             Type = "Code"; Source = $CurrentLine.Source; }
             $this.Bytes += $codes;
         }
@@ -762,12 +763,16 @@ if ($GenerateOUT) {
 }
 
 if ($GeneratePRG -or $ExecutePRG) {
-    $prgFileName = $FileName.Replace('.asm', '.prg')
+    $prgFileName = $FileName.Replace('.asm', '.prg').ToLower();
     Write-Host -ForegroundColor Yellow "$([DateTime]::Now.ToString('HH:mm:ss')) : Writing '$($prgFileName)'"
     $assembler.Export($prgFileName, $true);
     if ($ExecutePRG) {
         Write-Host -ForegroundColor Yellow "Launching'$($prgFileName)' in Vice."
-        (. "C:\Program Files\GTK3VICE-3.7-win64\bin\x64sc.exe" $prgFileName) | Out-Null
+        if ($C128) {
+            (. "C:\Program Files\GTK3VICE-3.7-win64\bin\x128.exe" $prgFileName) | Out-Null
+        } else {
+            (. "C:\Program Files\GTK3VICE-3.7-win64\bin\x64sc.exe" $prgFileName) | Out-Null
+        }
     }
 }
 
