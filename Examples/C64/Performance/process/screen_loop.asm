@@ -1,15 +1,15 @@
 
 #STATS.PUSH
-
+;SCREEN_LOOP:
                 LDX.#   $00
-.SCREEN_LOOP:   INC,X   VICII_SCREEN_RAM
+.LOOPX:         INC,X   VICII_SCREEN_RAM
                 INC,X   VICII_SCREEN_RAM + $100
 
                 INC,X   VICII_COLOR_RAM
                 INC,X   VICII_COLOR_RAM + $100
 
                 INX
-                BNE     .SCREEN_LOOP
+                BNE     .LOOPX
 
 #STATS.LOOP $FF
 #STATS.SAVE Process-screen_loop

@@ -40,6 +40,7 @@ class AssemblerV3 {
     $NamedStats = @{};
     $CycleTime = 1 / 1020000;
     $Regions = @{};
+    [System.Collections.Stack]$RegionStack;
     $CurrentRegion = '<root>'
     $LoadedBinary = 0;
 
@@ -56,6 +57,8 @@ class AssemblerV3 {
     AssemblerV3([string]$CPU = '6502') {
         (Get-Content -Path "$($Global:AssemblerPath)\Opcodes.$($CPU).json" | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $this.OPCodes.Add($_.Name, $_.Value); }
         $this.CreateSyntaxPattern();
+        $this.RegionStack = New-Object System.Collections.Stack;
+        $this.RegionStack.Push("<root>");
     }
     [void] CreateSyntaxPattern() {
         $patterns = [ordered]@{ directive = '\s*((?<label>[^\s]*):)?\s*#(?<command>[^\s]*)(?<parameters>[^;]*)?';
@@ -275,7 +278,9 @@ class AssemblerV3 {
                 $lines += @{  Line = $_; LineNumber = $lineNumber; Source = $FileName; }
                 if (($_ -replace ';.*', '') -match '.*#INCLUDE\s+([^\s]*).*') {
                     $includeFileName = $Matches[1];
+                    #$this.PushRegion($includeFileName);
                     $this.LoadFile([IO.Path]::Combine([IO.Path]::GetDirectoryName($FileName), $includeFileName)) | ForEach-Object { $lines += $_; }
+                    #$this.PopRegion();
                 }
                 $lineNumber += 1;
             }
@@ -412,6 +417,30 @@ class AssemblerV3 {
         $this.Pass = $pass;
         $lines | ForEach-Object { $this.AssembleLine($_); }
     }
+    [void] PushRegion($regionName) {
+        Write-Host -ForegroundColor Yellow "PushRegion($($regionName))"
+        $this.CurrentRegion = $regionName;
+        $this.RegionStack.Push($regionName);
+        if ($this.Pass -eq [PassType]::Collection) {
+            if (-not $this.Regions.ContainsKey($this.CurrentRegion)) {
+                $this.Regions.Add($this.CurrentRegion, @{
+                    Region = $this.CurrentRegion;
+                    StartAddress = $this.Address;
+                    EndAddress = 0;
+                    ReferenceCount = 0;
+                });
+            }
+        }
+    }
+    [void] PopRegion() {
+        Write-Host -ForegroundColor Yellow "PopRegion()"
+        if ($this.Pass -eq [PassType]::Collection) {
+            $this.Regions[$this.CurrentRegion].EndAddress = $this.Address - 1;
+        }
+        $this.RegionStack.Pop();
+        #$this.CurrentRegion = '<root>';
+        $this.CurrentRegion = $this.RegionStack.Peek();
+    }
     [void] AssembleLine($CurrentLine) {
         $codes = @();
         $details = "";
@@ -443,26 +472,15 @@ class AssemblerV3 {
             if ($null -ne $parsedSyntax.Command) {
                 switch ($parsedSyntax.Command) {
                     "REGION" {
-                        $this.CurrentRegion = $parsedSyntax.Parameters;
-                        if ($this.Pass -eq [PassType]::Collection) {
-                            $this.Regions.Add($this.CurrentRegion, @{
-                                Region = $this.CurrentRegion;
-                                StartAddress = $this.Address;
-                                EndAddress = 0;
-                                ReferenceCount = 0;
-                            });
-                        }
+                        $this.PushRegion($parsedSyntax.Parameters);
                     }
                     "ENDR" {
-                        if ($this.Pass -eq [PassType]::Collection) {
-                            $this.Regions[$this.CurrentRegion].EndAddress = $this.Address - 1;
-                        }
-                        $this.CurrentRegion = '<root>';
+                        $this.PopRegion();
                     }
                     "STATS" {
                         if ($this.Pass -eq [PassType]::Assembly) {
                             $currentStats = $this.Stats[$this.Stats.Count - 1];
-                            $this.Output += @{ Line = "                              | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
+                            $this.Output += @{ Line = "                          | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
                                             Type = "Stats"; Source = "Stats" }
                             $skipOutput = $true;
                         }
@@ -470,13 +488,13 @@ class AssemblerV3 {
                     "STATS.DETAIL" {
                         if ($this.Pass -eq [PassType]::Assembly) {
                             $currentStats = $this.Stats[$this.Stats.Count - 1];
-                            $this.Output += @{ Line = "                              | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
+                            $this.Output += @{ Line = "                          | ; STATS => Bytes: $($currentStats.Bytes)   MinCycles: $($currentStats.MinCycles.ToString('#,#'))   MaxCycles: $($currentStats.MaxCycles.ToString('#,#'))"; 
                                             Type = "Stats"; Source = "Stats" }
                             $minCycleTime = $currentStats.MinCycles * $this.CycleTime;
                             $maxCycleTime = $currentStats.MaxCycles * $this.CycleTime;
-                            $this.Output += @{ Line = "                              | ;          MinCycleTime: $(($minCycleTime * 1000).ToString('#,#.00')) mSec   MaxCycleTime: $(($maxCycleTime * 1000).ToString('#,#.00')) mSec"; 
+                            $this.Output += @{ Line = "                          | ;          MinCycleTime: $(($minCycleTime * 1000).ToString('#,#.00')) mSec   MaxCycleTime: $(($maxCycleTime * 1000).ToString('#,#.00')) mSec"; 
                                             Type = "Stats"; Source = "Stats" }
-                            $this.Output += @{ Line = "                              | ;          Max FPS: $((1 / $minCycleTime).ToString('#,#.00'))   Min FPS: $((1 / $maxCycleTime).ToString('#,#.00'))"; 
+                            $this.Output += @{ Line = "                          | ;          Max FPS: $((1 / $minCycleTime).ToString('#,#.00'))   Min FPS: $((1 / $maxCycleTime).ToString('#,#.00'))"; 
                                             Type = "Stats"; Source = "Stats" }
                             $skipOutput = $true;
                         }
@@ -701,9 +719,11 @@ $assembler.VerboseLST = $VerboseLST;
 $assembler.AssembleFile([IO.Path]::Combine($Global:ScriptRoot, $FileName));
 
 if ($GenerateLST) {
+    $lstFileName = $FileName.Replace('.asm', '.lst');
+    Remove-Item $lstFileName -ErrorAction SilentlyContinue
     $assembler.Output | ForEach-Object {
         if ($IncludeHFilesInOutput -or ($_.Source -ne $null -and -not $_.Source.EndsWith('.h'))) {
-            $_.Line
+            $_.Line | Add-Content $lstFileName
         }
     }
 }

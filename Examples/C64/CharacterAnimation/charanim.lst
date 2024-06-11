@@ -1,0 +1,464 @@
+0801 [      ]             | * = $0801
+0801 [      ]             | 
+0801 [      ]             | #INCLUDE ..\..\includes\includes.h
+0801 [      ]             |                             ; Basic Stub
+0801 [      ]             |             ; 10 SYS2061
+0801 [0B08  ]             |             DATA        $080B   ; $0801 Pointer to Next Line
+0803 [0A00  ]             |             DATA        $000A   ; $0803 Line Number '10'
+0805 [9E    ]             |             DATA.B      $9E     ; $0805 BASIC Token for SYS
+0806 [32    ]             |             DATA.B      $32     ; $0806 '2'
+0807 [30    ]             |             DATA.B      $30     ; $0807 '0'
+0808 [36    ]             |             DATA.B      $36     ; $0808 '6'
+0809 [31    ]             |             DATA.B      $31     ; $0809 '1'  - 2061 is $080D
+080A [00    ]             |             DATA.B      $00     ; $080A End of current line
+080B [0000  ]             |             DATA        $0000   ; $080B Next Line (NULL no more lines)
+080D [      ]             |                                 ; $080D - 2061
+080D [      ]             | 
+080D [      ]             | START:
+080D [      ]             | 
+080D [204808] JSR $0848   |                 JSR     INITIALIZE
+0810 [207308] JSR $0873   |                 JSR     SCREEN_OFF
+0813 [208708] JSR $0887   |                 JSR     DRAW_SCREEN
+0816 [207C08] JSR $087C   |                 JSR     SCREEN_ON
+0819 [      ]             | 
+0819 [78    ] SEI         |                 SEI                             ; Turn off Interrupts
+081A [A97F  ] LDA #$7F    |                 LDA.#   $7F
+081C [8D0DDC] STA $DC0D   |                 STA     $DC0D
+081F [8D0DDD] STA $DD0D   |                 STA     $DD0D
+0822 [      ]             | 
+0822 [A000  ] LDY #$00    | .LOOP:          LDY.#   0
+0824 [200A0B] JSR $0B0A   |                 JSR     WAIT_FOR_RASTER_LINE
+0827 [      ]             |                 
+0827 [A900  ] LDA #$00    |                 LDA.#   VICII_COLOR_BLACK
+0829 [8D20D0] STA $D020   |                 STA     VICII_BORDER_COLOR
+082C [      ]             | 
+082C [A032  ] LDY #$32    |                 LDY.#   50
+082E [200A0B] JSR $0B0A   |                 JSR     WAIT_FOR_RASTER_LINE
+0831 [      ]             |                 
+0831 [A205  ] LDX #$05    |                 LDX.#   5
+0833 [EA    ] NOP         | .NOP_LOOP:      NOP
+0834 [CA    ] DEX         |                 DEX
+0835 [10FC  ] BPL $FC     |                 BPL     .NOP_LOOP
+0837 [      ]             | 
+0837 [A901  ] LDA #$01    |                 LDA.#   VICII_COLOR_WHITE
+0839 [8D20D0] STA $D020   |                 STA     VICII_BORDER_COLOR
+083C [      ]             | 
+083C [200F09] JSR $090F   |                 JSR     ANIMATE
+083F [      ]             | 
+083F [A902  ] LDA #$02    |                 LDA.#   VICII_COLOR_RED
+0841 [8D20D0] STA $D020   |                 STA     VICII_BORDER_COLOR
+0844 [      ]             | 
+0844 [      ]             | ;                 LDX.#   20
+0844 [      ]             | ;                 LDY.#   250
+0844 [      ]             |                 
+0844 [      ]             | ; .WAIT_LOOP:     JSR     WAIT_FOR_RASTER_LINE
+0844 [      ]             | ;                 DEX
+0844 [      ]             | ;                 BPL     .WAIT_LOOP
+0844 [      ]             | 
+0844 [4C2208] JMP $0822   |                 JMP     .LOOP
+0847 [      ]             | 
+0847 [60    ] RTS         |                 RTS
+0848 [      ]             | 
+0848 [      ]             | INITIALIZE:
+0848 [      ]             | 	            ; jiffyTime := $A0;
+0848 [      ]             | 		
+0848 [      ]             | 	            ; SetBitMapMode();
+0848 [A93B  ] LDA #$3B    |                 LDA.#   $3B
+084A [8D11D0] STA $D011   |                 STA     $D011
+084D [      ]             | 
+084D [      ]             |                 ; SetMultiColorMode();
+084D [A910  ] LDA #$10    |                 LDA.#   16
+084F [0D16D0] ORA $D016   |                 ORA     $D016
+0852 [8D16D0] STA $D016   |                 STA     $D016
+0855 [      ]             | 
+0855 [      ]             |                 ; SetBank(VIC_BANK1);
+0855 [A902  ] LDA #$02    |                 LDA.#   $2
+0857 [8D00DD] STA $DD00   |                 STA     $DD00
+085A [      ]             | 
+085A [      ]             |                 ; Poke(^$D018, 0, Peek(^$D018, 0) | $08);
+085A [      ]             |                 ; What is this?
+085A [AD18D0] LDA $D018   |                 LDA     $D018
+085D [0908  ] ORA #$08    |                 ORA.#   $8
+085F [8D18D0] STA $D018   |                 STA     $D018
+0862 [      ]             | 
+0862 [      ]             |                 ; Screen_BG_Col := Cyan;
+0862 [      ]             |                 ; Screen_FG_Col := Cyan;
+0862 [A903  ] LDA #$03    |                 LDA.#   $3
+0864 [8D20D0] STA $D020   |                 STA     $D020
+0867 [8D21D0] STA $D021   |                 STA     $D021
+086A [      ]             | 
+086A [      ]             |                 ; SetMemoryConfig(1, 1, 0);	// IO, Kernal, BASIC
+086A [A501  ] LDA $01     |                 LDA.ZP  $01
+086C [29F8  ] AND #$F8    |                 AND.#   %11111000
+086E [0906  ] ORA #$06    |                 ORA.#   %110
+0870 [8501  ] STA $01     |                 STA.ZP  $01
+0872 [      ]             | 
+0872 [      ]             |                 ; idleFrame := 0;
+0872 [      ]             |                 ; walkingFrame := 0;
+0872 [      ]             | 
+0872 [60    ] RTS         |                 RTS
+0873 [      ]             | 
+0873 [AD11D0] LDA $D011   | SCREEN_OFF:     LDA     $D011
+0876 [296F  ] AND #$6F    |                 AND.#   %01101111
+0878 [8D11D0] STA $D011   |                 STA     $D011
+087B [      ]             | 
+087B [60    ] RTS         |                 RTS
+087C [      ]             | 
+087C [AD11D0] LDA $D011   | SCREEN_ON:      LDA     $D011
+087F [0910  ] ORA #$10    |                 ORA.#   %00010000
+0881 [297F  ] AND #$7F    |                 AND.#   %01111111
+0883 [8D11D0] STA $D011   |                 STA     $D011
+0886 [      ]             |                 
+0886 [60    ] RTS         |                 RTS
+0887 [      ]             | 
+0887 [      ]             | DRAW_SCREEN:
+0887 [20CB08] JSR $08CB   |                 JSR     CLEAR_SCREEN
+088A [      ]             | 
+088A [A900  ] LDA #$00    |                 LDA.#   0
+088C [8D940A] STA $0A94   |                 STA     SET_CELL.OFFSET
+088F [A900  ] LDA #$00    |                 LDA.#   0
+0891 [8D950A] STA $0A95   |                 STA     SET_CELL.OFFSET + 1
+0894 [      ]             |                 
+0894 [A9E1  ] LDA #$E1    |                 LDA.#   225
+0896 [8D960A] STA $0A96   |                 STA     SET_CELL.TILE_NUMBER
+0899 [A901  ] LDA #$01    |                 LDA.#   VICII_COLOR_WHITE
+089B [8D980A] STA $0A98   |                 STA     SET_CELL.COLOR_1
+089E [A900  ] LDA #$00    |                 LDA.#   VICII_COLOR_BLACK
+08A0 [8D990A] STA $0A99   |                 STA     SET_CELL.COLOR_2
+08A3 [A90F  ] LDA #$0F    |                 LDA.#   VICII_COLOR_LIGHT_GREY
+08A5 [8D9A0A] STA $0A9A   |                 STA     SET_CELL.COLOR_3
+08A8 [      ]             | 
+08A8 [      ]             | .LOOP:
+08A8 [20DE09] JSR $09DE   |                 JSR     SET_CELL
+08AB [      ]             | 
+08AB [18    ] CLC         |                             CLC
+08AC [AD940A] LDA $0A94   |             LDA         SET_CELL.OFFSET
+08AF [6928  ] ADC #$28    |             ADC.#       40
+08B1 [8D940A] STA $0A94   |             STA         SET_CELL.OFFSET
+08B4 [AD950A] LDA $0A95   |             LDA         SET_CELL.OFFSET+1
+08B7 [6900  ] ADC #$00    |             ADC.#       $00
+08B9 [8D950A] STA $0A95   |             STA         SET_CELL.OFFSET+1
+08BC [      ]             | 
+08BC [AD950A] LDA $0A95   |                 LDA     SET_CELL.OFFSET + 1
+08BF [C903  ] CMP #$03    |                 CMP.#   ((1000) & $FF00) >> 8
+08C1 [D0E5  ] BNE $E5     |                 BNE     .LOOP
+08C3 [AD940A] LDA $0A94   |                 LDA     SET_CELL.OFFSET
+08C6 [C9E8  ] CMP #$E8    |                 CMP.#   1000  & $00FF
+08C8 [D0DE  ] BNE $DE     |                 BNE     .LOOP
+08CA [      ]             | 
+08CA [60    ] RTS         |                 RTS
+08CB [      ]             | 
+08CB [      ]             | CLEAR_SCREEN:
+08CB [      ]             |                 ; offsetIndex := 0;
+08CB [A900  ] LDA #$00    |                 LDA.#   $00
+08CD [8D0D09] STA $090D   |                 STA     .INDEX
+08D0 [8D0E09] STA $090E   |                 STA     .INDEX + 1
+08D3 [      ]             | 
+08D3 [A900  ] LDA #$00    |                 LDA.#   0
+08D5 [8D960A] STA $0A96   |                 STA     SET_CELL.TILE_NUMBER
+08D8 [A901  ] LDA #$01    |                 LDA.#   VICII_COLOR_WHITE
+08DA [8D980A] STA $0A98   |                 STA     SET_CELL.COLOR_1
+08DD [A900  ] LDA #$00    |                 LDA.#   VICII_COLOR_BLACK
+08DF [8D990A] STA $0A99   |                 STA     SET_CELL.COLOR_2
+08E2 [A90F  ] LDA #$0F    |                 LDA.#   VICII_COLOR_LIGHT_GREY
+08E4 [8D9A0A] STA $0A9A   |                 STA     SET_CELL.COLOR_3
+08E7 [      ]             | 
+08E7 [      ]             |                 ; BEGIN
+08E7 [      ]             | .LOOP:          ; SetCell(offsetIndex, #CharacterTileSet, 0, Screen_BG_Col, Black, Black);
+08E7 [AD0D09] LDA $090D   |                 LDA     .INDEX
+08EA [8D940A] STA $0A94   |                 STA     SET_CELL.OFFSET
+08ED [AD0E09] LDA $090E   |                 LDA     .INDEX + 1
+08F0 [8D950A] STA $0A95   |                 STA     SET_CELL.OFFSET + 1
+08F3 [      ]             | 
+08F3 [20DE09] JSR $09DE   |                 JSR     SET_CELL
+08F6 [      ]             | 
+08F6 [EE0D09] INC $090D   |                                 INC         .INDEX            ; 	Inc(offsetIndex);		
+08F9 [D003  ] BNE $03     |                 BNE         CURADDR + 5
+08FB [EE0E09] INC $090E   |                 INC         .INDEX + 1
+08FE [AD0E09] LDA $090E   |                                 LDA         .INDEX + 1      ; WHILE (offsetIndex < 1000) DO
+0901 [C903  ] CMP #$03    |                 CMP.#       ((1000) & $FF00) >> 8
+0903 [D0E2  ] BNE $E2     |                 BNE         .LOOP
+0905 [AD0D09] LDA $090D   |                 LDA         .INDEX
+0908 [C9E8  ] CMP #$E8    |                 CMP.#       1000  & $00FF
+090A [D0DB  ] BNE $DB     |                 BNE         .LOOP
+090C [      ]             |                 ; END;
+090C [60    ] RTS         |                 RTS
+090D [      ]             | 
+090D [0000  ]             | .INDEX:         DATA    $0000
+090F [      ]             | 
+090F [AD2909] LDA $0929   | ANIMATE:        LDA     .IDLE_INDEX
+0912 [8DDD09] STA $09DD   |                 STA     DRAW_CHAR.CHAR_NUMBER
+0915 [202B09] JSR $092B   |                 JSR     DRAW_CHAR
+0918 [      ]             | 
+0918 [18    ] CLC         |                 CLC
+0919 [AD2909] LDA $0929   |                 LDA     .IDLE_INDEX
+091C [6D2A09] ADC $092A   |                 ADC     .IDLE_INCREMENT
+091F [C9E1  ] CMP #$E1    |                 CMP.#   9 * 25
+0921 [D002  ] BNE $02     |                 BNE     .CONTINUE
+0923 [      ]             | 
+0923 [A996  ] LDA #$96    |                 LDA.#   6 * 25
+0925 [8D2909] STA $0929   | .CONTINUE:      STA     .IDLE_INDEX
+0928 [      ]             | 
+0928 [60    ] RTS         |                 RTS
+0929 [      ]             | 
+0929 [00    ]             | .IDLE_INDEX:    DATA.b  $00
+092A [19    ]             | .IDLE_INCREMENT:DATA.b  25
+092B [      ]             | 
+092B [      ]             | DRAW_CHAR:      ; ToDo: Calculate offset by row and column
+092B [A908  ] LDA #$08    |                 LDA.#   8
+092D [8D050B] STA $0B05   |                 STA     SET_CELL_NO_COLOR.OFFSET
+0930 [A900  ] LDA #$00    |                 LDA.#   0
+0932 [8D060B] STA $0B06   |                 STA     SET_CELL_NO_COLOR.OFFSET + 1
+0935 [      ]             | 
+0935 [ADDD09] LDA $09DD   |                 LDA    .CHAR_NUMBER
+0938 [8D070B] STA $0B07   |                 STA     SET_CELL_NO_COLOR.TILE_NUMBER
+093B [A900  ] LDA #$00    |                 LDA.#   0
+093D [8D080B] STA $0B08   |                 STA     SET_CELL_NO_COLOR.TILE_NUMBER + 1
+0940 [      ]             | 
+0940 [A927  ] LDA #$27    |                 LDA.#   (5 * 8) - 1
+0942 [8D090B] STA $0B09   |                 STA     SET_CELL_NO_COLOR.LOOP_COUNT
+0945 [      ]             | 
+0945 [209B0A] JSR $0A9B   |                 JSR     SET_CELL_NO_COLOR
+0948 [      ]             | 
+0948 [18    ] CLC         |                             CLC
+0949 [AD050B] LDA $0B05   |             LDA         SET_CELL_NO_COLOR.OFFSET
+094C [6928  ] ADC #$28    |             ADC.#       40
+094E [8D050B] STA $0B05   |             STA         SET_CELL_NO_COLOR.OFFSET
+0951 [AD060B] LDA $0B06   |             LDA         SET_CELL_NO_COLOR.OFFSET+1
+0954 [6900  ] ADC #$00    |             ADC.#       $00
+0956 [8D060B] STA $0B06   |             STA         SET_CELL_NO_COLOR.OFFSET+1
+0959 [18    ] CLC         |                             CLC
+095A [AD070B] LDA $0B07   |             LDA         SET_CELL_NO_COLOR.TILE_NUMBER
+095D [6905  ] ADC #$05    |             ADC.#       5
+095F [8D070B] STA $0B07   |             STA         SET_CELL_NO_COLOR.TILE_NUMBER
+0962 [AD080B] LDA $0B08   |             LDA         SET_CELL_NO_COLOR.TILE_NUMBER+1
+0965 [6900  ] ADC #$00    |             ADC.#       $00
+0967 [8D080B] STA $0B08   |             STA         SET_CELL_NO_COLOR.TILE_NUMBER+1
+096A [209B0A] JSR $0A9B   |                 JSR     SET_CELL_NO_COLOR
+096D [      ]             | 
+096D [18    ] CLC         |                             CLC
+096E [AD050B] LDA $0B05   |             LDA         SET_CELL_NO_COLOR.OFFSET
+0971 [6928  ] ADC #$28    |             ADC.#       40
+0973 [8D050B] STA $0B05   |             STA         SET_CELL_NO_COLOR.OFFSET
+0976 [AD060B] LDA $0B06   |             LDA         SET_CELL_NO_COLOR.OFFSET+1
+0979 [6900  ] ADC #$00    |             ADC.#       $00
+097B [8D060B] STA $0B06   |             STA         SET_CELL_NO_COLOR.OFFSET+1
+097E [18    ] CLC         |                             CLC
+097F [AD070B] LDA $0B07   |             LDA         SET_CELL_NO_COLOR.TILE_NUMBER
+0982 [6905  ] ADC #$05    |             ADC.#       5
+0984 [8D070B] STA $0B07   |             STA         SET_CELL_NO_COLOR.TILE_NUMBER
+0987 [AD080B] LDA $0B08   |             LDA         SET_CELL_NO_COLOR.TILE_NUMBER+1
+098A [6900  ] ADC #$00    |             ADC.#       $00
+098C [8D080B] STA $0B08   |             STA         SET_CELL_NO_COLOR.TILE_NUMBER+1
+098F [209B0A] JSR $0A9B   |                 JSR     SET_CELL_NO_COLOR
+0992 [      ]             | 
+0992 [18    ] CLC         |                             CLC
+0993 [AD050B] LDA $0B05   |             LDA         SET_CELL_NO_COLOR.OFFSET
+0996 [6928  ] ADC #$28    |             ADC.#       40
+0998 [8D050B] STA $0B05   |             STA         SET_CELL_NO_COLOR.OFFSET
+099B [AD060B] LDA $0B06   |             LDA         SET_CELL_NO_COLOR.OFFSET+1
+099E [6900  ] ADC #$00    |             ADC.#       $00
+09A0 [8D060B] STA $0B06   |             STA         SET_CELL_NO_COLOR.OFFSET+1
+09A3 [18    ] CLC         |                             CLC
+09A4 [AD070B] LDA $0B07   |             LDA         SET_CELL_NO_COLOR.TILE_NUMBER
+09A7 [6905  ] ADC #$05    |             ADC.#       5
+09A9 [8D070B] STA $0B07   |             STA         SET_CELL_NO_COLOR.TILE_NUMBER
+09AC [AD080B] LDA $0B08   |             LDA         SET_CELL_NO_COLOR.TILE_NUMBER+1
+09AF [6900  ] ADC #$00    |             ADC.#       $00
+09B1 [8D080B] STA $0B08   |             STA         SET_CELL_NO_COLOR.TILE_NUMBER+1
+09B4 [209B0A] JSR $0A9B   |                 JSR     SET_CELL_NO_COLOR
+09B7 [      ]             | 
+09B7 [18    ] CLC         |                             CLC
+09B8 [AD050B] LDA $0B05   |             LDA         SET_CELL_NO_COLOR.OFFSET
+09BB [6928  ] ADC #$28    |             ADC.#       40
+09BD [8D050B] STA $0B05   |             STA         SET_CELL_NO_COLOR.OFFSET
+09C0 [AD060B] LDA $0B06   |             LDA         SET_CELL_NO_COLOR.OFFSET+1
+09C3 [6900  ] ADC #$00    |             ADC.#       $00
+09C5 [8D060B] STA $0B06   |             STA         SET_CELL_NO_COLOR.OFFSET+1
+09C8 [18    ] CLC         |                             CLC
+09C9 [AD070B] LDA $0B07   |             LDA         SET_CELL_NO_COLOR.TILE_NUMBER
+09CC [6905  ] ADC #$05    |             ADC.#       5
+09CE [8D070B] STA $0B07   |             STA         SET_CELL_NO_COLOR.TILE_NUMBER
+09D1 [AD080B] LDA $0B08   |             LDA         SET_CELL_NO_COLOR.TILE_NUMBER+1
+09D4 [6900  ] ADC #$00    |             ADC.#       $00
+09D6 [8D080B] STA $0B08   |             STA         SET_CELL_NO_COLOR.TILE_NUMBER+1
+09D9 [209B0A] JSR $0A9B   |                 JSR     SET_CELL_NO_COLOR
+09DC [      ]             | 
+09DC [60    ] RTS         |                 RTS
+09DD [      ]             | 
+09DD [00    ]             | .CHAR_NUMBER:   DATA.b  $00
+09DE [      ]             | 
+09DE [      ]             | ; ===========================================================================
+09DE [      ]             | SET_CELL:       ; screenLocation := $4400 + offset;
+09DE [A900  ] LDA #$00    |                             LDA.#   $4400  & $00FF
+09E0 [8D910A] STA $0A91   |             STA     .SL_ST + 1
+09E3 [A944  ] LDA #$44    |             LDA.#   (($4400) & $FF00) >> 8
+09E5 [8D920A] STA $0A92   |             STA     .SL_ST + 1+1
+09E8 [18    ] CLC         |                 CLC
+09E9 [AD910A] LDA $0A91   |                 LDA     .SL_ST + 1
+09EC [6D940A] ADC $0A94   |                 ADC     .OFFSET
+09EF [8D910A] STA $0A91   |                 STA     .SL_ST + 1
+09F2 [AD920A] LDA $0A92   |                 LDA     .SL_ST + 2
+09F5 [6D950A] ADC $0A95   |                 ADC     .OFFSET + 1
+09F8 [8D920A] STA $0A92   |                 STA     .SL_ST + 2
+09FB [      ]             |                 ; colorLocation := $D800 + offset;
+09FB [A900  ] LDA #$00    |                             LDA.#   $D800  & $00FF
+09FD [8D840A] STA $0A84   |             STA     .CL_ST + 1
+0A00 [A9D8  ] LDA #$D8    |             LDA.#   (($D800) & $FF00) >> 8
+0A02 [8D850A] STA $0A85   |             STA     .CL_ST + 1+1
+0A05 [18    ] CLC         |                 CLC
+0A06 [AD840A] LDA $0A84   |                 LDA     .CL_ST + 1
+0A09 [6D940A] ADC $0A94   |                 ADC     .OFFSET
+0A0C [8D840A] STA $0A84   |                 STA     .CL_ST + 1
+0A0F [AD850A] LDA $0A85   |                 LDA     .CL_ST + 2
+0A12 [6D950A] ADC $0A95   |                 ADC     .OFFSET + 1
+0A15 [8D850A] STA $0A85   |                 STA     .CL_ST + 2
+0A18 [      ]             | 
+0A18 [      ]             |                 ; bitmapLocation := $6000 + (offset * 8);
+0A18 [AD940A] LDA $0A94   |                 LDA     .OFFSET
+0A1B [8D7B0A] STA $0A7B   |                 STA     .BMP_ST + 1
+0A1E [AD950A] LDA $0A95   |                 LDA     .OFFSET + 1
+0A21 [8D7C0A] STA $0A7C   |                 STA     .BMP_ST + 2
+0A24 [0E7B0A] ASL $0A7B   |                                 ASL     .BMP_ST + 1
+0A27 [      ]             |                 ;BCC     CURADDR + 5
+0A27 [2E7C0A] ROL $0A7C   |                 ROL     .BMP_ST + 1 + 1
+0A2A [0E7B0A] ASL $0A7B   |                                 ASL     .BMP_ST + 1
+0A2D [      ]             |                 ;BCC     CURADDR + 5
+0A2D [2E7C0A] ROL $0A7C   |                 ROL     .BMP_ST + 1 + 1
+0A30 [0E7B0A] ASL $0A7B   |                                 ASL     .BMP_ST + 1
+0A33 [      ]             |                 ;BCC     CURADDR + 5
+0A33 [2E7C0A] ROL $0A7C   |                 ROL     .BMP_ST + 1 + 1
+0A36 [18    ] CLC         |                 CLC
+0A37 [AD7B0A] LDA $0A7B   |                 LDA     .BMP_ST + 1
+0A3A [6900  ] ADC #$00    |                 ADC.#   $6000  & $00FF
+0A3C [8D7B0A] STA $0A7B   |                 STA     .BMP_ST + 1
+0A3F [AD7C0A] LDA $0A7C   |                 LDA     .BMP_ST + 2
+0A42 [6960  ] ADC #$60    |                 ADC.#   (($6000) & $FF00) >> 8
+0A44 [8D7C0A] STA $0A7C   |                 STA     .BMP_ST + 2
+0A47 [      ]             | 
+0A47 [      ]             |                 ; tileLocation := tilesetLocation + (tileNumber << 3);
+0A47 [AD960A] LDA $0A96   |                 LDA     .TILE_NUMBER
+0A4A [8D780A] STA $0A78   |                 STA     .TL_LD + 1
+0A4D [A900  ] LDA #$00    |                 LDA.#   0
+0A4F [8D790A] STA $0A79   |                 STA     .TL_LD + 2
+0A52 [0E780A] ASL $0A78   |                                 ASL     .TL_LD + 1
+0A55 [      ]             |                 ;BCC     CURADDR + 5
+0A55 [2E790A] ROL $0A79   |                 ROL     .TL_LD + 1 + 1
+0A58 [0E780A] ASL $0A78   |                                 ASL     .TL_LD + 1
+0A5B [      ]             |                 ;BCC     CURADDR + 5
+0A5B [2E790A] ROL $0A79   |                 ROL     .TL_LD + 1 + 1
+0A5E [0E780A] ASL $0A78   |                                 ASL     .TL_LD + 1
+0A61 [      ]             |                 ;BCC     CURADDR + 5
+0A61 [2E790A] ROL $0A79   |                 ROL     .TL_LD + 1 + 1
+0A64 [18    ] CLC         |                 CLC
+0A65 [AD780A] LDA $0A78   |                 LDA     .TL_LD + 1
+0A68 [6917  ] ADC #$17    |                 ADC.#   CHARDATA  & $00FF
+0A6A [8D780A] STA $0A78   |                 STA     .TL_LD + 1
+0A6D [AD790A] LDA $0A79   |                 LDA     .TL_LD + 2
+0A70 [690B  ] ADC #$0B    |                 ADC.#   ((CHARDATA) & $FF00) >> 8
+0A72 [8D790A] STA $0A79   |                 STA     .TL_LD + 2
+0A75 [      ]             | 
+0A75 [A207  ] LDX #$07    |                 LDX.#   7
+0A77 [      ]             | .LOOP:          ; FOR bitmapIndex := 0 TO 8 DO
+0A77 [      ]             |                 ; 	bitmapLocation[bitmapIndex] := tileLocation[bitmapIndex];
+0A77 [BD0000] LDA $0000,X | .TL_LD:         LDA,X   $0000
+0A7A [9D0000] STA $0000,X | .BMP_ST:        STA,X   $0000
+0A7D [CA    ] DEX         |                 DEX
+0A7E [10F7  ] BPL $F7     |                 BPL     .LOOP
+0A80 [      ]             | 
+0A80 [      ]             |                 ; colorLocation[0] := c1;
+0A80 [AD980A] LDA $0A98   |                 LDA     .COLOR_1
+0A83 [8D0000] STA $0000   | .CL_ST:         STA     $0000
+0A86 [      ]             |                 ; screenLocation[0] := (c2 << 4) | c3;
+0A86 [AD990A] LDA $0A99   |                 LDA     .COLOR_2
+0A89 [0A    ] ASL A       |                 ASL.A
+0A8A [0A    ] ASL A       |                 ASL.A
+0A8B [0A    ] ASL A       |                 ASL.A
+0A8C [0A    ] ASL A       |                 ASL.A
+0A8D [0D9A0A] ORA $0A9A   |                 ORA     .COLOR_3
+0A90 [8D0000] STA $0000   | .SL_ST:         STA     $0000
+0A93 [      ]             | 
+0A93 [60    ] RTS         |                 RTS
+0A94 [      ]             | 
+0A94 [0000  ]             | .OFFSET:        DATA    $0000
+0A96 [0000  ]             | .TILE_NUMBER:   DATA    $0000
+0A98 [00    ]             | .COLOR_1:       DATA.b  $00
+0A99 [00    ]             | .COLOR_2:       DATA.b  $00
+0A9A [00    ]             | .COLOR_3:       DATA.b  $00
+0A9B [      ]             | 
+0A9B [      ]             | ; ===========================================================================
+0A9B [      ]             | SET_CELL_NO_COLOR:       ; bitmapLocation := $6000 + (offset * 8);
+0A9B [AD050B] LDA $0B05   |                 LDA     .OFFSET
+0A9E [8DFF0A] STA $0AFF   |                 STA     .BMP_ST + 1
+0AA1 [AD060B] LDA $0B06   |                 LDA     .OFFSET + 1
+0AA4 [8D000B] STA $0B00   |                 STA     .BMP_ST + 2
+0AA7 [0EFF0A] ASL $0AFF   |                                 ASL     .BMP_ST + 1
+0AAA [      ]             |                 ;BCC     CURADDR + 5
+0AAA [2E000B] ROL $0B00   |                 ROL     .BMP_ST + 1 + 1
+0AAD [0EFF0A] ASL $0AFF   |                                 ASL     .BMP_ST + 1
+0AB0 [      ]             |                 ;BCC     CURADDR + 5
+0AB0 [2E000B] ROL $0B00   |                 ROL     .BMP_ST + 1 + 1
+0AB3 [0EFF0A] ASL $0AFF   |                                 ASL     .BMP_ST + 1
+0AB6 [      ]             |                 ;BCC     CURADDR + 5
+0AB6 [2E000B] ROL $0B00   |                 ROL     .BMP_ST + 1 + 1
+0AB9 [18    ] CLC         |                 CLC
+0ABA [ADFF0A] LDA $0AFF   |                 LDA     .BMP_ST + 1
+0ABD [6900  ] ADC #$00    |                 ADC.#   $6000  & $00FF
+0ABF [8DFF0A] STA $0AFF   |                 STA     .BMP_ST + 1
+0AC2 [AD000B] LDA $0B00   |                 LDA     .BMP_ST + 2
+0AC5 [6960  ] ADC #$60    |                 ADC.#   (($6000) & $FF00) >> 8
+0AC7 [8D000B] STA $0B00   |                 STA     .BMP_ST + 2
+0ACA [      ]             | 
+0ACA [      ]             |                 ; tileLocation := tilesetLocation + (tileNumber << 3);
+0ACA [AD070B] LDA $0B07   |                 LDA     .TILE_NUMBER
+0ACD [8DFC0A] STA $0AFC   |                 STA     .TL_LD + 1
+0AD0 [A900  ] LDA #$00    |                 LDA.#   0
+0AD2 [8DFD0A] STA $0AFD   |                 STA     .TL_LD + 2
+0AD5 [0EFC0A] ASL $0AFC   |                                 ASL     .TL_LD + 1
+0AD8 [      ]             |                 ;BCC     CURADDR + 5
+0AD8 [2EFD0A] ROL $0AFD   |                 ROL     .TL_LD + 1 + 1
+0ADB [0EFC0A] ASL $0AFC   |                                 ASL     .TL_LD + 1
+0ADE [      ]             |                 ;BCC     CURADDR + 5
+0ADE [2EFD0A] ROL $0AFD   |                 ROL     .TL_LD + 1 + 1
+0AE1 [0EFC0A] ASL $0AFC   |                                 ASL     .TL_LD + 1
+0AE4 [      ]             |                 ;BCC     CURADDR + 5
+0AE4 [2EFD0A] ROL $0AFD   |                 ROL     .TL_LD + 1 + 1
+0AE7 [18    ] CLC         |                 CLC
+0AE8 [ADFC0A] LDA $0AFC   |                 LDA     .TL_LD + 1
+0AEB [6917  ] ADC #$17    |                 ADC.#   CHARDATA  & $00FF
+0AED [8DFC0A] STA $0AFC   |                 STA     .TL_LD + 1
+0AF0 [ADFD0A] LDA $0AFD   |                 LDA     .TL_LD + 2
+0AF3 [690B  ] ADC #$0B    |                 ADC.#   ((CHARDATA) & $FF00) >> 8
+0AF5 [8DFD0A] STA $0AFD   |                 STA     .TL_LD + 2
+0AF8 [      ]             | 
+0AF8 [AE090B] LDX $0B09   |                 LDX     .LOOP_COUNT
+0AFB [      ]             | .LOOP:          ; FOR bitmapIndex := 0 TO 8 DO
+0AFB [      ]             |                 ; 	bitmapLocation[bitmapIndex] := tileLocation[bitmapIndex];
+0AFB [BD0000] LDA $0000,X | .TL_LD:         LDA,X   $0000
+0AFE [9D0000] STA $0000,X | .BMP_ST:        STA,X   $0000
+0B01 [CA    ] DEX         |                 DEX
+0B02 [10F7  ] BPL $F7     |                 BPL     .LOOP
+                          | ; STATS => Bytes: 9   MinCycles: 468   MaxCycles: 624
+                          | ;          MinCycleTime: .46 mSec   MaxCycleTime: .61 mSec
+                          | ;          Max FPS: 2,179.49   Min FPS: 1,634.62
+0B04 [60    ] RTS         |                 RTS
+                          | ; STATS => Bytes: 106   MinCycles: 596   MaxCycles: 752
+                          | ;          MinCycleTime: .58 mSec   MaxCycleTime: .74 mSec
+                          | ;          Max FPS: 1,711.41   Min FPS: 1,356.38
+0B05 [      ]             | 
+0B05 [0000  ]             | .OFFSET:        DATA    $0000
+0B07 [0000  ]             | .TILE_NUMBER:   DATA    $0000
+0B09 [07    ]             | .LOOP_COUNT:    DATA.b  7
+0B0A [      ]             | 
+0B0A [      ]             | WAIT_FOR_RASTER_LINE: ; Only works for Rasters < 256
+0B0A [A980  ] LDA #$80    |                 LDA.#   $80
+0B0C [CC12D0] CPY $D012   | .LOOP:          CPY     VICII_RASTER
+0B0F [D0FB  ] BNE $FB     |                 BNE     .LOOP
+0B11 [2D11D0] AND $D011   |                 AND     VICII_CONTROL_1
+0B14 [D0F6  ] BNE $F6     |                 BNE     .LOOP
+0B16 [      ]             | 
+0B16 [60    ] RTS         |                 RTS
+0B17 [      ]             | 
+0B17 [      ]             | CHARDATA:       #LOADBINARY     aleahdumasklop-character.bin
+0B17 [      ]             | ; '.\aleahdumasklop-character.bin' : 1808 bytes
+1227 [      ]             | 

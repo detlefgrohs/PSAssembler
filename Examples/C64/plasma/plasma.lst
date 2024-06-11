@@ -1,0 +1,267 @@
+0801 [      ]             | * = $0801
+0801 [      ]             | 
+0801 [      ]             | #INCLUDE ..\..\includes\includes.h
+0801 [      ]             | #INCLUDE plasma.h
+0801 [      ]             | 
+0801 [      ]             | ; //--------------------------------------------------------------------------------------------------
+0801 [      ]             | ; // 8x8 Plasma Crap w/o Speedcode
+0801 [      ]             | ; // For Codebase64
+0801 [      ]             | ; // By Cruzer/CML 2009
+0801 [      ]             | ; // Asm: KickAss 3.1
+0801 [      ]             | ; //--------------------------------------------------------------------------------------------------
+0801 [      ]             | 
+0801 [      ]             | ; //--------------------------------------------------------------------------------------------------
+0801 [      ]             | ; .pc = $0801 "basic"
+0801 [      ]             | ; :BasicUpstart(code)
+0801 [      ]             | ; //--------------------------------------------------------------------------------------------------
+0801 [      ]             | ; .pc = code "code"
+0801 [      ]             | ; 	jmp start
+0801 [      ]             | ; //--------------------------------------------------------------------------------------------------
+0801 [      ]             |                             ; Basic Stub
+0801 [      ]             |             ; 10 SYS2061
+0801 [0B08  ]             |             DATA        $080B   ; $0801 Pointer to Next Line
+0803 [0A00  ]             |             DATA        $000A   ; $0803 Line Number '10'
+0805 [9E    ]             |             DATA.B      $9E     ; $0805 BASIC Token for SYS
+0806 [32    ]             |             DATA.B      $32     ; $0806 '2'
+0807 [30    ]             |             DATA.B      $30     ; $0807 '0'
+0808 [36    ]             |             DATA.B      $36     ; $0808 '6'
+0809 [31    ]             |             DATA.B      $31     ; $0809 '1'  - 2061 is $080D
+080A [00    ]             |             DATA.B      $00     ; $080A End of current line
+080B [0000  ]             |             DATA        $0000   ; $080B Next Line (NULL no more lines)
+080D [      ]             |                                 ; $080D - 2061
+080D [      ]             | 
+080D [      ]             | ; //--------------------------------------------------------------------------------------------------
+080D [      ]             | ; start:
+080D [      ]             | START:
+080D [      ]             | ; 	sei
+080D [      ]             | ; //clear screen...
+080D [      ]             | ; 	ldx #$00
+080D [      ]             | ; 	txa
+080D [      ]             | ; !:	sta $0400,x
+080D [      ]             | ; 	sta $0500,x
+080D [      ]             | ; 	sta $0600,x
+080D [      ]             | ; 	sta $0700,x
+080D [      ]             | ; 	inx
+080D [      ]             | ; 	bne !-
+080D [78    ] SEI         |                     SEI
+080E [A200  ] LDX #$00    |                     LDX.#   $00
+0810 [8A    ] TXA         |                     TXA
+0811 [9D0004] STA $0400,X | .CSLOOP:            STA,X   $0400
+0814 [9D0005] STA $0500,X |                     STA,X   $0500
+0817 [9D0006] STA $0600,X |                     STA,X   $0600
+081A [9D0007] STA $0700,X |                     STA,X   $0700
+081D [E8    ] INX         |                     INX
+081E [D0F1  ] BNE $F1     |                     BNE     .CSLOOP
+0820 [      ]             | 
+0820 [      ]             | ; // fill bitmap...
+0820 [      ]             | ; 	ldx #0
+0820 [      ]             | ; 	ldy #$1f
+0820 [      ]             | ; 	lda #%01010101
+0820 [      ]             | ; !:	sta bitmap,x
+0820 [      ]             | ; 	eor #%11111111
+0820 [      ]             | ; 	inx
+0820 [      ]             | ; 	bne !-
+0820 [      ]             | ; 	inc !- +2
+0820 [      ]             | ; 	dey
+0820 [      ]             | ; 	bpl !-
+0820 [A200  ] LDX #$00    |                     LDX.#   $00
+0822 [A01F  ] LDY #$1F    |                     LDY.#   $1f
+0824 [A955  ] LDA #$55    |                     LDA.#   %01010101
+0826 [9D0020] STA $2000,X | .FBLOOP:            STA,X   bitmap
+0829 [49FF  ] EOR #$FF    |                     EOR.#   %11111111
+082B [E8    ] INX         |                     INX
+082C [D0F8  ] BNE $F8     |                     BNE     .FBLOOP
+082E [EE2808] INC $0828   |                     INC     .FBLOOP + 2
+0831 [88    ] DEY         |                     DEY
+0832 [10F2  ] BPL $F2     |                     BPL     .FBLOOP
+0834 [      ]             | 
+0834 [      ]             | ; // generate color table...
+0834 [      ]             | ; 	ldx #0
+0834 [      ]             | ; !loop:
+0834 [      ]             | ; 	txa
+0834 [      ]             | ; 	asl
+0834 [      ]             | ; 	asl
+0834 [      ]             | ; 	asl
+0834 [      ]             | ; 	bcc !+
+0834 [      ]             | ; 	eor #$ff
+0834 [      ]             | ; !:	lsr
+0834 [      ]             | ; 	lsr
+0834 [      ]             | ; 	lsr
+0834 [      ]             | ; 	lsr
+0834 [      ]             | ; 	tay
+0834 [      ]             | ; 	lda colors,y
+0834 [      ]             | ; 	sta colorTable,x
+0834 [      ]             | ; 	sta colorTable+$100,x
+0834 [      ]             | ; 	inx
+0834 [      ]             | ; 	bne !loop-
+0834 [      ]             | 
+0834 [      ]             | ; // init vic...
+0834 [      ]             | ; 	lda #$3b
+0834 [      ]             | ; 	sta $d011
+0834 [      ]             | ; 	lda #$18
+0834 [      ]             | ; 	sta $d018
+0834 [A93B  ] LDA #$3B    |                     LDA.#   $3b
+0836 [8D11D0] STA $D011   |                     STA     $D011
+0839 [A918  ] LDA #$18    |                     LDA.#   $18
+083B [8D18D0] STA $D018   |                     STA     $D018
+083E [      ]             | 
+083E [      ]             | ; //--------------------------------------------------------------------------------------------------
+083E [      ]             | ; mainLoop:
+083E [      ]             | .MAINLOOP:
+083E [      ]             | ; 	lda #$00
+083E [      ]             | ; 	sta $d020
+083E [      ]             | ; 	lda #$44
+083E [      ]             | ; !:	cmp $d012
+083E [      ]             | ; 	bne !-
+083E [      ]             | ; 	sta $d020
+083E [A900  ] LDA #$00    |                     LDA.#   $00
+0840 [8D20D0] STA $D020   |                     STA     $D020
+0843 [A944  ] LDA #$44    |                     LDA.#   $44
+0845 [CD12D0] CMP $D012   | .1:                 CMP     $D012
+0848 [D0FB  ] BNE $FB     |                     BNE     .1
+084A [8D20D0] STA $D020   |                     STA     $D020
+084D [      ]             | 
+084D [      ]             | ; 	lda plasmaCnt+0
+084D [      ]             | ; 	clc
+084D [      ]             | ; 	adc sineSpeeds+0
+084D [      ]             | ; 	sta plasmaCnt+0
+084D [      ]             | ; 	lda plasmaCnt+1
+084D [      ]             | ; 	clc
+084D [      ]             | ; 	adc sineSpeeds+1
+084D [      ]             | 
+084D [      ]             | ; 	sta plasmaCnt+1
+084D [      ]             | ; 	lda add
+084D [      ]             | ; 	clc
+084D [      ]             | ; 	adc addSpeed
+084D [      ]             | ; 	anc #$3f
+084D [      ]             | ; 	sta add
+084D [      ]             | 
+084D [      ]             | ; 	lda #<screen
+084D [      ]             | ; 	sta store+1
+084D [      ]             | ; 	lda #>screen
+084D [      ]             | ; 	sta store+2
+084D [      ]             | 	
+084D [      ]             | ; 	lda #0
+084D [      ]             | ; 	sta sine0+1
+084D [      ]             | ; 	sta sine1+1
+084D [      ]             | ; 	sta rtSine+1
+084D [      ]             | ; 	sta color+1
+084D [      ]             | 
+084D [      ]             | ; 	lda #height-1
+084D [      ]             | ; 	sta yPos
+084D [      ]             | ; yLoop:
+084D [      ]             | ; 	ldx plasmaCnt + 0
+084D [      ]             | ; 	ldy plasmaCnt + 1
+084D [      ]             | ; 	clc
+084D [      ]             | ; sine0:	lda sine128,x
+084D [      ]             | ; sine1:	adc sine64,y
+084D [      ]             | ; 	sta lineOffset
+084D [      ]             | 	
+084D [      ]             | ; 	lda sine0+1
+084D [      ]             | ; 	clc
+084D [      ]             | ; 	adc #realtimeSpread0
+084D [      ]             | ; 	sta sine0+1
+084D [      ]             | 
+084D [      ]             | ; 	lda sine1+1
+084D [      ]             | ; 	clc
+084D [      ]             | ; 	adc #realtimeSpread1
+084D [      ]             | ; 	sta sine1+1
+084D [      ]             | 
+084D [      ]             | ; 	ldx #width-1
+084D [      ]             | ; xLoop:
+084D [      ]             | ; 	lda sineOffsets,x
+084D [      ]             | ; 	clc
+084D [      ]             | ; 	adc lineOffset
+084D [      ]             | ; 	tay
+084D [      ]             | ; 	lda colorOffsets,x
+084D [      ]             | ; 	clc
+084D [      ]             | ; rtSine:	adc sine64,y
+084D [      ]             | ; 	adc add
+084D [      ]             | ; 	tay
+084D [      ]             | ; color:	lda colorTable,y
+084D [      ]             | ; store:	sta screen,x
+084D [      ]             | ; 	dex
+084D [      ]             | ; 	bpl xLoop
+084D [      ]             | 
+084D [      ]             | ; 	lda rtSine+1
+084D [      ]             | ; 	clc
+084D [      ]             | ; 	adc #sineSpreadY
+084D [      ]             | ; 	sta rtSine+1
+084D [      ]             | 
+084D [      ]             | ; 	lda color+1
+084D [      ]             | ; 	clc
+084D [      ]             | ; 	adc #colorSpreadY
+084D [      ]             | ; 	sta color+1
+084D [      ]             | 
+084D [      ]             | ; 	lda store+1
+084D [      ]             | ; 	clc
+084D [      ]             | ; 	adc #40
+084D [      ]             | ; 	sta store+1
+084D [      ]             | ; 	bcc !+
+084D [      ]             | ; 	inc store+2
+084D [      ]             | ; !:	
+084D [      ]             | ; 	dec yPos	
+084D [      ]             | ; 	bpl yLoop
+084D [      ]             | 
+084D [      ]             | ; 	jmp mainLoop
+084D [4C3E08] JMP $083E   |                     JMP     .MAINLOOP
+0850 [      ]             | 
+0850 [      ]             | #INCLUDE plasma-data.asm
+0850 [      ]             | 
+0850 [03    ]             | sineSpeeds:	        DATA.b  $03
+0851 [FE    ]             |                     DATA.b  $fe
+0852 [FF    ]             | addSpeed:	        DATA.b  $ff
+0853 [A7    ]             | colors:		        DATA.b  $a7
+0854 [AA    ]             |                     DATA.b  $aa
+0855 [8A    ]             |                     DATA.b  $8a
+0856 [2A    ]             |                     DATA.b  $2a
+0857 [B8    ]             |                     DATA.b  $b8
+0858 [95    ]             |                     DATA.b  $95
+0859 [B5    ]             |                     DATA.b  $b5
+085A [C5    ]             |                     DATA.b  $c5
+085B [55    ]             |                     DATA.b  $55
+085C [5F    ]             |                     DATA.b  $5f
+085D [CD    ]             |                     DATA.b  $cd
+085E [5D    ]             |                     DATA.b  $5d
+085F [37    ]             |                     DATA.b  $37
+0860 [DD    ]             |                     DATA.b  $dd
+0861 [D1    ]             |                     DATA.b  $d1
+0862 [11    ]             |                     DATA.b  $11
+0863 [      ]             | 
+0863 [      ]             | ; //--------------------------------------------------------------------------------------------------
+0863 [      ]             | ; sineOffsets:
+0863 [      ]             | ; 	.fill 40, i*sineSpreadX
+0863 [EAEAEA]             | sineOffsets:        PAD     40
+088B [      ]             | ; ToDo: Fill with the data properly
+088B [      ]             | 
+088B [      ]             | ; colorOffsets:
+088B [      ]             | ; 	.fill 40, i*colorSpreadX
+088B [EAEAEA]             | colorOffsets:       PAD     40
+08B3 [      ]             | ; ToDo: Fill with the data properly
+08B3 [      ]             | 
+08B3 [      ]             | ; lineOffset:
+08B3 [      ]             | ; 	.by 0
+08B3 [00    ]             | LineOffset:         DATA.b  $00
+08B4 [      ]             | 
+08B4 [EAEAEA]             |                     PAD     $1000 - CURADDR
+1000 [      ]             | ; //--------------------------------------------------------------------------------------------------
+1000 [      ]             | 
+1000 [      ]             | ;sine64 =		$1000           ; Done: Move to plasma-data.asm
+1000 [      ]             | ; .pc = sine64 "sine64"
+1000 [      ]             | ; .for (var i=0; i<$200; i++)
+1000 [      ]             | ; 	.by 32 + 32 * sin(i/[$100/2/PI])
+1000 [EAEAEA]             | sine64:             PAD     $0200
+1200 [      ]             | ; ToDo: Fill with the data properly
+1200 [      ]             | 
+1200 [      ]             | ;sine128 =		$1200
+1200 [      ]             | ; .pc = sine128 "sine128"
+1200 [      ]             | ; .for (var i=0; i<$200; i++)
+1200 [      ]             | ; 	.by 64 + 64 * sin(i/[$100/2/PI])
+1200 [EAEAEA]             | sine128:            PAD     $0200
+1400 [      ]             | ; ToDo: Fill with the data properly
+1400 [      ]             | 
+1400 [      ]             | ; colorTable =	$1400
+1400 [EAEAEA]             | colorTable:         PAD     $2000 - $1400    ; ToDo Find actual size
+2000 [      ]             | 
+2000 [      ]             | ;bitmap =		$2000
+2000 [EAEAEA]             | bitmap:             PAD     $1000 ; ToDo Find actual size

@@ -1,2 +1,3 @@
 
-..\..\..\source\PSAssembler.ps1 .\workarea.asm -GenerateLST -ExecutePRG
+..\..\..\source\PSAssembler.ps1 .\workarea.asm -GenerateLST `
+    -ExecutePRG -DumpRegions -DumpLabels

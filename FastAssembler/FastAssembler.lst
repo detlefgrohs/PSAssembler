@@ -1,0 +1,1881 @@
+0801 [      ]             | * = $0801
+0801 [      ]             | 
+0801 [      ]             | #INCLUDE ..\Examples\includes\includes.h
+0801 [      ]             | CHRGET      =   $0073
+0801 [      ]             | BUF         =   $0200     ; BASIC Line Editor Input Buffer
+0801 [      ]             | HIGHDS = $58 ; Destination of highest element in BLT.  
+0801 [      ]             | 
+0801 [      ]             | HIGHTR = $5A ; 	Source of highest element to move. 
+0801 [      ]             | 
+0801 [      ]             | LOWTR = $5F  ; 	Last thing to move in BLT.
+0801 [      ]             | 
+0801 [      ]             | BLTU = $A3BB
+0801 [      ]             | IMAIN = $0302
+0801 [      ]             | 
+0801 [      ]             | R6510 = $01     ; 6510 On-Chip I/O Port
+0801 [      ]             | 
+0801 [      ]             | ENDCHR = $08
+0801 [      ]             | DORES = $0F
+0801 [      ]             | 
+0801 [      ]             |                 ;@BASICSTUB()
+0801 [      ]             | 
+0801 [0C08  ]             |             DATA        $080C   ; $0801 Pointer to Next Line
+0803 [0A00  ]             |             DATA        $000A   ; $0803 Line Number '10'
+0805 [9E    ]             |             DATA.B      $9E     ; $0805 BASIC Token for SYS
+0806 [20    ]             |             DATA.B      $20     ; $0806 ' '
+0807 [34    ]             |             DATA.B      $34     ; $0807 '2'
+0808 [34    ]             |             DATA.B      $34     ; $0808 '0'
+0809 [30    ]             |             DATA.B      $30     ; $0809 '6'
+080A [38    ]             |             DATA.B      $38     ; $080A '1'  - 2061 is $080D
+080B [00    ]             |             DATA.B      $00     ; $080B End of current line
+080C [0000  ]             |             DATA        $0000   ; $080C Next Line (NULL no more lines)
+080E [      ]             | 
+080E [      ]             |                 ;JMP STARTUP
+080E [      ]             | 
+080E [A936  ] LDA #$36    | ICRNCH_PATCH:   LDA.#       $36
+0810 [8501  ] STA $01     |                 STA.zp      R6510           ; $01 
+0812 [A67A  ] LDX $7A     |                 LDX.zp      $7A 
+0814 [      ]             | 
+0814 [      ]             | BRANCHB:
+0814 [CA    ] DEX         |                 DEX 
+0815 [300F  ] BMI $0F     |                 BMI         BRANCHA
+0817 [      ]             | 
+0817 [BD0002] LDA $0200,X |                 LDA,X       BUF             ;$0200           ; Basic Parsing Buffer
+081A [C920  ] CMP #$20    |                 CMP.#       $20             ; Space
+081C [F0F6  ] BEQ $F6     |                 BEQ         BRANCHB
+081E [      ]             | 
+081E [E8    ] INX         |                 INX 
+081F [BD0002] LDA $0200,X |                 LDA,x       BUF             ; $0200
+0822 [C920  ] CMP #$20    |                 CMP.#       $20
+0824 [D001  ] BNE $01     |                 BNE         BRANCHC
+0826 [      ]             | BRANCHA:
+0826 [E8    ] INX         |                 INX 
+0827 [      ]             | 
+0827 [      ]             | BRANCHC:
+0827 [A004  ] LDY #$04    |                 LDY.#       $04
+0829 [840F  ] STY $0F     |                 STY.zp      DORES           ; $0F
+082B [      ]             | 
+082B [      ]             | L_BRS_082B084F:
+082B [      ]             | L_BRS_082B0867:
+082B [      ]             | L_BRS_082B086F:
+082B [      ]             | L_JMP_082B091A:
+082B [BD0002] LDA $0200,X |                 LDA,x       BUF             ; $0200
+082E [100A  ] BPL $0A     |                 BPL         L_BRS_083A082E
+0830 [C9FF  ] CMP #$FF    |                 CMP.#       $FF
+0832 [F006  ] BEQ $06     |                 BEQ         L_BRS_083A0832
+0834 [E99F  ] SBC #$9F    |                 SBC.#       $9F
+0836 [D016  ] BNE $16     |                 BNE         L_BRS_084E0836
+0838 [A920  ] LDA #$20    |                 LDA.#       $20
+083A [      ]             | 
+083A [      ]             | L_BRS_083A082E:
+083A [      ]             | L_BRS_083A0832:
+083A [C920  ] CMP #$20    |                 CMP.#       $20
+083C [F00C  ] BEQ $0C     |                 BEQ         L_BRS_084A083C
+083E [8508  ] STA $08     |                 STA.zp      $08 
+0840 [C922  ] CMP #$22    |                 CMP.#       $22
+0842 [F04A  ] BEQ $4A     |                 BEQ         L_BRS_088E0842
+0844 [C93F  ] CMP #$3F    |                 CMP.#       $3F
+0846 [D04F  ] BNE $4F     |                 BNE         L_BRS_08970846
+0848 [A999  ] LDA #$99    |                 LDA.#       $99
+084A [      ]             | 
+084A [      ]             | L_BRS_084A083C:
+084A [      ]             | L_BRS_084A0881:
+084A [C8    ] INY         |                 INY 
+084B [99FB01] STA $01FB,Y |                 STA,y       $01FB
+084E [      ]             | 
+084E [      ]             | L_BRS_084E0836:
+084E [E8    ] INX         |                 INX 
+084F [D0DA  ] BNE $DA     |                 BNE         L_BRS_082B084F
+0851 [      ]             | 
+0851 [      ]             | L_BRS_085108BD:
+0851 [A471  ] LDY $71     |                 LDY.zp      $71 
+0853 [240B  ] BIT $0B     |                 BIT.zp      $0B 
+0855 [1006  ] BPL $06     |                 BPL         L_BRS_085D0855
+0857 [C8    ] INY         |                 INY 
+0858 [A990  ] LDA #$90    |                 LDA.#       $90
+085A [99FB01] STA $01FB,Y |                 STA,y       $01FB
+085D [      ]             | 
+085D [      ]             | L_BRS_085D0855:
+085D [A50B  ] LDA $0B     |                 LDA.zp      $0B 
+085F [0980  ] ORA #$80    |                 ORA.#       $80
+0861 [C8    ] INY         |                 INY 
+0862 [99FB01] STA $01FB,Y |                 STA,y       $01FB
+0865 [240B  ] BIT $0B     |                 BIT.zp      $0B 
+0867 [30C2  ] BMI $C2     |                 BMI         L_BRS_082B0867
+0869 [C983  ] CMP #$83    |                 CMP.#       $83
+086B [F005  ] BEQ $05     |                 BEQ         L_BRS_0872086B + 1 ; This goes into the middle of the BIT below L_BRS_0872086B
+086D [498F  ] EOR #$8F    |                 EOR.#       $8F
+086F [D0BA  ] BNE $BA     |                 BNE         L_BRS_082B086F
+0871 [      ]             | 
+0871 [      ]             | L_BRS_0872086B:
+0871 [2CA93A] BIT $3AA9   |                 BIT         $3AA9 
+0874 [8508  ] STA $08     |                 STA.zp      $08 
+0876 [      ]             | 
+0876 [      ]             | L_BRS_08760893:
+0876 [BD0002] LDA $0200,X |                 LDA,x       $0200
+0879 [F01A  ] BEQ $1A     |                 BEQ         L_BRS_08950879
+087B [240F  ] BIT $0F     |                 BIT.zp      $0F 
+087D [7004  ] BVS $04     |                 BVS         L_BRS_0883087D
+087F [C508  ] CMP $08     |                 CMP.zp      $08 
+0881 [F0C7  ] BEQ $C7     |                 BEQ         L_BRS_084A0881
+0883 [      ]             | 
+0883 [      ]             | L_BRS_0883087D:
+0883 [C922  ] CMP #$22    |                 CMP.#      $22
+0885 [D007  ] BNE $07     |                 BNE        L_BRS_088E0885
+0887 [0A    ] ASL A       |                 ASL.A 
+0888 [450F  ] EOR $0F     |                 EOR.zp     $0F 
+088A [850F  ] STA $0F     |                 STA.zp     $0F 
+088C [A922  ] LDA #$22    |                 LDA.#      $22
+088E [      ]             | 
+088E [      ]             | L_BRS_088E0842:
+088E [      ]             | L_BRS_088E0885:
+088E [C8    ] INY         |                 INY 
+088F [99FB01] STA $01FB,Y |                 STA,y       $01FB
+0892 [E8    ] INX         |                 INX 
+0893 [D0E1  ] BNE $E1     |                 BNE         L_BRS_08760893
+0895 [      ]             | 
+0895 [      ]             | L_BRS_08950879:
+0895 [F05E  ] BEQ $5E     |                 BEQ         L_BRS_08F50895
+0897 [      ]             | 
+0897 [      ]             | L_BRS_08970846:
+0897 [8471  ] STY $71     |                 STY.zp     $71 
+0899 [867A  ] STX $7A     |                 STX.zp     $7A 
+089B [A09E  ] LDY #$9E    |                 LDY.#      $9E
+089D [8422  ] STY $22     |                 STY.zp     $22 
+089F [A0A0  ] LDY #$A0    |                 LDY.#      $A0
+08A1 [8423  ] STY $23     |                 STY.zp     $23 
+08A3 [A000  ] LDY #$00    |                 LDY.#      $00
+08A5 [840B  ] STY $0B     |                 STY.zp     $0B 
+08A7 [      ]             | 
+08A7 [      ]             | L_BRS_08A708B0:
+08A7 [5122  ] EOR ($22),Y |                 EOR.i,y    $22
+08A9 [D007  ] BNE $07     |                 BNE        L_BRS_08B208A9
+08AB [E8    ] INX         |                 INX 
+08AC [C8    ] INY         |                 INY 
+08AD [      ]             | 
+08AD [      ]             | L_BRS_08AD08E9:
+08AD [      ]             | L_BRS_08AD0904:
+08AD [BD0002] LDA $0200,X |                 LDA,x      $0200
+08B0 [D0F5  ] BNE $F5     |                 BNE        L_BRS_08A708B0
+08B2 [      ]             | 
+08B2 [      ]             | L_BRS_08B208A9:
+08B2 [C980  ] CMP #$80    |                 CMP.#      $80
+08B4 [D026  ] BNE $26     |                 BNE        L_BRS_08DC08B4
+08B6 [E8    ] INX         |                 INX 
+08B7 [BD0002] LDA $0200,X |                 LDA,x      $0200 
+08BA [201D09] JSR $091D   |                 JSR        L_JSR_091D08BA
+08BD [      ]             | 
+08BD [      ]             | L_BRS_08BD08CA:
+08BD [      ]             | L_BRS_08BD08DA:
+08BD [B092  ] BCS $92     |                 BCS        L_BRS_085108BD
+08BF [A50B  ] LDA $0B     |                 LDA.zp     $0B 
+08C1 [3019  ] BMI $19     |                 BMI        L_BRS_08DC08C1
+08C3 [8408  ] STY $08     |                 STY.zp     $08 
+08C5 [A00B  ] LDY #$0B    |                 LDY.#      $0B
+08C7 [      ]             | 
+08C7 [      ]             | L_BRS_08C708CD:
+08C7 [D92E09] CMP $092E,Y |                 CMP,y      $092E 
+08CA [F0F1  ] BEQ $F1     |                 BEQ        L_BRS_08BD08CA
+08CC [88    ] DEY         |                 DEY 
+08CD [10F8  ] BPL $F8     |                 BPL        L_BRS_08C708CD
+08CF [A408  ] LDY $08     |                 LDY.zp     $08 
+08D1 [C934  ] CMP #$34    |                 CMP.#      $34
+08D3 [9007  ] BCC $07     |                 BCC        L_BRS_08DC08D3
+08D5 [BD0002] LDA $0200,X |                 LDA,x      $0200 
+08D8 [C928  ] CMP #$28    |                 CMP.#      $28
+08DA [F0E1  ] BEQ $E1     |                 BEQ        L_BRS_08BD08DA
+08DC [      ]             | 
+08DC [      ]             | L_BRS_08DC08B4:
+08DC [      ]             | L_BRS_08DC08C1:
+08DC [      ]             | L_BRS_08DC08D3:
+08DC [88    ] DEY         |                 DEY 
+08DD [      ]             | 
+08DD [      ]             | L_BRS_08DD08E0:
+08DD [C8    ] INY         |                 INY 
+08DE [B122  ] LDA ($22),Y |                 LDA.i,y    $22 
+08E0 [10FB  ] BPL $FB     |                 BPL        L_BRS_08DD08E0
+08E2 [E60B  ] INC $0B     |                 INC.zp     $0B 
+08E4 [A67A  ] LDX $7A     |                 LDX.zp     $7A 
+08E6 [C8    ] INY         |                 INY 
+08E7 [B122  ] LDA ($22),Y |                 LDA.i,y    $22
+08E9 [D0C2  ] BNE $C2     |                 BNE        L_BRS_08AD08E9
+08EB [C8    ] INY         |                 INY 
+08EC [F00A  ] BEQ $0A     |                 BEQ        L_BRS_08F808EC
+08EE [A471  ] LDY $71     |                 LDY.zp     $71 
+08F0 [BD0002] LDA $0200,X |                 LDA,x      $0200 
+08F3 [D011  ] BNE $11     |                 BNE        L_BRS_090608F3
+08F5 [      ]             | 
+08F5 [      ]             | L_BRS_08F50895:
+08F5 [      ]             | L_BRS_08F50913:
+08F5 [4CC9A5] JMP $A5C9   |                 JMP         $A5C9  
+08F8 [      ]             | 
+08F8 [      ]             | L_BRS_08F808EC:
+08F8 [A93A  ] LDA #$3A    |                 LDA.#      $3A
+08FA [8522  ] STA $22     |                 STA.zp     $22 
+08FC [A909  ] LDA #$09    |                 LDA.#      $09
+08FE [8523  ] STA $23     |                 STA.zp     $23 
+0900 [A980  ] LDA #$80    |                 LDA.#      $80
+0902 [850B  ] STA $0B     |                 STA.zp     $0B 
+0904 [D0A7  ] BNE $A7     |                 BNE        L_BRS_08AD0904
+0906 [      ]             | 
+0906 [      ]             | L_BRS_090608F3:
+0906 [      ]             | L_BRS_09060918:
+0906 [E8    ] INX         |                 INX 
+0907 [C8    ] INY         |                 INY 
+0908 [      ]             | 
+0908 [      ]             | L_JSR_09090E73:
+0908 [99FB01] STA $01FB,Y |                 STA,y      $01FB
+090B [201D09] JSR $091D   |                 JSR        L_JSR_091D090B
+090E [B00A  ] BCS $0A     |                 BCS        L_BRS_091A090E
+0910 [BD0002] LDA $0200,X |                 LDA,x      $0200
+0913 [F0E0  ] BEQ $E0     |                 BEQ        L_BRS_08F50913
+0915 [201D09] JSR $091D   |                 JSR        L_JSR_091D0915
+0918 [90EC  ] BCC $EC     |                 BCC        L_BRS_09060918
+091A [      ]             | 
+091A [      ]             | L_BRS_091A090E:
+091A [4C2B08] JMP $082B   |                 JMP L_JMP_082B091A
+091D [      ]             | 
+091D [      ]             | L_JSR_091D08BA:
+091D [      ]             | L_JSR_091D090B:
+091D [      ]             | L_JSR_091D0915:
+091D [C930  ] CMP #$30    |                 CMP.#      $30
+091F [900B  ] BCC $0B     |                 BCC        L_BRS_092C091F + 1 ; BAD
+0921 [C93A  ] CMP #$3A    |                 CMP.#      $3A
+0923 [9008  ] BCC $08     |                 BCC        L_BRS_092D0923
+0925 [C941  ] CMP #$41    |                 CMP.#      $41
+0927 [9003  ] BCC $03     |                 BCC         L_BRS_092C0927 + 1 ; BAD
+0929 [C95B  ] CMP #$5B    |                 CMP.#       $5B
+092B [      ]             | 
+092B [      ]             | L_BRS_092C091F:
+092B [      ]             | L_BRS_092C0927:
+092B [2438  ] BIT $38     |                 BIT.zp      $38 
+092D [      ]             | 
+092D [      ]             | L_BRS_092D0923:
+092D [60    ] RTS         |                 RTS
+092E [      ]             | 
+092E [      ]             | ; Data Block
+092E [04    ]             |                 DATA.b $04
+092F [18    ]             |                 DATA.b $18
+0930 [23    ]             |                 DATA.b $23
+0931 [26    ]             |                 DATA.b $26
+0932 [31    ]             |                 DATA.b $31
+0933 [32    ]             |                 DATA.b $32
+0934 [33    ]             |                 DATA.b $33
+0935 [2E    ]             |                 DATA.b $2E
+0936 [2D    ]             |                 DATA.b $2D
+0937 [2C    ]             |                 DATA.b $2C
+0938 [2B    ]             |                 DATA.b $2B
+0939 [2A    ]             |                 DATA.b $2A
+093A [42    ]             |                 DATA.b $42
+093B [59    ]             |                 DATA.b $59
+093C [54    ]             |                 DATA.b $54
+093D [C5    ]             |                 DATA.b $C5
+093E [57    ]             |                 DATA.b $57
+093F [4F    ]             |                 DATA.b $4F
+0940 [52    ]             |                 DATA.b $52
+0941 [C4    ]             |                 DATA.b $C4
+0942 [4F    ]             |                 DATA.b $4F
+0943 [52    ]             |                 DATA.b $52
+0944 [C7    ]             |                 DATA.b $C7
+0945 [41    ]             |                 DATA.b $41
+0946 [55    ]             |                 DATA.b $55
+0947 [54    ]             |                 DATA.b $54
+0948 [CF    ]             |                 DATA.b $CF
+0949 [4F    ]             |                 DATA.b $4F
+094A [4C    ]             |                 DATA.b $4C
+094B [C4    ]             |                 DATA.b $C4
+094C [49    ]             |                 DATA.b $49
+094D [4E    ]             |                 DATA.b $4E
+094E [43    ]             |                 DATA.b $43
+094F [4C    ]             |                 DATA.b $4C
+0950 [55    ]             |                 DATA.b $55
+0951 [44    ]             |                 DATA.b $44
+0952 [C5    ]             |                 DATA.b $C5
+0953 [53    ]             |                 DATA.b $53
+0954 [45    ]             |                 DATA.b $45
+0955 [4E    ]             |                 DATA.b $4E
+0956 [C4    ]             |                 DATA.b $C4
+0957 [55    ]             |                 DATA.b $55
+0958 [4E    ]             |                 DATA.b $4E
+0959 [53    ]             |                 DATA.b $53
+095A [45    ]             |                 DATA.b $45
+095B [4E    ]             |                 DATA.b $4E
+095C [C4    ]             |                 DATA.b $C4
+095D [42    ]             |                 DATA.b $42
+095E [43    ]             |                 DATA.b $43
+095F [C3    ]             |                 DATA.b $C3
+0960 [42    ]             |                 DATA.b $42
+0961 [43    ]             |                 DATA.b $43
+0962 [D3    ]             |                 DATA.b $D3
+0963 [42    ]             |                 DATA.b $42
+0964 [45    ]             |                 DATA.b $45
+0965 [D1    ]             |                 DATA.b $D1
+0966 [42    ]             |                 DATA.b $42
+0967 [4D    ]             |                 DATA.b $4D
+0968 [C9    ]             |                 DATA.b $C9
+0969 [42    ]             |                 DATA.b $42
+096A [4E    ]             |                 DATA.b $4E
+096B [C5    ]             |                 DATA.b $C5
+096C [42    ]             |                 DATA.b $42
+096D [50    ]             |                 DATA.b $50
+096E [CC    ]             |                 DATA.b $CC
+096F [42    ]             |                 DATA.b $42
+0970 [56    ]             |                 DATA.b $56
+0971 [C3    ]             |                 DATA.b $C3
+0972 [42    ]             |                 DATA.b $42
+0973 [56    ]             |                 DATA.b $56
+0974 [D3    ]             |                 DATA.b $D3
+0975 [41    ]             |                 DATA.b $41
+0976 [44    ]             |                 DATA.b $44
+0977 [C3    ]             |                 DATA.b $C3
+0978 [41    ]             |                 DATA.b $41
+0979 [4E    ]             |                 DATA.b $4E
+097A [C4    ]             |                 DATA.b $C4
+097B [43    ]             |                 DATA.b $43
+097C [4D    ]             |                 DATA.b $4D
+097D [D0    ]             |                 DATA.b $D0
+097E [45    ]             |                 DATA.b $45
+097F [4F    ]             |                 DATA.b $4F
+0980 [D2    ]             |                 DATA.b $D2
+0981 [4C    ]             |                 DATA.b $4C
+0982 [44    ]             |                 DATA.b $44
+0983 [C1    ]             |                 DATA.b $C1
+0984 [4F    ]             |                 DATA.b $4F
+0985 [52    ]             |                 DATA.b $52
+0986 [C1    ]             |                 DATA.b $C1
+0987 [53    ]             |                 DATA.b $53
+0988 [42    ]             |                 DATA.b $42
+0989 [C3    ]             |                 DATA.b $C3
+098A [53    ]             |                 DATA.b $53
+098B [54    ]             |                 DATA.b $54
+098C [C1    ]             |                 DATA.b $C1
+098D [41    ]             |                 DATA.b $41
+098E [53    ]             |                 DATA.b $53
+098F [CC    ]             |                 DATA.b $CC
+0990 [44    ]             |                 DATA.b $44
+0991 [45    ]             |                 DATA.b $45
+0992 [C3    ]             |                 DATA.b $C3
+0993 [49    ]             |                 DATA.b $49
+0994 [4E    ]             |                 DATA.b $4E
+0995 [C3    ]             |                 DATA.b $C3
+0996 [4C    ]             |                 DATA.b $4C
+0997 [53    ]             |                 DATA.b $53
+0998 [D2    ]             |                 DATA.b $D2
+0999 [52    ]             |                 DATA.b $52
+099A [4F    ]             |                 DATA.b $4F
+099B [CC    ]             |                 DATA.b $CC
+099C [52    ]             |                 DATA.b $52
+099D [4F    ]             |                 DATA.b $4F
+099E [D2    ]             |                 DATA.b $D2
+099F [53    ]             |                 DATA.b $53
+09A0 [54    ]             |                 DATA.b $54
+09A1 [D8    ]             |                 DATA.b $D8
+09A2 [43    ]             |                 DATA.b $43
+09A3 [50    ]             |                 DATA.b $50
+09A4 [D8    ]             |                 DATA.b $D8
+09A5 [43    ]             |                 DATA.b $43
+09A6 [50    ]             |                 DATA.b $50
+09A7 [D9    ]             |                 DATA.b $D9
+09A8 [4C    ]             |                 DATA.b $4C
+09A9 [44    ]             |                 DATA.b $44
+09AA [D8    ]             |                 DATA.b $D8
+09AB [4C    ]             |                 DATA.b $4C
+09AC [44    ]             |                 DATA.b $44
+09AD [D9    ]             |                 DATA.b $D9
+09AE [53    ]             |                 DATA.b $53
+09AF [54    ]             |                 DATA.b $54
+09B0 [D9    ]             |                 DATA.b $D9
+09B1 [4A    ]             |                 DATA.b $4A
+09B2 [53    ]             |                 DATA.b $53
+09B3 [D2    ]             |                 DATA.b $D2
+09B4 [4A    ]             |                 DATA.b $4A
+09B5 [4D    ]             |                 DATA.b $4D
+09B6 [D0    ]             |                 DATA.b $D0
+09B7 [42    ]             |                 DATA.b $42
+09B8 [49    ]             |                 DATA.b $49
+09B9 [D4    ]             |                 DATA.b $D4
+09BA [42    ]             |                 DATA.b $42
+09BB [52    ]             |                 DATA.b $52
+09BC [CB    ]             |                 DATA.b $CB
+09BD [43    ]             |                 DATA.b $43
+09BE [4C    ]             |                 DATA.b $4C
+09BF [C3    ]             |                 DATA.b $C3
+09C0 [43    ]             |                 DATA.b $43
+09C1 [4C    ]             |                 DATA.b $4C
+09C2 [C4    ]             |                 DATA.b $C4
+09C3 [43    ]             |                 DATA.b $43
+09C4 [4C    ]             |                 DATA.b $4C
+09C5 [C9    ]             |                 DATA.b $C9
+09C6 [43    ]             |                 DATA.b $43
+09C7 [4C    ]             |                 DATA.b $4C
+09C8 [D6    ]             |                 DATA.b $D6
+09C9 [44    ]             |                 DATA.b $44
+09CA [45    ]             |                 DATA.b $45
+09CB [D8    ]             |                 DATA.b $D8
+09CC [44    ]             |                 DATA.b $44
+09CD [45    ]             |                 DATA.b $45
+09CE [D9    ]             |                 DATA.b $D9
+09CF [49    ]             |                 DATA.b $49
+09D0 [4E    ]             |                 DATA.b $4E
+09D1 [D8    ]             |                 DATA.b $D8
+09D2 [49    ]             |                 DATA.b $49
+09D3 [4E    ]             |                 DATA.b $4E
+09D4 [D9    ]             |                 DATA.b $D9
+09D5 [4E    ]             |                 DATA.b $4E
+09D6 [4F    ]             |                 DATA.b $4F
+09D7 [D0    ]             |                 DATA.b $D0
+09D8 [50    ]             |                 DATA.b $50
+09D9 [48    ]             |                 DATA.b $48
+09DA [C1    ]             |                 DATA.b $C1
+09DB [50    ]             |                 DATA.b $50
+09DC [48    ]             |                 DATA.b $48
+09DD [D0    ]             |                 DATA.b $D0
+09DE [50    ]             |                 DATA.b $50
+09DF [4C    ]             |                 DATA.b $4C
+09E0 [C1    ]             |                 DATA.b $C1
+09E1 [50    ]             |                 DATA.b $50
+09E2 [4C    ]             |                 DATA.b $4C
+09E3 [D0    ]             |                 DATA.b $D0
+09E4 [52    ]             |                 DATA.b $52
+09E5 [54    ]             |                 DATA.b $54
+09E6 [C9    ]             |                 DATA.b $C9
+09E7 [52    ]             |                 DATA.b $52
+09E8 [54    ]             |                 DATA.b $54
+09E9 [D3    ]             |                 DATA.b $D3
+09EA [53    ]             |                 DATA.b $53
+09EB [45    ]             |                 DATA.b $45
+09EC [C3    ]             |                 DATA.b $C3
+09ED [53    ]             |                 DATA.b $53
+09EE [45    ]             |                 DATA.b $45
+09EF [C4    ]             |                 DATA.b $C4
+09F0 [53    ]             |                 DATA.b $53
+09F1 [45    ]             |                 DATA.b $45
+09F2 [C9    ]             |                 DATA.b $C9
+09F3 [54    ]             |                 DATA.b $54
+09F4 [41    ]             |                 DATA.b $41
+09F5 [D8    ]             |                 DATA.b $D8
+09F6 [54    ]             |                 DATA.b $54
+09F7 [41    ]             |                 DATA.b $41
+09F8 [D9    ]             |                 DATA.b $D9
+09F9 [54    ]             |                 DATA.b $54
+09FA [53    ]             |                 DATA.b $53
+09FB [D8    ]             |                 DATA.b $D8
+09FC [54    ]             |                 DATA.b $54
+09FD [58    ]             |                 DATA.b $58
+09FE [C1    ]             |                 DATA.b $C1
+09FF [54    ]             |                 DATA.b $54
+0A00 [58    ]             |                 DATA.b $58
+0A01 [D3    ]             |                 DATA.b $D3
+0A02 [54    ]             |                 DATA.b $54
+0A03 [59    ]             |                 DATA.b $59
+0A04 [C1    ]             |                 DATA.b $C1
+0A05 [00    ]             |                 DATA.b $00
+0A06 [      ]             | 
+0A06 [      ]             | IQPLOP_PATCH:         ; $0a06
+0A06 [48    ] PHA         |                 PHA 
+0A07 [      ]             | 
+0A07 [      ]             | L_BRS_0A070A0C:
+0A07 [AD8D02] LDA $028D   |                 LDA        $028D 
+0A0A [C901  ] CMP #$01    |                 CMP.#      $01
+0A0C [F0F9  ] BEQ $F9     |                 BEQ        L_BRS_0A070A0C
+0A0E [68    ] PLA         |                 PLA 
+0A0F [1016  ] BPL $16     |                 BPL        L_BRS_0A270A0F
+0A11 [C9FF  ] CMP #$FF    |                 CMP.#      $FF
+0A13 [F012  ] BEQ $12     |                 BEQ        L_BRS_0A270A13
+0A15 [240F  ] BIT $0F     |                 BIT.zp     $0F 
+0A17 [300E  ] BMI $0E     |                 BMI        L_BRS_0A270A17
+0A19 [500F  ] BVC $0F     |                 BVC        L_BRS_0A2A0A19
+0A1B [C508  ] CMP $08     |                 CMP.zp     $08 
+0A1D [D008  ] BNE $08     |                 BNE        L_BRS_0A270A1D
+0A1F [48    ] PHA         |                 PHA 
+0A20 [A50F  ] LDA $0F     |                 LDA.zp     $0F 
+0A22 [4940  ] EOR #$40    |                 EOR.#      $40
+0A24 [850F  ] STA $0F     |                 STA.zp     $0F 
+0A26 [68    ] PLA         |                 PLA 
+0A27 [      ]             | 
+0A27 [      ]             | L_BRS_0A270A0F:
+0A27 [      ]             | L_BRS_0A270A13:
+0A27 [      ]             | L_BRS_0A270A17:
+0A27 [      ]             | L_BRS_0A270A1D:
+0A27 [4CF3A6] JMP $A6F3   |                 JMP         $A6F3
+0A2A [      ]             | 
+0A2A [      ]             | L_BRS_0A2A0A19:
+0A2A [C990  ] CMP #$90    |                 CMP.#      $90
+0A2C [F018  ] BEQ $18     |                 BEQ        L_BRS_0A460A2C
+0A2E [48    ] PHA         |                 PHA 
+0A2F [C983  ] CMP #$83    |                 CMP.#      $83
+0A31 [F005  ] BEQ $05     |                 BEQ        L_BRS_0A380A31 + 1     ; Bad
+0A33 [498F  ] EOR #$8F    |                 EOR.#      $8F
+0A35 [D00B  ] BNE $0B     |                 BNE        L_BRS_0A420A35
+0A37 [      ]             | 
+0A37 [      ]             | L_BRS_0A380A31:
+0A37 [2CA93A] BIT $3AA9   |                 BIT         $3AA9 
+0A3A [8508  ] STA $08     |                 STA.zp      $08 
+0A3C [A50F  ] LDA $0F     |                 LDA.zp      $0F 
+0A3E [4940  ] EOR #$40    |                 EOR.#       $40
+0A40 [850F  ] STA $0F     |                 STA.zp      $0F
+0A42 [      ]             | 
+0A42 [      ]             | L_BRS_0A420A35:
+0A42 [68    ] PLA         |                 PLA 
+0A43 [      ]             | 
+0A43 [      ]             | L_BRS_0A430A4E:
+0A43 [4C24A7] JMP $A724   |                 JMP         $A724
+0A46 [      ]             | 
+0A46 [      ]             | L_BRS_0A460A2C:
+0A46 [C8    ] INY         |                 INY 
+0A47 [B15F  ] LDA ($5F),Y |                 LDA.i,y     $5F
+0A49 [3005  ] BMI $05     |                 BMI         L_BRS_0A500A49
+0A4B [88    ] DEY         |                 DEY 
+0A4C [A990  ] LDA #$90    |                 LDA.#       $90
+0A4E [D0F3  ] BNE $F3     |                 BNE         L_BRS_0A430A4E
+0A50 [      ]             | 
+0A50 [      ]             | L_BRS_0A500A49:
+0A50 [8449  ] STY $49     |                 STY.zp      $49
+0A52 [AA    ] TAX         |                 TAX 
+0A53 [A0FF  ] LDY #$FF    |                 LDY.#       $FF
+0A55 [      ]             | 
+0A55 [      ]             | L_BRS_0A550A5E:
+0A55 [CA    ] DEX         |                 DEX 
+0A56 [1008  ] BPL $08     |                 BPL         L_BRS_0A600A56
+0A58 [      ]             | 
+0A58 [      ]             | L_BRS_0A580A5C:
+0A58 [C8    ] INY         |                 INY 
+0A59 [B93A09] LDA $093A,Y |                 LDA,Y       $093A
+0A5C [10FA  ] BPL $FA     |                 BPL         L_BRS_0A580A5C
+0A5E [30F5  ] BMI $F5     |                 BMI         L_BRS_0A550A5E
+0A60 [      ]             | 
+0A60 [      ]             | L_BRS_0A600A56:
+0A60 [      ]             | L_BRS_0A600A6C:
+0A60 [C8    ] INY         |                 INY 
+0A61 [B93A09] LDA $093A,Y |                 LDA,y       $093A
+0A64 [1003  ] BPL $03     |                 BPL         L_BRS_0A690A64
+0A66 [4CEFA6] JMP $A6EF   |                 JMP         $A6EF
+0A69 [      ]             | 
+0A69 [      ]             | L_BRS_0A690A64:
+0A69 [2047AB] JSR $AB47   |                 JSR         $AB47
+0A6C [D0F2  ] BNE $F2     |                 BNE         L_BRS_0A600A6C
+0A6E [      ]             | 
+0A6E [      ]             | IEVAL_PATCH:          ; $0a66
+0A6E [      ]             | 
+0A6E [207300] JSR $0073   |                 JSR         CHRGET          ; $0073
+0A71 [A200  ] LDX #$00    |                 LDX.#       $00
+0A73 [860D  ] STX $0D     |                 STX.zp      $0D 
+0A75 [C9AC  ] CMP #$AC    |                 CMP.#       $AC
+0A77 [F016  ] BEQ $16     |                 BEQ         L_BRS_0A8F0A77
+0A79 [8662  ] STX $62     |                 STX.zp      $62 
+0A7B [8663  ] STX $63     |                 STX.zp      $63 
+0A7D [C924  ] CMP #$24    |                 CMP.#       $24
+0A7F [F03F  ] BEQ $3F     |                 BEQ         L_BRS_0AC00A7F
+0A81 [C925  ] CMP #$25    |                 CMP.#       $25
+0A83 [F028  ] BEQ $28     |                 BEQ         L_BRS_0AAD0A83
+0A85 [C927  ] CMP #$27    |                 CMP.#       $27
+0A87 [F017  ] BEQ $17     |                 BEQ         L_BRS_0AA00A87
+0A89 [207900] JSR $0079   |                 JSR         $0079
+0A8C [4C8DAE] JMP $AE8D   |                 JMP         $AE8D
+0A8F [      ]             | 
+0A8F [      ]             | L_BRS_0A8F0A77:
+0A8F [207300] JSR $0073   |                 JSR         CHRGET          ; $0073
+0A92 [      ]             | 
+0A92 [      ]             | L_JSR_0A920F3D:
+0A92 [A5FB  ] LDA $FB     |                 LDA.zp      $FB 
+0A94 [A4FC  ] LDY $FC     |                 LDY.zp      $FC 
+0A96 [8462  ] STY $62     |                 STY.zp      $62 
+0A98 [      ]             | 
+0A98 [      ]             | L_BRS_0A980AA8:
+0A98 [8563  ] STA $63     |                 STA.zp      $63 
+0A9A [      ]             | 
+0A9A [      ]             | L_BRS_0A9A0AB0:
+0A9A [      ]             | L_BRS_0A9A0AB4:
+0A9A [      ]             | L_BRS_0A9A0AC7:
+0A9A [      ]             | L_BRS_0A9A0ACB:
+0A9A [A290  ] LDX #$90    |                 LDX.#       $90
+0A9C [38    ] SEC         |                 SEC 
+0A9D [4C49BC] JMP $BC49   |                 JMP         $BC49
+0AA0 [      ]             | 
+0AA0 [      ]             | L_BRS_0AA00A87:
+0AA0 [20AC0B] JSR $0BAC   |                 JSR         L_JSR_0BAC0AA0
+0AA3 [48    ] PHA         |                 PHA 
+0AA4 [207300] JSR $0073   |                 JSR         CHRGET          ; $0073
+0AA7 [68    ] PLA         |                 PLA 
+0AA8 [D0EE  ] BNE $EE     |                 BNE         L_BRS_0A980AA8
+0AAA [4C08AF] JMP $AF08   |                 JMP         $AF08                         ; Output ?SYNTAX Error
+0AAD [      ]             | 
+0AAD [      ]             | L_BRS_0AAD0A83:
+0AAD [      ]             | L_BRS_0AAD0ABB:
+0AAD [207300] JSR $0073   |                 JSR         CHRGET          ; $0073
+0AB0 [B0E8  ] BCS $E8     |                 BCS         L_BRS_0A9A0AB0
+0AB2 [C932  ] CMP #$32    |                 CMP.#       $32
+0AB4 [B0E4  ] BCS $E4     |                 BCS         L_BRS_0A9A0AB4
+0AB6 [4A    ] LSR A       |                 LSR.A 
+0AB7 [2663  ] ROL $63     |                 ROL.zp      $63 
+0AB9 [2662  ] ROL $62     |                 ROL.zp      $62 
+0ABB [90F0  ] BCC $F0     |                 BCC         L_BRS_0AAD0ABB
+0ABD [      ]             | 
+0ABD [      ]             | L_BRS_0ABD0AD7:
+0ABD [4C48B2] JMP $B248   |                 JMP         $B248                         ; ?ILLEGAL QUANTITY
+0AC0 [      ]             | 
+0AC0 [      ]             | L_BRS_0AC00A7F:
+0AC0 [      ]             | L_BRS_0AC00AE0:
+0AC0 [207300] JSR $0073   |                 JSR         CHRGET          ; $0073
+0AC3 [900A  ] BCC $0A     |                 BCC         L_BRS_0ACF0AC3
+0AC5 [C947  ] CMP #$47    |                 CMP.#       $47
+0AC7 [B0D1  ] BCS $D1     |                 BCS         L_BRS_0A9A0AC7
+0AC9 [C941  ] CMP #$41    |                 CMP.#       $41
+0ACB [90CD  ] BCC $CD     |                 BCC         L_BRS_0A9A0ACB
+0ACD [E907  ] SBC #$07    |                 SBC.#       $07
+0ACF [      ]             | 
+0ACF [      ]             | L_BRS_0ACF0AC3:
+0ACF [290F  ] AND #$0F    |                 AND.#       $0F
+0AD1 [A204  ] LDX #$04    |                 LDX.#       $04
+0AD3 [      ]             | 
+0AD3 [      ]             | L_BRS_0AD30ADA:
+0AD3 [0663  ] ASL $63     |                 ASL.zp      $63 
+0AD5 [2662  ] ROL $62     |                 ROL.zp      $62 
+0AD7 [B0E4  ] BCS $E4     |                 BCS         L_BRS_0ABD0AD7
+0AD9 [CA    ] DEX         |                 DEX 
+0ADA [D0F7  ] BNE $F7     |                 BNE         L_BRS_0AD30ADA
+0ADC [0563  ] ORA $63     |                 ORA.zp      $63
+0ADE [8563  ] STA $63     |                 STA.zp      $63 
+0AE0 [90DE  ] BCC $DE     |                 BCC         L_BRS_0AC00AE0
+0AE2 [8DA802] STA $02A8   |                 STA         $02A8 
+0AE5 [8545  ] STA $45     |                 STA.zp      $45 
+0AE7 [20B20B] JSR $0BB2   |                 JSR         L_JSR_0BB20AE7
+0AEA [2013B1] JSR $B113   |                 JSR         $B113                         ; Does A hold an alphabetic character?
+0AED [B003  ] BCS $03     |                 BCS         L_BRS_0AF20AED
+0AEF [      ]             | 
+0AEF [      ]             | L_BRS_0AEF0B2D:
+0AEF [4C08AF] JMP $AF08   |                 JMP         $AF08                         ; Output ?SYNTAX Error
+0AF2 [      ]             | 
+0AF2 [      ]             | L_BRS_0AF20AED:
+0AF2 [A200  ] LDX #$00    |                 LDX.#       $00
+0AF4 [860D  ] STX $0D     |                 STX.zp      $0D 
+0AF6 [860E  ] STX $0E     |                 STX.zp      $0E 
+0AF8 [      ]             | 
+0AF8 [      ]             | L_BRS_0AF80B04:
+0AF8 [      ]             | L_BRS_0AF80B0A:
+0AF8 [20AC0B] JSR $0BAC   |                 JSR         L_JSR_0BAC0AF8
+0AFB [9005  ] BCC $05     |                 BCC         L_BRS_0B020AFB
+0AFD [2013B1] JSR $B113   |                 JSR         $B113                         ; Does A hold an alphabetic character?
+0B00 [900A  ] BCC $0A     |                 BCC         L_BRS_0B0C0B00
+0B02 [      ]             | 
+0B02 [      ]             | L_BRS_0B020AFB:
+0B02 [E007  ] CPX #$07    |                 CPX.#       $07
+0B04 [B0F2  ] BCS $F2     |                 BCS         L_BRS_0AF80B04
+0B06 [E8    ] INX         |                 INX 
+0B07 [      ]             | 
+0B07 [      ]             | L_BRS_0B070B13:
+0B07 [9DA802] STA $02A8,X |                 STA,x       $02A8 
+0B0A [D0EC  ] BNE $EC     |                 BNE         L_BRS_0AF80B0A
+0B0C [      ]             | 
+0B0C [      ]             | L_BRS_0B0C0B00:
+0B0C [E8    ] INX         |                 INX 
+0B0D [E008  ] CPX #$08    |                 CPX.#       $08
+0B0F [B004  ] BCS $04     |                 BCS         L_BRS_0B150B0F
+0B11 [A900  ] LDA #$00    |                 LDA.#       $00
+0B13 [F0F2  ] BEQ $F2     |                 BEQ         L_BRS_0B070B13
+0B15 [      ]             | 
+0B15 [      ]             | L_BRS_0B150B0F:
+0B15 [ADA902] LDA $02A9   |                 LDA         $02A9 
+0B18 [8546  ] STA $46     |                 STA.zp $46 
+0B1A [20B20B] JSR $0BB2   |                 JSR L_JSR_0BB20B1A
+0B1D [C924  ] CMP #$24    |                 CMP.#  $24
+0B1F [D006  ] BNE $06     |                 BNE L_BRS_0B270B1F
+0B21 [A9FF  ] LDA #$FF    |                 LDA.#  $FF
+0B23 [850D  ] STA $0D     |                 STA.zp $0D 
+0B25 [D013  ] BNE $13     |                 BNE L_BRS_0B3A0B25
+0B27 [      ]             | 
+0B27 [      ]             | L_BRS_0B270B1F:
+0B27 [C925  ] CMP #$25    |                 CMP.#  $25
+0B29 [D01B  ] BNE $1B     |                 BNE L_BRS_0B460B29
+0B2B [A510  ] LDA $10     |                 LDA.zp $10 
+0B2D [D0C0  ] BNE $C0     |                 BNE L_BRS_0AEF0B2D
+0B2F [A980  ] LDA #$80    |                 LDA.#  $80
+0B31 [850E  ] STA $0E     |                 STA.zp $0E 
+0B33 [0545  ] ORA $45     |                 ORA.zp $45
+0B35 [8545  ] STA $45     |                 STA.zp $45 
+0B37 [8DA802] STA $02A8   |                 STA $02A8 
+0B3A [      ]             | 
+0B3A [      ]             | L_BRS_0B3A0B25:
+0B3A [A546  ] LDA $46     |                 LDA.zp $46 
+0B3C [0980  ] ORA #$80    |                 ORA.#  $80
+0B3E [8546  ] STA $46     |                 STA.zp $46 
+0B40 [8DA902] STA $02A9   |                 STA $02A9 
+0B43 [20AC0B] JSR $0BAC   |                 JSR L_JSR_0BAC0B43
+0B46 [      ]             | 
+0B46 [      ]             | L_BRS_0B460B29:
+0B46 [0510  ] ORA $10     |                 ORA.zp $10
+0B48 [4928  ] EOR #$28    |                 EOR.#   $28
+0B4A [D003  ] BNE $03     |                 BNE L_BRS_0B4F0B4A
+0B4C [4CD1B1] JMP $B1D1   |                 JMP $B1D1                         ; Get Array Parameters
+0B4F [      ]             | 
+0B4F [      ]             | L_BRS_0B4F0B4A:
+0B4F [8410  ] STY $10     |                 STY.zp $10 
+0B51 [A52D  ] LDA $2D     |                 LDA.zp $2D 
+0B53 [A62E  ] LDX $2E     |                 LDX.zp $2E 
+0B55 [      ]             | 
+0B55 [      ]             | L_BRS_0B550B79:
+0B55 [8660  ] STX $60     |                 STX.zp $60 
+0B57 [      ]             | 
+0B57 [      ]             | L_BRS_0B570B76:
+0B57 [855F  ] STA $5F     |                 STA.zp $5F 
+0B59 [E430  ] CPX $30     |                 CPX.zp $30 
+0B5B [9004  ] BCC $04     |                 BCC L_BRS_0B610B5B
+0B5D [C52F  ] CMP $2F     |                 CMP.zp $2F 
+0B5F [B01A  ] BCS $1A     |                 BCS L_BRS_0B7B0B5F
+0B61 [      ]             | 
+0B61 [      ]             | L_BRS_0B610B5B:
+0B61 [A000  ] LDY #$00    |                 LDY.#  $00
+0B63 [      ]             | 
+0B63 [      ]             | L_BRS_0B630B6D:
+0B63 [B9A802] LDA $02A8,Y |                 LDA,y $02A8
+0B66 [515F  ] EOR ($5F),Y |                 EOR.i,y $5F 
+0B68 [D008  ] BNE $08     |                 BNE L_BRS_0B720B68
+0B6A [C8    ] INY         |                 INY 
+0B6B [C008  ] CPY #$08    |                 CPY.#  $08
+0B6D [90F4  ] BCC $F4     |                 BCC L_BRS_0B630B6D
+0B6F [4C85B1] JMP $B185   |                 JMP $B185
+0B72 [      ]             | 
+0B72 [      ]             | L_BRS_0B720B68:
+0B72 [A55F  ] LDA $5F     |                 LDA.zp $5F 
+0B74 [690D  ] ADC #$0D    |                 ADC.#  $0D
+0B76 [90DF  ] BCC $DF     |                 BCC L_BRS_0B570B76
+0B78 [E8    ] INX         |                 INX 
+0B79 [D0DA  ] BNE $DA     |                 BNE L_BRS_0B550B79
+0B7B [      ]             | 
+0B7B [      ]             | L_BRS_0B7B0B5F:
+0B7B [68    ] PLA         |                 PLA 
+0B7C [48    ] PHA         |                 PHA 
+0B7D [C92A  ] CMP #$2A    |                 CMP.#  $2A
+0B7F [D003  ] BNE $03     |                 BNE L_BRS_0B840B7F
+0B81 [4C23B1] JMP $B123   |                 JMP $B123
+0B84 [      ]             | 
+0B84 [      ]             | L_BRS_0B840B7F:
+0B84 [ADAA02] LDA $02AA   |                 LDA $02AA 
+0B87 [D003  ] BNE $03     |                 BNE L_BRS_0B8C0B87
+0B89 [4C28B1] JMP $B128   |                 JMP $B128                         ; Create Variable
+0B8C [      ]             | 
+0B8C [      ]             | L_BRS_0B8C0B87:
+0B8C [A52F  ] LDA $2F     |                 LDA.zp $2F 
+0B8E [A430  ] LDY $30     |                 LDY.zp $30 
+0B90 [2047B1] JSR $B147   |                 JSR $B147
+0B93 [A007  ] LDY #$07    |                 LDY.#  $07
+0B95 [      ]             | 
+0B95 [      ]             | L_BRS_0B950B9B:
+0B95 [B9A802] LDA $02A8,Y |                 LDA,y $02A8 
+0B98 [915F  ] STA ($5F),Y |                 STA.i,y $5F 
+0B9A [88    ] DEY         |                 DEY 
+0B9B [10F8  ] BPL $F8     |                 BPL L_BRS_0B950B9B
+0B9D [A007  ] LDY #$07    |                 LDY.#  $07
+0B9F [4C74B1] JMP $B174   |                 JMP $B174
+0BA2 [1005  ] BPL $05     |                 BPL L_BRS_0BA90BA2
+0BA4 [A008  ] LDY #$08    |                 LDY.#  $08
+0BA6 [4CC7B5] JMP $B5C7   |                 JMP $B5C7
+0BA9 [      ]             | 
+0BA9 [      ]             | L_BRS_0BA90BA2:
+0BA9 [4CF6B5] JMP $B5F6   |                 JMP $B5F6
+0BAC [      ]             | 
+0BAC [      ]             | L_JSR_0BAC0AA0:
+0BAC [      ]             | L_JSR_0BAC0AF8:
+0BAC [      ]             | L_JSR_0BAC0B43:
+0BAC [E67A  ] INC $7A     |                 INC.zp $7A 
+0BAE [D002  ] BNE $02     |                 BNE L_BRS_0BB20BAE
+0BB0 [E67B  ] INC $7B     |                 INC.zp $7B 
+0BB2 [      ]             | 
+0BB2 [      ]             | L_JSR_0BB20AE7:
+0BB2 [      ]             | L_JSR_0BB20B1A:
+0BB2 [      ]             | L_BRS_0BB20BAE:
+0BB2 [A000  ] LDY #$00    |                 LDY.#  $00
+0BB4 [B17A  ] LDA ($7A),Y |                 LDA.i,y $7A 
+0BB6 [C93A  ] CMP #$3A    |                 CMP.#  $3A
+0BB8 [B003  ] BCS $03     |                 BCS L_BRS_0BBD0BB8
+0BBA [4C8400] JMP $0084   |                 JMP $0084
+0BBD [      ]             | 
+0BBD [      ]             | L_BRS_0BBD0BB8:
+0BBD [60    ] RTS         |                 RTS
+0BBE [      ]             | 
+0BBE [      ]             | ; $0bb3
+0BBE [      ]             | L_JSR_0BBE0D03:
+0BBE [      ]             | L_JMP_0BBE0D2F:
+0BBE [      ]             | L_JSR_0BBE0D44:
+0BBE [      ]             | L_JSR_0BBE0D84:
+0BBE [      ]             | L_JSR_0BBE0D92:
+0BBE [      ]             | L_JMP_0BBE0D9A:
+0BBE [      ]             | L_JSR_0BBE100C:
+0BBE [      ]             | L_JMP_0BBE10B6:
+0BBE [      ]             | L_JSR_0BBE110A:
+0BBE [A69D  ] LDX $9D     |                 LDX.zp      $9D 
+0BC0 [3029  ] BMI $29     |                 BMI         L_BRS_0BEB0BC0
+0BC2 [E021  ] CPX #$21    |                 CPX.#       $21
+0BC4 [F00B  ] BEQ $0B     |                 BEQ         L_BRS_0BD10BC4
+0BC6 [E020  ] CPX #$20    |                 CPX.#        $20
+0BC8 [F01A  ] BEQ $1A     |                 BEQ         L_BRS_0BE40BC8
+0BCA [A90E  ] LDA #$0E    |                 LDA.#       $0E
+0BCC [A00E  ] LDY #$0E    |                 LDY.#       $0E
+0BCE [4C2711] JMP $1127   |                 JMP         L_JMP_11270BCE
+0BD1 [      ]             | 
+0BD1 [      ]             | L_BRS_0BD10BC4:
+0BD1 [A6FD  ] LDX $FD     |                 LDX.zp      $FD 
+0BD3 [F00D  ] BEQ $0D     |                 BEQ         L_BRS_0BE20BD3
+0BD5 [A208  ] LDX #$08    |                 LDX.#       $08
+0BD7 [2018E1] JSR $E118   |                 JSR         $E118                         ; Set Up For Output
+0BDA [200CE1] JSR $E10C   |                 JSR         $E10C                         ; Output Character
+0BDD [20CCFF] JSR $FFCC   |                 JSR         $FFCC                         ; Restore I/O Vector
+0BE0 [F002  ] BEQ $02     |                 BEQ         L_BRS_0BE40BE0
+0BE2 [      ]             | 
+0BE2 [      ]             | L_BRS_0BE20BD3:
+0BE2 [81FB  ] STA ($FB,X) |                 STA.i,x     $FB
+0BE4 [      ]             | 
+0BE4 [      ]             | L_BRS_0BE40BC8:
+0BE4 [      ]             | L_BRS_0BE40BE0:
+0BE4 [E6FB  ] INC $FB     |                 INC.zp      $FB
+0BE6 [D002  ] BNE $02     |                 BNE L_BRS_0BEA0BE6
+0BE8 [E6FC  ] INC $FC     |                 INC.zp      $FC
+0BEA [      ]             | 
+0BEA [      ]             | L_BRS_0BEA0BE6:
+0BEA [60    ] RTS         |                 RTS
+0BEB [      ]             | 
+0BEB [      ]             | L_BRS_0BEB0BC0:
+0BEB [4CABB3] JMP $B3AB   |                 JMP         $B3AB
+0BEE [      ]             | 
+0BEE [      ]             | ; $0bee
+0BEE [      ]             | L_JSR_0BEE0C3D:
+0BEE [      ]             | L_JSR_0BEE0FE0:
+0BEE [A566  ] LDA $66     |                 LDA.zp      $66 
+0BF0 [3012  ] BMI $12     |                 BMI         L_BRS_0C040BF0
+0BF2 [A561  ] LDA $61     |                 LDA.zp      $61 
+0BF4 [C991  ] CMP #$91    |                 CMP.#       $91
+0BF6 [B00C  ] BCS $0C     |                 BCS         L_BRS_0C040BF6
+0BF8 [209BBC] JSR $BC9B   |                 JSR         $BC9B                         ; Convert FAC#1 to Integer
+0BFB [A464  ] LDY $64     |                 LDY.zp      $64 
+0BFD [A565  ] LDA $65     |                 LDA.zp      $65 
+0BFF [      ]             | 
+0BFF [      ]             | L_BRS_0BFF0C0F:
+0BFF [8514  ] STA $14     |                 STA.zp      $14 
+0C01 [8415  ] STY $15     |                 STY.zp      $15 
+0C03 [60    ] RTS         |                 RTS 
+0C04 [      ]             | 
+0C04 [      ]             | L_BRS_0C040BF0:
+0C04 [      ]             | L_BRS_0C040BF6:
+0C04 [A59D  ] LDA $9D     |                 LDA.zp      $9D 
+0C06 [4A    ] LSR A       |                 LSR.A 
+0C07 [9003  ] BCC $03     |                 BCC         L_BRS_0C0C0C07
+0C09 [4C48B2] JMP $B248   |                 JMP         $B248                         ; ?ILLEGAL QUANTITY
+0C0C [      ]             | 
+0C0C [      ]             | L_BRS_0C0C0C07:
+0C0C [A900  ] LDA #$00    |                 LDA.#       $00
+0C0E [A8    ] TAY         |                 TAY 
+0C0F [F0EE  ] BEQ $EE     |                 BEQ         L_BRS_0BFF0C0F
+0C11 [      ]             | 
+0C11 [      ]             | L_JSR_0C110D50:
+0C11 [207300] JSR $0073   |                 JSR         CHRGET              ; $0073
+0C14 [F004  ] BEQ $04     |                 BEQ         L_BRS_0C1A0C14
+0C16 [C93B  ] CMP #$3B    |                 CMP.#       $3B
+0C18 [D007  ] BNE $07     |                 BNE         L_BRS_0C210C18
+0C1A [      ]             | 
+0C1A [      ]             | L_BRS_0C1A0C14:
+0C1A [A900  ] LDA #$00    |                 LDA.#        $00
+0C1C [8515  ] STA $15     |                 STA.zp      $15
+0C1E [85FE  ] STA $FE     |                 STA.zp      $FE
+0C20 [60    ] RTS         |                 RTS
+0C21 [      ]             | 
+0C21 [      ]             | L_BRS_0C210C18:
+0C21 [C923  ] CMP #$23    |                 CMP.#       $23
+0C23 [D004  ] BNE $04     |                 BNE         L_BRS_0C290C23
+0C25 [A201  ] LDX #$01    |                 LDX.#       $01
+0C27 [D008  ] BNE $08     |                 BNE         L_BRS_0C310C27
+0C29 [      ]             | 
+0C29 [      ]             | L_BRS_0C290C23:
+0C29 [A200  ] LDX #$00    |                 LDX.#       $00
+0C2B [C928  ] CMP #$28    |                 CMP.#       $28
+0C2D [D005  ] BNE $05     |                 BNE L_BRS_0C340C2D
+0C2F [A280  ] LDX #$80    |                 LDX.#       $80
+0C31 [      ]             | 
+0C31 [      ]             | L_BRS_0C310C27:
+0C31 [207300] JSR $0073   |                 JSR         CHRGET              ; $0073
+0C34 [      ]             | 
+0C34 [      ]             | L_BRS_0C340C2D:
+0C34 [86FE  ] STX $FE     |                 STX.zp      $FE 
+0C36 [209EAD] JSR $AD9E   |                 JSR         $AD9E                         ; Evaluate Expression in Text
+0C39 [240D  ] BIT $0D     |                 BIT.zp      $0D 
+0C3B [300A  ] BMI $0A     |                 BMI         L_BRS_0C470C3B
+0C3D [20EE0B] JSR $0BEE   |                 JSR         L_JSR_0BEE0C3D
+0C40 [A5FE  ] LDA $FE     |                 LDA.zp      $FE 
+0C42 [301C  ] BMI $1C     |                 BMI         L_BRS_0C600C42
+0C44 [F051  ] BEQ $51     |                 BEQ         L_BRS_0C970C44
+0C46 [60    ] RTS         |                 RTS 
+0C47 [      ]             | 
+0C47 [      ]             | L_BRS_0C470C3B:
+0C47 [A5FE  ] LDA $FE     |                 LDA.zp $FE 
+0C49 [C901  ] CMP #$01    |                 CMP.# $01
+0C4B [F003  ] BEQ $03     |                 BEQ L_BRS_0C500C4B
+0C4D [      ]             | 
+0C4D [      ]             | L_BRS_0C4D0C90:
+0C4D [4C08AF] JMP $AF08   |                 JMP         $AF08                         ; Output ?SYNTAX Error
+0C50 [      ]             | 
+0C50 [      ]             | L_BRS_0C500C4B:
+0C50 [20A6B6] JSR $B6A6   |                 JSR $B6A6
+0C53 [A000  ] LDY #$00    |                 LDY.# $00
+0C55 [8415  ] STY $15     |                 STY.zp $15 
+0C57 [C900  ] CMP #$00    |                 CMP.# $00
+0C59 [F002  ] BEQ $02     |                 BEQ L_BRS_0C5D0C59
+0C5B [B122  ] LDA ($22),Y |                 LDA.i,y $22 
+0C5D [      ]             | 
+0C5D [      ]             | L_BRS_0C5D0C59:
+0C5D [8514  ] STA $14     |                 STA.zp $14 
+0C5F [60    ] RTS         |                 RTS 
+0C60 [      ]             | 
+0C60 [      ]             | L_BRS_0C600C42:
+0C60 [A200  ] LDX #$00    |                 LDX.# $00
+0C62 [860B  ] STX $0B     |                 STX.zp $0B 
+0C64 [      ]             | 
+0C64 [      ]             | L_BRS_0C640C8C:
+0C64 [      ]             | L_BRS_0C640C9D:
+0C64 [A000  ] LDY #$00    |                 LDY.# $00
+0C66 [      ]             | 
+0C66 [      ]             | L_BRS_0C660C6F:
+0C66 [BD9F0C] LDA $0C9F,X |                 LDA,x $0C9F 
+0C69 [517A  ] EOR ($7A),Y |                 EOR.i,y $7A 
+0C6B [D004  ] BNE $04     |                 BNE L_BRS_0C710C6B
+0C6D [E8    ] INX         |                 INX 
+0C6E [C8    ] INY         |                 INY 
+0C6F [D0F5  ] BNE $F5     |                 BNE L_BRS_0C660C6F
+0C71 [      ]             | 
+0C71 [      ]             | L_BRS_0C710C6B:
+0C71 [0A    ] ASL A       |                 ASL.A 
+0C72 [D00D  ] BNE $0D     |                 BNE L_BRS_0C810C72
+0C74 [A60B  ] LDX $0B     |                 LDX.zp $0B 
+0C76 [BDAC0C] LDA $0CAC,X |                 LDA,x $0CAC 
+0C79 [85FE  ] STA $FE     |                 STA.zp $FE 
+0C7B [20FBA8] JSR $A8FB   |                 JSR $A8FB
+0C7E [4C7300] JMP $0073   |                 JMP         CHRGET              ; $0073
+0C81 [      ]             | 
+0C81 [      ]             | L_BRS_0C810C72:
+0C81 [      ]             | L_BRS_0C810C85:
+0C81 [E8    ] INX         |                 INX 
+0C82 [BD9E0C] LDA $0C9E,X |                 LDA,x $0C9E 
+0C85 [10FA  ] BPL $FA     |                 BPL L_BRS_0C810C85
+0C87 [E60B  ] INC $0B     |                 INC.zp $0B 
+0C89 [BD9F0C] LDA $0C9F,X |                 LDA,x $0C9F 
+0C8C [D0D6  ] BNE $D6     |                 BNE L_BRS_0C640C8C
+0C8E [A5FE  ] LDA $FE     |                 LDA.zp $FE 
+0C90 [30BB  ] BMI $BB     |                 BMI L_BRS_0C4D0C90
+0C92 [A902  ] LDA #$02    |                 LDA.# $02
+0C94 [85FE  ] STA $FE     |                 STA.zp $FE 
+0C96 [60    ] RTS         |                 RTS 
+0C97 [      ]             | 
+0C97 [      ]             | L_BRS_0C970C44:
+0C97 [A903  ] LDA #$03    |                 LDA.# $03
+0C99 [850B  ] STA $0B     |                 STA.zp $0B 
+0C9B [A208  ] LDX #$08    |                 LDX.# $08
+0C9D [D0C5  ] BNE $C5     |                 BNE L_BRS_0C640C9D
+0C9F [2C58A9] BIT $A958   |                 BIT $A958 
+0CA2 [292C  ] AND #$2C    |                 AND.# $2C
+0CA4 [D9A900] CMP $00A9,Y |                 CMP,Y $00A9 
+0CA7 [2CD82C] BIT $2CD8   |                 BIT $2CD8 
+0CAA [D90005] CMP $0500,Y |                 CMP,y $0500 
+0CAD [060F  ] ASL $0F     |                 ASL.zp $0F 
+0CAF [03    ]             |                 DATA.b $03
+0CB0 [04    ]             |                 DATA.b $04  
+0CB1 [      ]             | 
+0CB1 [      ]             | IGONE_PATCH:          ; $0cb1
+0CB1 [      ]             | 
+0CB1 [207300] JSR $0073   |                 JSR         CHRGET              ; $0073
+0CB4 [20C40C] JSR $0CC4   |                 JSR L_JSR_0CC40CB4
+0CB7 [207900] JSR $0079   |                 JSR $0079
+0CBA [C93B  ] CMP #$3B    |                 CMP.# $3B
+0CBC [D003  ] BNE $03     |                 BNE L_BRS_0CC10CBC
+0CBE [203BA9] JSR $A93B   |                 JSR $A93B                         ; Perform [rem]
+0CC1 [      ]             | 
+0CC1 [      ]             | L_BRS_0CC10CBC:
+0CC1 [4CAEA7] JMP $A7AE   |                 JMP $A7AE                         ; BASIC Warm Start
+0CC4 [      ]             | 
+0CC4 [      ]             | L_JSR_0CC40CB4:
+0CC4 [      ]             | L_JSR_0CC4108E:
+0CC4 [F005  ] BEQ $05     |                 BEQ L_BRS_0CCB0CC4
+0CC6 [C93B  ] CMP #$3B    |                 CMP.# $3B
+0CC8 [D005  ] BNE $05     |                 BNE L_BRS_0CCF0CC8
+0CCA [60    ] RTS         |                 RTS 
+0CCB [      ]             | 
+0CCB [      ]             | L_BRS_0CCB0CC4:
+0CCB [      ]             | L_BRS_0CCB0CD1:
+0CCB [38    ] SEC         |                 SEC 
+0CCC [4CEDA7] JMP $A7ED   |                 JMP $A7ED                         ; Perform BASIC Keyword
+0CCF [      ]             | 
+0CCF [      ]             | L_BRS_0CCF0CC8:
+0CCF [C9AF  ] CMP #$AF    |                 CMP.# $AF
+0CD1 [D0F8  ] BNE $F8     |                 BNE L_BRS_0CCB0CD1
+0CD3 [A209  ] LDX #$09    |                 LDX.# $09
+0CD5 [8A    ] TXA         |                 TXA 
+0CD6 [D072  ] BNE $72     |                 BNE L_BRS_0D4A0CD6
+0CD8 [D003  ] BNE $03     |                 BNE L_BRS_0CDD0CD8
+0CDA [4C2FA8] JMP $A82F   |                 JMP $A82F                         ; Perform [end]
+0CDD [      ]             | 
+0CDD [      ]             | L_BRS_0CDD0CD8:
+0CDD [E980  ] SBC #$80    |                 SBC.# $80
+0CDF [B003  ] BCS $03     |                 BCS L_BRS_0CE40CDF
+0CE1 [      ]             | 
+0CE1 [      ]             | L_BRS_0CE10CE6:
+0CE1 [      ]             | L_BRS_0CE10D09:
+0CE1 [      ]             | L_BRS_0CE10D0D:
+0CE1 [      ]             | L_BRS_0CE10D3F:
+0CE1 [4C08AF] JMP $AF08   |                 JMP $AF08                         ; Output ?SYNTAX Error
+0CE4 [      ]             | 
+0CE4 [      ]             | L_BRS_0CE40CDF:
+0CE4 [C940  ] CMP #$40    |                 CMP.# $40
+0CE6 [B0F9  ] BCS $F9     |                 BCS L_BRS_0CE10CE6
+0CE8 [C908  ] CMP #$08    |                 CMP.# $08
+0CEA [B00D  ] BCS $0D     |                 BCS L_BRS_0CF90CEA
+0CEC [0A    ] ASL A       |                 ASL.A 
+0CED [A8    ] TAY         |                 TAY 
+0CEE [B9C70D] LDA $0DC7,Y |                 LDA,y $0DC7
+0CF1 [48    ] PHA         |                 PHA 
+0CF2 [B9C60D] LDA $0DC6,Y |                 LDA,y $0DC6
+0CF5 [48    ] PHA         |                 PHA 
+0CF6 [4C7300] JMP $0073   |                 JMP         CHRGET              ; $0073
+0CF9 [      ]             | 
+0CF9 [      ]             | L_BRS_0CF90CEA:
+0CF9 [E908  ] SBC #$08    |                 SBC.# $08
+0CFB [AA    ] TAX         |                 TAX 
+0CFC [C908  ] CMP #$08    |                 CMP.# $08
+0CFE [B039  ] BCS $39     |                 BCS L_BRS_0D390CFE
+0D00 [BDD60D] LDA $0DD6,X |                 LDA,x $0DD6
+0D03 [20BE0B] JSR $0BBE   |                 JSR L_JSR_0BBE0D03
+0D06 [207300] JSR $0073   |                 JSR         CHRGET              ; $0073
+0D09 [F0D6  ] BEQ $D6     |                 BEQ L_BRS_0CE10D09
+0D0B [C93B  ] CMP #$3B    |                 CMP.# $3B
+0D0D [F0D2  ] BEQ $D2     |                 BEQ L_BRS_0CE10D0D
+0D0F [208AAD] JSR $AD8A   |                 JSR $AD8A                         ; Confirm Result
+0D12 [A59D  ] LDA $9D     |                 LDA.zp $9D 
+0D14 [4A    ] LSR A       |                 LSR.A 
+0D15 [9018  ] BCC $18     |                 BCC L_BRS_0D2F0D15
+0D17 [20F7B7] JSR $B7F7   |                 JSR $B7F7                         ; Convert FAC#1 to Integer in LINNUM
+0D1A [18    ] CLC         |                 CLC 
+0D1B [A514  ] LDA $14     |                 LDA.zp $14 
+0D1D [E5FB  ] SBC $FB     |                 SBC.zp $FB 
+0D1F [AA    ] TAX         |                 TAX 
+0D20 [08    ] PHP         |                 PHP 
+0D21 [A515  ] LDA $15     |                 LDA.zp $15 
+0D23 [E5FC  ] SBC $FC     |                 SBC.zp $FC 
+0D25 [28    ] PLP         |                 PLP 
+0D26 [1002  ] BPL $02     |                 BPL L_BRS_0D2A0D26
+0D28 [49FF  ] EOR #$FF    |                 EOR.# $FF
+0D2A [      ]             | 
+0D2A [      ]             | L_BRS_0D2A0D26:
+0D2A [C900  ] CMP #$00    |                 CMP.# $00
+0D2C [D004  ] BNE $04     |                 BNE L_BRS_0D320D2C
+0D2E [8A    ] TXA         |                 TXA 
+0D2F [      ]             | 
+0D2F [      ]             | L_BRS_0D2F0D15:
+0D2F [4CBE0B] JMP $0BBE   |                 JMP L_JMP_0BBE0D2F
+0D32 [      ]             | 
+0D32 [      ]             | L_BRS_0D320D2C:
+0D32 [A926  ] LDA #$26    |                 LDA.# $26
+0D34 [A00E  ] LDY #$0E    |                 LDY.# $0E
+0D36 [4C2711] JMP $1127   |                 JMP L_JMP_11270D36
+0D39 [      ]             | 
+0D39 [      ]             | L_BRS_0D390CFE:
+0D39 [C91F  ] CMP #$1F    |                 CMP.# $1F
+0D3B [900D  ] BCC $0D     |                 BCC L_BRS_0D4A0D3B
+0D3D [C938  ] CMP #$38    |                 CMP.# $38
+0D3F [B0A0  ] BCS $A0     |                 BCS L_BRS_0CE10D3F
+0D41 [BDD60D] LDA $0DD6,X |                 LDA,x $0DD6 
+0D44 [20BE0B] JSR $0BBE   |                 JSR L_JSR_0BBE0D44
+0D47 [4C7300] JMP $0073   |                 JMP         CHRGET              ; $0073
+0D4A [      ]             | 
+0D4A [      ]             | L_BRS_0D4A0CD6:
+0D4A [      ]             | L_BRS_0D4A0D3B:
+0D4A [48    ] PHA         |                 PHA 
+0D4B [BDD60D] LDA $0DD6,X |                 LDA,x $0DD6 
+0D4E [8502  ] STA $02     |                 STA.zp $02 
+0D50 [20110C] JSR $0C11   |                 JSR L_JSR_0C110D50
+0D53 [A515  ] LDA $15     |                 LDA.zp $15 
+0D55 [209D0D] JSR $0D9D   |                 JSR L_JSR_0D9D0D55
+0D58 [F00C  ] BEQ $0C     |                 BEQ L_BRS_0D660D58
+0D5A [209D0D] JSR $0D9D   |                 JSR L_JSR_0D9D0D5A
+0D5D [F007  ] BEQ $07     |                 BEQ L_BRS_0D660D5D
+0D5F [A946  ] LDA #$46    |                 LDA.# $46
+0D61 [A00E  ] LDY #$0E    |                 LDY.# $0E
+0D63 [4C2711] JMP $1127   |                 JMP L_JMP_11270D63
+0D66 [      ]             | 
+0D66 [      ]             | L_BRS_0D660D58:
+0D66 [      ]             | L_BRS_0D660D5D:
+0D66 [      ]             | L_BRS_0D670DD5:
+0D66 [A502  ] LDA $02     |                 LDA.zp $02 
+0D68 [290F  ] AND #$0F    |                 AND.# $0F
+0D6A [A8    ] TAY         |                 TAY 
+0D6B [B9390E] LDA $0E39,Y |                 LDA,y $0E39 
+0D6E [1006  ] BPL $06     |                 BPL L_BRS_0D760D6E
+0D70 [A5FE  ] LDA $FE     |                 LDA.zp $FE 
+0D72 [0910  ] ORA #$10    |                 ORA.# $10
+0D74 [85FE  ] STA $FE     |                 STA.zp $FE 
+0D76 [      ]             | 
+0D76 [      ]             | L_BRS_0D760D6E:
+0D76 [68    ] PLA         |                 PLA 
+0D77 [38    ] SEC         |                 SEC 
+0D78 [E908  ] SBC #$08    |                 SBC.# $08
+0D7A [A6FE  ] LDX $FE     |                 LDX.zp $FE 
+0D7C [A8    ] TAY         |                 TAY 
+0D7D [18    ] CLC         |                 CLC 
+0D7E [B95D0E] LDA $0E5D,Y |                 LDA,y $0E5D
+0D81 [7D740E] ADC $0E74,X |                 ADC,x $0E74 
+0D84 [      ]             | 
+0D84 [      ]             | L_BRS_0D850DD3:
+0D84 [20BE0B] JSR $0BBE   |                 JSR L_JSR_0BBE0D84
+0D87 [A5FE  ] LDA $FE     |                 LDA.zp $FE 
+0D89 [290F  ] AND #$0F    |                 AND.# $0F
+0D8B [      ]             | 
+0D8B [      ]             | L_BRS_0D8B0DD1:
+0D8B [F038  ] BEQ $38     |                 BEQ L_BRS_0DC50D8B
+0D8D [      ]             | 
+0D8D [      ]             | L_JSR_0D8D0FF4:
+0D8D [2908  ] AND #$08    |                 AND.# $08
+0D8F [08    ] PHP         |                 PHP 
+0D90 [A514  ] LDA $14     |                 LDA.zp $14 
+0D92 [20BE0B] JSR $0BBE   |                 JSR L_JSR_0BBE0D92
+0D95 [28    ] PLP         |                 PLP 
+0D96 [F02D  ] BEQ $2D     |                 BEQ L_BRS_0DC50D96
+0D98 [A515  ] LDA $15     |                 LDA.zp $15 
+0D9A [4CBE0B] JMP $0BBE   |                 JMP L_JMP_0BBE0D9A
+0D9D [      ]             | 
+0D9D [      ]             | L_JSR_0D9D0D55:
+0D9D [      ]             | L_JSR_0D9D0D5A:
+0D9D [F006  ] BEQ $06     |                 BEQ L_BRS_0DA50D9D
+0D9F [A5FE  ] LDA $FE     |                 LDA.zp $FE 
+0DA1 [0908  ] ORA #$08    |                 ORA.# $08
+0DA3 [85FE  ] STA $FE     |                 STA.zp $FE 
+0DA5 [      ]             | 
+0DA5 [      ]             | L_BRS_0DA50D9D:
+0DA5 [A5FE  ] LDA $FE     |                 LDA.zp $FE 
+0DA7 [4A    ] LSR A       |                 LSR.A 
+0DA8 [4A    ] LSR A       |                 LSR.A 
+0DA9 [4A    ] LSR A       |                 LSR.A 
+0DAA [4A    ] LSR A       |                 LSR.A 
+0DAB [      ]             | 
+0DAB [      ]             | L_BRS_0DAB0DD9:
+0DAB [A502  ] LDA $02     |                 LDA.zp $02 
+0DAD [B004  ] BCS $04     |                 BCS L_BRS_0DB30DAD
+0DAF [290F  ] AND #$0F    |                 AND.# $0F
+0DB1 [9004  ] BCC $04     |                 BCC L_BRS_0DB70DB1
+0DB3 [      ]             | 
+0DB3 [      ]             | L_BRS_0DB30DAD:
+0DB3 [4A    ] LSR A       |                 LSR.A 
+0DB4 [4A    ] LSR A       |                 LSR.A 
+0DB5 [4A    ] LSR A       |                 LSR.A 
+0DB6 [4A    ] LSR A       |                 LSR.A 
+0DB7 [      ]             | 
+0DB7 [      ]             | L_BRS_0DB70DB1:
+0DB7 [A8    ] TAY         |                 TAY 
+0DB8 [A5FE  ] LDA $FE     |                 LDA.zp $FE 
+0DBA [2907  ] AND #$07    |                 AND.# $07
+0DBC [AA    ] TAX         |                 TAX 
+0DBD [B9390E] LDA $0E39,Y |                 LDA,y $0E39
+0DC0 [49FF  ] EOR #$FF    |                 EOR.# $FF
+0DC2 [3D940E] AND $0E94,X |                 AND,x $0E94
+0DC5 [      ]             | 
+0DC5 [      ]             | L_BRS_0DC50D8B:
+0DC5 [      ]             | L_BRS_0DC50D96:
+0DC5 [60    ] RTS         |                 RTS 
+0DC6 [      ]             | 
+0DC6 [D4    ]             |                 DATA.b $D4
+0DC7 [0F    ]             |                 DATA.b $0F
+0DC8 [      ]             | 
+0DC8 [      ]             | L_BRS_0DC90DD7:
+0DC8 [D10F  ] CMP ($0F),Y |                 CMP.i,y $0F
+0DCA [A7    ]             |                 DATA.b $A7
+0DCB [0E420F] ASL $0F42   |                 ASL $0F42 
+0DCE [1110  ] ORA ($10),Y |                 ORA.i,y $10
+0DD0 [2A    ] ROL A       |                 ROL.A 
+0DD1 [10B8  ] BPL $B8     |                 BPL L_BRS_0D8B0DD1
+0DD3 [10B0  ] BPL $B0     |                 BPL L_BRS_0D850DD3 + 1
+0DD5 [1090  ] BPL $90     |                 BPL L_BRS_0D670DD5 + 1
+0DD7 [B0F0  ] BCS $F0     |                 BCS L_BRS_0DC90DD7 + 1
+0DD9 [30D0  ] BMI $D0     |                 BMI L_BRS_0DAB0DD9
+0DDB [1050  ] BPL $50     |                 BPL L_BRS_0E2D0DDB + 1
+0DDD [7005  ] BVS $05     |                 BVS L_BRS_0DE40DDD + 1
+0DDF [0505  ] ORA $05     |                 ORA.zp $05
+0DE1 [0505  ] ORA $05     |                 ORA.zp $05
+0DE3 [      ]             | 
+0DE3 [      ]             | L_BRS_0DE40DDD:
+0DE3 [0505  ] ORA $05     |                 ORA.zp $05
+0DE5 [0617  ] ASL $17     |                 ASL.zp $17 
+0DE7 [1111  ] ORA ($11),Y |                 ORA.i,Y $11
+0DE9 [17    ]             |                 DATA.b $17
+0DEA [17    ]             |                 DATA.b $17
+0DEB [17    ]             |                 DATA.b $17
+0DEC [23    ]             |                 DATA.b $23
+0DED [28    ] PLP         |                 PLP 
+0DEE [28    ] PLP         |                 PLP 
+0DEF [391A2B] AND $2B1A,Y |                 AND,y $2B1A
+0DF2 [2C4C24] BIT $244C   |                 BIT $244C 
+0DF5 [00    ]             |                 DATA.b $00
+0DF6 [18    ] CLC         |                 CLC 
+0DF7 [D8    ] CLD         |                 CLD 
+0DF8 [58    ] CLI         |                 CLI 
+0DF9 [B8    ]             |                 DATA.b $B8
+0DFA [CA    ] DEX         |                 DEX 
+0DFB [88    ] DEY         |                 DEY 
+0DFC [E8    ] INX         |                 INX 
+0DFD [C8    ] INY         |                 INY 
+0DFE [EA    ] NOP         |                 NOP 
+0DFF [48    ] PHA         |                 PHA 
+0E00 [08    ] PHP         |                 PHP 
+0E01 [68    ] PLA         |                 PLA 
+0E02 [28    ] PLP         |                 PLP 
+0E03 [40    ] RTI         |                 RTI 
+0E04 [      ]             |                 ;------------------------------
+0E04 [60    ] RTS         |                 RTS 
+0E05 [      ]             |                 ;------------------------------
+0E05 [38    ] SEC         |                 SEC 
+0E06 [F8    ]             |                 DATA.B $F8
+0E07 [78    ] SEI         |                 SEI 
+0E08 [AA    ] TAX         |                 TAX 
+0E09 [A8    ] TAY         |                 TAY 
+0E0A [BA    ] TSX         |                 TSX 
+0E0B [8A    ] TXA         |                 TXA 
+0E0C [9A    ] TXS         |                 TXS 
+0E0D [98    ] TYA         |                 TYA 
+0E0E [554E  ] EOR $4E,X   |                 EOR.zp,x $4E 
+0E10 [44    ]             |                 DATA.b $44
+0E11 [4546  ] EOR $46     |                 EOR.zp $46 
+0E13 [27    ]             |                 DATA.b $27
+0E14 [44    ]             |                 DATA.b $44
+0E15 [204C4F] JSR $4F4C   |                 JSR $4F4C
+0E18 [43    ]             |                 DATA.b $43
+0E19 [4154  ] EOR ($54,X) |                 EOR.i,x $54
+0E1B [494F  ] EOR #$4F    |                 EOR.# $4F
+0E1D [4E2043] LSR $4320   |                 LSR $4320
+0E20 [4F    ]             |                 DATA.b $4F
+0E21 [554E  ] EOR $4E,X   |                 EOR.zp,x $4E
+0E23 [54    ]             |                 DATA.b $54
+0E24 [45D2  ] EOR $D2     |                 EOR.zp $D2
+0E26 [42    ]             |                 DATA.b $42
+0E27 [52    ]             |                 DATA.b $52
+0E28 [414E  ] EOR ($4E,X) |                 EOR.i,x $4E
+0E2A [43    ]             |                 DATA.b $43
+0E2B [48    ] PHA         |                 PHA 
+0E2C [      ]             | 
+0E2C [      ]             | L_BRS_0E2D0DDB:
+0E2C [204F55] JSR $554F   |                 JSR $554F
+0E2F [54    ]             |                 DATA.b $54
+0E30 [204F46] JSR $464F   |                 JSR $464F
+0E33 [205241] JSR $4152   |                 JSR $4152
+0E36 [4E47C5] LSR $C547   |                 LSR $C547 
+0E39 [1C    ]             |                 DATA.b $1C
+0E3A [0C    ]             |                 DATA.b $0C
+0E3B [04    ]             |                 DATA.b $04
+0E3C [14    ]             |                 DATA.b $14
+0E3D [846E  ] STY $6E     |                 STY.zp $6E 
+0E3F [6C0D86] JMP ($860D) |                 JMP.i $860D 
+0E42 [968E  ] STX $8E,Y   |                 STX.zp,y $8E 
+0E44 [8C8049] STY $4980   |                 STY $4980 
+0E47 [4C4C45] JMP $454C   |                 JMP $454C
+0E4A [47    ]             |                 DATA.b $47
+0E4B [414C  ] EOR ($4C,X) |                 EOR.i,x $4C 
+0E4D [204144] JSR $4441   |                 JSR $4441
+0E50 [44    ]             |                 DATA.b $44
+0E51 [52    ]             |                 DATA.b $52
+0E52 [4553  ] EOR $53     |                 EOR.zp $53 
+0E54 [53    ]             |                 DATA.b $53
+0E55 [494E  ] EOR #$4E    |                 EOR.# $4E
+0E57 [47    ]             |                 DATA.b $47
+0E58 [204D4F] JSR $4F4D   |                 JSR $4F4D
+0E5B [44    ]             |                 DATA.b $44
+0E5C [C560  ] CMP $60     |                 CMP.zp $60 
+0E5E [20C040] JSR $40C0   |                 JSR $40C0
+0E61 [A000  ] LDY #$00    |                 LDY.# $00
+0E63 [E080  ] CPX #$80    |                 CPX.# $80
+0E65 [01C1  ] ORA ($C1,X) |                 ORA.i,x $C1
+0E67 [E141  ] SBC ($41,X) |                 SBC.i,x $41
+0E69 [2161  ] AND ($61,X) |                 AND.i,x $61
+0E6B [81E0  ] STA ($E0,X) |                 STA.i,x $E0
+0E6D [C0A2  ] CPY #$A2    |                 CPY.# $A2
+0E6F [A080  ] LDY #$80    |                 LDY.# $80
+0E71 [14    ]             |                 DATA.b $14
+0E72 [40    ] RTI         |                 RTI 
+0E73 [      ]             | 
+0E73 [200909] JSR $0909   |                 JSR L_JSR_09090E73 + 1
+0E76 [0515  ] ORA $15     |                 ORA.zp $15
+0E78 [1501  ] ORA $01,X   |                 ORA.zp,x $01
+0E7A [1180  ] ORA ($80),Y |                 ORA.i,y $80
+0E7C [0980  ] ORA #$80    |                 ORA.# $80
+0E7E [0D1D19] ORA $191D   |                 ORA $191D
+0E81 [80    ]             |                 DATA.b $80
+0E82 [80    ]             |                 DATA.b $80
+0E83 [80    ]             |                 DATA.b $80
+0E84 [80    ]             |                 DATA.b $80
+0E85 [00    ]             |                 DATA.b $00
+0E86 [04    ]             |                 DATA.b $04
+0E87 [14    ]             |                 DATA.b $14
+0E88 [14    ]             |                 DATA.b $14
+0E89 [80    ]             |                 DATA.b $80
+0E8A [80    ]             |                 DATA.b $80
+0E8B [80    ]             |                 DATA.b $80
+0E8C [80    ]             |                 DATA.b $80
+0E8D [80    ]             |                 DATA.b $80
+0E8E [0C    ]             |                 DATA.b $0C
+0E8F [1C    ]             |                 DATA.b $1C
+0E90 [1C    ]             |                 DATA.b $1C
+0E91 [80    ]             |                 DATA.b $80
+0E92 [80    ]             |                 DATA.b $80
+0E93 [2C0102] BIT $0201   |                 BIT $0201 
+0E96 [04    ]             |                 DATA.b $04
+0E97 [08    ] PHP         |                 PHP 
+0E98 [1020  ] BPL $20     |                 BPL L_BRS_0EBA0E98
+0E9A [40    ] RTI         |                 RTI 
+0E9B [      ]             | 
+0E9B [80    ]             |                 DATA.b $80
+0E9C [      ]             | 
+0E9C [      ]             | L_JSR_0E9C0EBA:
+0E9C [      ]             | L_JSR_0E9C0EC7:
+0E9C [      ]             | L_JSR_0E9C0ED9:
+0E9C [      ]             | L_JSR_0E9C0FF7:
+0E9C [207900] JSR $0079   |                 JSR $0079
+0E9F [F004  ] BEQ $04     |                 BEQ L_BRS_0EA50E9F
+0EA1 [C93B  ] CMP #$3B    |                 CMP.# $3B
+0EA3 [D002  ] BNE $02     |                 BNE L_BRS_0EA70EA3
+0EA5 [      ]             | 
+0EA5 [      ]             | L_BRS_0EA50E9F:
+0EA5 [68    ] PLA         |                 PLA 
+0EA6 [68    ] PLA         |                 PLA 
+0EA7 [      ]             | 
+0EA7 [      ]             | L_BRS_0EA70EA3:
+0EA7 [      ]             | L_BRS_0EA70EEF:
+0EA7 [      ]             | L_BRS_0EA70EFB:
+0EA7 [60    ] RTS         |                 RTS 
+0EA8 [      ]             | 
+0EA8 [A900  ] LDA #$00    |                 LDA.# $00
+0EAA [85FB  ] STA $FB     |                 STA.zp $FB 
+0EAC [85FD  ] STA $FD     |                 STA.zp $FD 
+0EAE [85B7  ] STA $B7     |                 STA.zp $B7 
+0EB0 [A9C0  ] LDA #$C0    |                 LDA.# $C0
+0EB2 [85FC  ] STA $FC     |                 STA.zp $FC 
+0EB4 [A59D  ] LDA $9D     |                 LDA.zp $9D 
+0EB6 [0920  ] ORA #$20    |                 ORA.# $20
+0EB8 [859D  ] STA $9D     |                 STA.zp $9D 
+0EBA [      ]             | 
+0EBA [      ]             | L_BRS_0EBA0E98:
+0EBA [209C0E] JSR $0E9C   |                 JSR L_JSR_0E9C0EBA
+0EBD [208AAD] JSR $AD8A   |                 JSR $AD8A                         ; Confirm Result
+0EC0 [20F7B7] JSR $B7F7   |                 JSR $B7F7                         ; Convert FAC#1 to Integer in LINNUM
+0EC3 [84FB  ] STY $FB     |                 STY.zp $FB 
+0EC5 [85FC  ] STA $FC     |                 STA.zp $FC 
+0EC7 [209C0E] JSR $0E9C   |                 JSR L_JSR_0E9C0EC7
+0ECA [2000E2] JSR $E200   |                 JSR $E200                         ; Get Next One Byte Parameter
+0ECD [E002  ] CPX #$02    |                 CPX.# $02
+0ECF [9003  ] BCC $03     |                 BCC L_BRS_0ED40ECF
+0ED1 [4C48B2] JMP $B248   |                 JMP $B248                         ; ?ILLEGAL QUANTITY
+0ED4 [      ]             | 
+0ED4 [      ]             | L_BRS_0ED40ECF:
+0ED4 [8A    ] TXA         |                 TXA 
+0ED5 [059D  ] ORA $9D     |                 ORA.zp $9D
+0ED7 [859D  ] STA $9D     |                 STA.zp $9D 
+0ED9 [209C0E] JSR $0E9C   |                 JSR L_JSR_0E9C0ED9
+0EDC [2000E2] JSR $E200   |                 JSR $E200                         ; Get Next One Byte Parameter
+0EDF [86FD  ] STX $FD     |                 STX.zp $FD 
+0EE1 [200EE2] JSR $E20E   |                 JSR $E20E                         ; Check For Comma
+0EE4 [209EAD] JSR $AD9E   |                 JSR $AD9E                         ; Evaluate Expression in Text
+0EE7 [20A3B6] JSR $B6A3   |                 JSR $B6A3                         ; Perform String Housekeeping
+0EEA [20BDFF] JSR $FFBD   |                 JSR $FFBD                         ; Set Filename
+0EED [A6FD  ] LDX $FD     |                 LDX.zp $FD 
+0EEF [F0B6  ] BEQ $B6     |                 BEQ L_BRS_0EA70EEF
+0EF1 [A908  ] LDA #$08    |                 LDA.# $08
+0EF3 [A001  ] LDY #$01    |                 LDY.# $01
+0EF5 [20BAFF] JSR $FFBA   |                 JSR $FFBA                         ; Set Logical File Parameters
+0EF8 [A59D  ] LDA $9D     |                 LDA.zp $9D 
+0EFA [4A    ] LSR A       |                 LSR.A 
+0EFB [90AA  ] BCC $AA     |                 BCC L_BRS_0EA70EFB
+0EFD [A5B7  ] LDA $B7     |                 LDA.zp $B7 
+0EFF [D006  ] BNE $06     |                 BNE L_BRS_0F070EFF
+0F01 [A5FD  ] LDA $FD     |                 LDA.zp $FD 
+0F03 [C908  ] CMP #$08    |                 CMP.# $08
+0F05 [B015  ] BCS $15     |                 BCS L_BRS_0F1C0F05
+0F07 [      ]             | 
+0F07 [      ]             | L_BRS_0F070EFF:
+0F07 [20C1E1] JSR $E1C1   |                 JSR $E1C1
+0F0A [A208  ] LDX #$08    |                 LDX.# $08
+0F0C [2018E1] JSR $E118   |                 JSR $E118                         ; Set Up For Output
+0F0F [A5FB  ] LDA $FB     |                 LDA.zp $FB 
+0F11 [200CE1] JSR $E10C   |                 JSR $E10C                         ; Output Character
+0F14 [A5FC  ] LDA $FC     |                 LDA.zp $FC 
+0F16 [200CE1] JSR $E10C   |                 JSR $E10C                         ; Output Character
+0F19 [4CCCFF] JMP $FFCC   |                 JMP $FFCC                         ; Restore I/O Vector
+0F1C [      ]             | 
+0F1C [      ]             | L_BRS_0F1C0F05:
+0F1C [2010F7] JSR $F710   |                 JSR $F710                         ; Output I/O Error Messages: MISSING FILENAME
+0F1F [4C3BA4] JMP $A43B   |                 JMP $A43B
+0F22 [208BB0] JSR $B08B   |                 JSR $B08B                         ; Identify Variable
+0F25 [8549  ] STA $49     |                 STA.zp $49 
+0F27 [844A  ] STY $4A     |                 STY.zp $4A 
+0F29 [207900] JSR $0079   |                 JSR $0079
+0F2C [F007  ] BEQ $07     |                 BEQ L_BRS_0F350F2C
+0F2E [C93B  ] CMP #$3B    |                 CMP.# $3B
+0F30 [F003  ] BEQ $03     |                 BEQ L_BRS_0F350F30
+0F32 [4CACA9] JMP $A9AC   |                 JMP $A9AC
+0F35 [      ]             | 
+0F35 [      ]             | L_BRS_0F350F2C:
+0F35 [      ]             | L_BRS_0F350F30:
+0F35 [A63A  ] LDX $3A     |                 LDX.zp $3A 
+0F37 [E8    ] INX         |                 INX 
+0F38 [D003  ] BNE $03     |                 BNE L_BRS_0F3D0F38
+0F3A [4C08AF] JMP $AF08   |                 JMP $AF08                         ; Output ?SYNTAX Error
+0F3D [      ]             | 
+0F3D [      ]             | L_BRS_0F3D0F38:
+0F3D [20920A] JSR $0A92   |                 JSR L_JSR_0A920F3D
+0F40 [4CD0BB] JMP $BBD0   |                 JMP $BBD0
+0F43 [F010  ] BEQ $10     |                 BEQ L_BRS_0F550F43 + 1
+0F45 [206BA9] JSR $A96B   |                 JSR $A96B                         ; Fetch linnum From BASIC
+0F48 [A514  ] LDA $14     |                 LDA.zp $14 
+0F4A [8DB102] STA $02B1   |                 STA $02B1 
+0F4D [A515  ] LDA $15     |                 LDA.zp $15 
+0F4F [8DB202] STA $02B2   |                 STA $02B2 
+0F52 [A980  ] LDA #$80    |                 LDA.# $80
+0F54 [      ]             | 
+0F54 [      ]             |                 L_BRS_0F550F43:
+0F54 [2CA900] BIT $00A9   |                 BIT $00A9 
+0F57 [8DB002] STA $02B0   |                 STA $02B0 
+0F5A [60    ] RTS         |                 RTS 
+0F5B [      ]             | 
+0F5B [      ]             | L_BRS_0F5B0F80:
+0F5B [ADB002] LDA $02B0   |                 LDA $02B0 
+0F5E [29BF  ] AND #$BF    |                 AND.# $BF
+0F60 [      ]             | 
+0F60 [      ]             | L_BRS_0F610F99:
+0F60 [      ]             | L_BRS_0F610FAC:
+0F60 [2CA900] BIT $00A9   |                 BIT $00A9 
+0F63 [8DB002] STA $02B0   |                 STA $02B0                   
+0F66 [      ]             | 
+0F66 [      ]             | IMAIN_PATCH:    ; $0f66
+0F66 [A614  ] LDX $14     |                 LDX.zp     $14 
+0F68 [8EFE01] STX $01FE   |                 STX        $01FE 
+0F6B [A615  ] LDX $15     |                 LDX.zp     $15 
+0F6D [8EFF01] STX $01FF   |                 STX        $01FF 
+0F70 [2CB002] BIT $02B0   |                 BIT        $02B0 
+0F73 [7024  ] BVS $24     |                 BVS        L_BRS_0F990F73
+0F75 [      ]             | 
+0F75 [      ]             | L_BRS_0F750FD0:
+0F75 [2060A5] JSR $A560   |                 JSR        $A560                         ; Input Line Into Buffer
+0F78 [867A  ] STX $7A     |                 STX.zp     $7A 
+0F7A [847B  ] STY $7B     |                 STY.zp     $7B 
+0F7C [207300] JSR $0073   |                 JSR        CHRGET               ; $0073
+0F7F [AA    ] TAX         |                 TAX 
+0F80 [F0D9  ] BEQ $D9     |                 BEQ        L_BRS_0F5B0F80
+0F82 [A2FF  ] LDX #$FF    |                 LDX.#      $FF
+0F84 [863A  ] STX $3A     |                 STX.zp     $3A 
+0F86 [9003  ] BCC $03     |                 BCC        L_BRS_0F8B0F86
+0F88 [4C96A4] JMP $A496   |                 JMP        $A496
+0F8B [      ]             | 
+0F8B [      ]             | L_BRS_0F8B0F86:
+0F8B [ADB002] LDA $02B0   |                 LDA        $02B0 
+0F8E [0940  ] ORA #$40    |                 ORA.#      $40
+0F90 [8DB002] STA $02B0   |                 STA        $02B0 
+0F93 [207900] JSR $0079   |                 JSR        $0079
+0F96 [4C9CA4] JMP $A49C   |                 JMP        $A49C                         ; Get Line Number & Tokenise Text
+0F99 [      ]             | 
+0F99 [      ]             | L_BRS_0F990F73:
+0F99 [10C6  ] BPL $C6     |                 BPL         L_BRS_0F610F99 + 1
+0F9B [18    ] CLC         |                 CLC 
+0F9C [ADFE01] LDA $01FE   |                 LDA         $01FE 
+0F9F [6DB102] ADC $02B1   |                 ADC         $02B1 
+0FA2 [8563  ] STA $63     |                 STA.zp      $63 
+0FA4 [ADFF01] LDA $01FF   |                 LDA         $01FF 
+0FA7 [6DB202] ADC $02B2   |                 ADC         $02B2 
+0FAA [8562  ] STA $62     |                 STA.zp      $62 
+0FAC [B0B3  ] BCS $B3     |                 BCS         L_BRS_0F610FAC + 1
+0FAE [A290  ] LDX #$90    |                 LDX.#       $90
+0FB0 [38    ] SEC         |                 SEC 
+0FB1 [2049BC] JSR $BC49   |                 JSR         $BC49
+0FB4 [20DFBD] JSR $BDDF   |                 JSR         $BDDF
+0FB7 [78    ] SEI         |                 SEI 
+0FB8 [A200  ] LDX #$00    |                 LDX.#       $00
+0FBA [      ]             | 
+0FBA [      ]             | L_BRS_0FBA0FC5:
+0FBA [BD0001] LDA $0100,X |                 LDA,x       $0100
+0FBD [C930  ] CMP #$30    |                 CMP.#       $30
+0FBF [9006  ] BCC $06     |                 BCC         L_BRS_0FC70FBF
+0FC1 [9D7702] STA $0277,X |                 STA,x       $0277
+0FC4 [E8    ] INX         |                 INX 
+0FC5 [D0F3  ] BNE $F3     |                 BNE         L_BRS_0FBA0FC5
+0FC7 [      ]             | 
+0FC7 [      ]             | L_BRS_0FC70FBF:
+0FC7 [A920  ] LDA #$20    |                 LDA.#      $20
+0FC9 [9D7702] STA $0277,X |                 STA,x      $0277
+0FCC [E8    ] INX         |                 INX 
+0FCD [86C6  ] STX $C6     |                 STX.zp     $C6
+0FCF [58    ] CLI         |                 CLI 
+0FD0 [D0A3  ] BNE $A3     |                 BNE        L_BRS_0F750FD0
+0FD2 [A908  ] LDA #$08    |                 LDA.#      $08
+0FD4 [2CA900] BIT $00A9   |                 BIT        $00A9
+0FD7 [8502  ] STA $02     |                 STA.zp     $02
+0FD9 [      ]             | 
+0FD9 [      ]             | L_BRS_0FD90FFD:
+0FD9 [209EAD] JSR $AD9E   |                 JSR         $AD9E                         ; Evaluate Expression in Text
+0FDC [240D  ] BIT $0D     |                 BIT.zp      $0D 
+0FDE [301F  ] BMI $1F     |                 BMI         L_BRS_0FFF0FDE
+0FE0 [20EE0B] JSR $0BEE   |                 JSR         L_JSR_0BEE0FE0
+0FE3 [A502  ] LDA $02     |                 LDA.zp      $02 
+0FE5 [D00D  ] BNE $0D     |                 BNE         L_BRS_0FF40FE5
+0FE7 [A615  ] LDX $15     |                 LDX.zp      $15 
+0FE9 [F009  ] BEQ $09     |                 BEQ         L_BRS_0FF40FE9
+0FEB [A69D  ] LDX $9D     |                 LDX.zp      $9D 
+0FED [E020  ] CPX #$20    |                 CPX.#       $20
+0FEF [F003  ] BEQ $03     |                 BEQ         L_BRS_0FF40FEF
+0FF1 [4C48B2] JMP $B248   |                 JMP         $B248                         ; ?ILLEGAL QUANTITY
+0FF4 [      ]             | 
+0FF4 [      ]             | L_BRS_0FF40FE5:
+0FF4 [      ]             | L_BRS_0FF40FE9:
+0FF4 [      ]             | L_BRS_0FF40FEF:
+0FF4 [208D0D] JSR $0D8D   |                 JSR         L_JSR_0D8D0FF4
+0FF7 [      ]             | 
+0FF7 [      ]             | L_BRS_0FF71008:
+0FF7 [209C0E] JSR $0E9C   |                 JSR         L_JSR_0E9C0FF7
+0FFA [200EE2] JSR $E20E   |                 JSR         $E20E                         ; Check For Comma
+0FFD [D0DA  ] BNE $DA     |                 BNE         L_BRS_0FD90FFD
+0FFF [      ]             | 
+0FFF [      ]             | L_BRS_0FFF0FDE:
+0FFF [20A6B6] JSR $B6A6   |                 JSR         $B6A6
+1002 [8564  ] STA $64     |                 STA.zp      $64
+1004 [A000  ] LDY #$00    |                 LDY.#       $00
+1006 [      ]             | 
+1006 [      ]             | L_BRS_10061010:
+1006 [C464  ] CPY $64     |                 CPY.zp      $64
+1008 [F0ED  ] BEQ $ED     |                 BEQ         L_BRS_0FF71008
+100A [B122  ] LDA ($22),Y |                 LDA.i,y     $22 
+100C [20BE0B] JSR $0BBE   |                 JSR         L_JSR_0BBE100C
+100F [C8    ] INY         |                 INY 
+1010 [D0F4  ] BNE $F4     |                 BNE         L_BRS_10061010
+1012 [A001  ] LDY #$01    |                 LDY.#       $01
+1014 [A908  ] LDA #$08    |                 LDA.#       $08
+1016 [912B  ] STA ($2B),Y |                 STA.i,y     $2B
+1018 [2033A5] JSR $A533   |                 JSR         $A533                         ; Rechain Lines
+101B [A522  ] LDA $22     |                 LDA.zp      $22
+101D [A423  ] LDY $23     |                 LDY.zp      $23
+101F [652D  ] ADC $2D     |                 ADC.zp      $2D
+1021 [852D  ] STA $2D     |                 STA.zp      $2D
+1023 [9001  ] BCC $01     |                 BCC         L_BRS_10261023
+1025 [C8    ] INY         |                 INY
+1026 [      ]             | 
+1026 [      ]             | L_BRS_10261023:
+1026 [842E  ] STY $2E     |                 STY.zp      $2E
+1028 [4C5CA6] JMP $A65C   |                 JMP         $A65C
+102B [209EAD] JSR $AD9E   |                 JSR         $AD9E                         ; Evaluate Expression in Text
+102E [20A3B6] JSR $B6A3   |                 JSR         $B6A3                         ; Perform String Housekeeping
+1031 [20BDFF] JSR $FFBD   |                 JSR         $FFBD                         ; Set Filename
+1034 [2000E2] JSR $E200   |                 JSR         $E200                         ; Get Next One Byte Parameter
+1037 [A909  ] LDA #$09    |                 LDA.#       $09
+1039 [A000  ] LDY #$00    |                 LDY.#       $00
+103B [20BAFF] JSR $FFBA   |                 JSR         $FFBA                         ; Set Logical File Parameters
+103E [20C1E1] JSR $E1C1   |                 JSR         $E1C1
+1041 [A209  ] LDX #$09    |                 LDX.#       $09
+1043 [201EE1] JSR $E11E   |                 JSR         $E11E                         ; Set Up For Input
+1046 [2012E1] JSR $E112   |                 JSR         $E112                         ; Input Character
+1049 [A590  ] LDA $90     |                 LDA.zp      $90 
+104B [2902  ] AND #$02    |                 AND.#       $02
+104D [F005  ] BEQ $05     |                 BEQ         L_BRS_1054104D
+104F [A904  ] LDA #$04    |                 LDA.#       $04
+1051 [4C3BA4] JMP $A43B   |                 JMP         $A43B
+1054 [      ]             | 
+1054 [      ]             | L_BRS_1054104D:
+1054 [2012E1] JSR $E112   |                 JSR         $E112                         ; Input Character
+1057 [20CCFF] JSR $FFCC   |                 JSR         $FFCC                         ; Restore I/O Vector
+105A [A57A  ] LDA $7A     |                 LDA.zp      $7A
+105C [48    ] PHA         |                 PHA 
+105D [A57B  ] LDA $7B     |                 LDA.zp      $7B
+105F [48    ] PHA         |                 PHA 
+1060 [      ]             | 
+1060 [      ]             | L_BRS_10601095:
+1060 [      ]             | L_BRS_1060109D:
+1060 [A209  ] LDX #$09    |                 LDX.#  $09
+1062 [201EE1] JSR $E11E   |                 JSR         $E11E                         ; Set Up For Input
+1065 [2012E1] JSR $E112   |                 JSR         $E112                         ; Input Character
+1068 [2012E1] JSR $E112   |                 JSR         $E112                         ; Input Character
+106B [AA    ] TAX         |                 TAX 
+106C [F034  ] BEQ $34     |                 BEQ         L_BRS_10A2106C
+106E [2012E1] JSR $E112   |                 JSR         $E112                         ; Input Character
+1071 [2012E1] JSR $E112   |                 JSR         $E112                         ; Input Character
+1074 [A2FF  ] LDX #$FF    |                 LDX.#       $FF
+1076 [      ]             | 
+1076 [      ]             | L_BRS_1076107E:
+1076 [E8    ] INX         |                 INX 
+1077 [2012E1] JSR $E112   |                 JSR         $E112                         ; Input Character
+107A [9D0002] STA $0200,X |                 STA,x       $0200 
+107D [A8    ] TAY         |                 TAY 
+107E [D0F6  ] BNE $F6     |                 BNE         L_BRS_1076107E
+1080 [20CCFF] JSR $FFCC   |                 JSR         $FFCC                         ; Restore I/O Vector
+1083 [A9FF  ] LDA #$FF    |                 LDA.#       $FF
+1085 [857A  ] STA $7A     |                 STA.zp      $7A 
+1087 [A901  ] LDA #$01    |                 LDA.#       $01
+1089 [857B  ] STA $7B     |                 STA.zp      $7B 
+108B [      ]             | 
+108B [      ]             | L_BRS_108B1099:
+108B [207300] JSR $0073   |                 JSR         CHRGET              ; $0073
+108E [20C40C] JSR $0CC4   |                 JSR         L_JSR_0CC4108E
+1091 [207900] JSR $0079   |                 JSR         $0079
+1094 [AA    ] TAX         |                 TAX 
+1095 [F0C9  ] BEQ $C9     |                 BEQ         L_BRS_10601095
+1097 [C93A  ] CMP #$3A    |                 CMP.#       $3A
+1099 [F0F0  ] BEQ $F0     |                 BEQ         L_BRS_108B1099
+109B [C93B  ] CMP #$3B    |                 CMP.#       $3B
+109D [F0C1  ] BEQ $C1     |                 BEQ         L_BRS_1060109D
+109F [4C08AF] JMP $AF08   |                 JMP         $AF08                         ; Output ?SYNTAX Error
+10A2 [      ]             | 
+10A2 [      ]             | L_BRS_10A2106C:
+10A2 [20CCFF] JSR $FFCC   |                 JSR         $FFCC                         ; Restore I/O Vector
+10A5 [A909  ] LDA #$09    |                 LDA.#       $09
+10A7 [20C3FF] JSR $FFC3   |                 JSR         $FFC3                         ; Close Vector
+10AA [      ]             | 
+10AA [      ]             | L_BRS_10AA1112:
+10AA [68    ] PLA         |                 PLA 
+10AB [857B  ] STA $7B     |                 STA.zp      $7B
+10AD [68    ] PLA         |                 PLA 
+10AE [857A  ] STA $7A     |                 STA.zp      $7A
+10B0 [60    ] RTS         |                 RTS 
+10B1 [      ]             | 
+10B1 [      ]             | ;$10B1  20 B4 10  JSR L_JSR_10B410B1
+10B1 [20B410] JSR $10B4   |                 JSR         L_JSR_10B410B1
+10B4 [      ]             | 
+10B4 [      ]             | L_JSR_10B410B1:
+10B4 [A900  ] LDA #$00    |                 LDA.#       $00
+10B6 [4CBE0B] JMP $0BBE   |                 JMP         L_JMP_0BBE10B6
+10B9 [209EAD] JSR $AD9E   |                 JSR         $AD9E                         ; Evaluate Expression in Text
+10BC [20A3B6] JSR $B6A3   |                 JSR         $B6A3                         ; Perform String Housekeeping
+10BF [A8    ] TAY         |                 TAY 
+10C0 [A900  ] LDA #$00    |                 LDA.#       $00
+10C2 [C058  ] CPY #$58    |                 CPY.#       $58
+10C4 [9003  ] BCC $03     |                 BCC         L_BRS_10C910C4
+10C6 [4C71A5] JMP $A571   |                 JMP         $A571
+10C9 [      ]             | 
+10C9 [      ]             | L_BRS_10C910C4:
+10C9 [      ]             | L_BRS_10C910D1:
+10C9 [990002] STA $0200,Y |                 STA,y       $0200
+10CC [88    ] DEY         |                 DEY 
+10CD [3004  ] BMI $04     |                 BMI         L_BRS_10D310CD
+10CF [B122  ] LDA ($22),Y |                 LDA.i,y     $22 
+10D1 [90F6  ] BCC $F6     |                 BCC         L_BRS_10C910D1
+10D3 [      ]             | 
+10D3 [      ]             | L_BRS_10D310CD:
+10D3 [A57A  ] LDA $7A     |                 LDA.zp      $7A 
+10D5 [48    ] PHA         |                 PHA 
+10D6 [A57B  ] LDA $7B     |                 LDA.zp      $7B 
+10D8 [48    ] PHA         |                 PHA 
+10D9 [A9FF  ] LDA #$FF    |                 LDA.#       $FF
+10DB [857A  ] STA $7A     |                 STA.zp      $7A 
+10DD [A901  ] LDA #$01    |                 LDA.#       $01
+10DF [857B  ] STA $7B     |                 STA.zp      $7B 
+10E1 [207300] JSR $0073   |                 JSR         CHRGET              ; $0073
+10E4 [9007  ] BCC $07     |                 BCC         L_BRS_10ED10E4
+10E6 [A914  ] LDA #$14    |                 LDA.#       $14
+10E8 [A011  ] LDY #$11    |                 LDY.#       $11
+10EA [4C2711] JMP $1127   |                 JMP         L_JMP_112710EA
+10ED [      ]             | 
+10ED [      ]             | L_BRS_10ED10E4:
+10ED [206BA9] JSR $A96B   |                 JSR         $A96B                         ; Fetch linnum From BASIC
+10F0 [207CA5] JSR $A57C   |                 JSR         $A57C
+10F3 [A514  ] LDA $14     |                 LDA.zp      $14 
+10F5 [8DFE01] STA $01FE   |                 STA         $01FE 
+10F8 [A515  ] LDA $15     |                 LDA.zp      $15 
+10FA [8DFF01] STA $01FF   |                 STA         $01FF 
+10FD [8CFC01] STY $01FC   |                 STY         $01FC 
+1100 [8CFD01] STY $01FD   |                 STY         $01FD 
+1103 [840B  ] STY $0B     |                 STY.zp      $0B 
+1105 [A000  ] LDY #$00    |                 LDY.#       $00
+1107 [      ]             | 
+1107 [      ]             | L_BRS_11071110:
+1107 [B9FC01] LDA $01FC,Y |                 LDA,y       $01FC
+110A [20BE0B] JSR $0BBE   |                 JSR         L_JSR_0BBE110A
+110D [C8    ] INY         |                 INY 
+110E [C40B  ] CPY $0B     |                 CPY.zp      $0B
+1110 [90F5  ] BCC $F5     |                 BCC         L_BRS_11071110
+1112 [B096  ] BCS $96     |                 BCS         L_BRS_10AA1112
+1114 [4D4953] EOR $5349   |                 EOR         $5349 
+1117 [53    ]             |                 DATA.b      $53
+1118 [494E  ] EOR #$4E    |                 EOR.#       $4E
+111A [47    ]             |                 DATA.b      $47
+111B [204C49] JSR $494C   |                 JSR         $494C
+111E [4E4520] LSR $2045   |                 LSR         $2045 
+1121 [4E554D] LSR $4D55   |                 LSR         $4D55 
+1124 [42    ]             |                 DATA.b      $42
+1125 [45D2  ] EOR $D2     |                 EOR.zp      $D2 
+1127 [      ]             | ;------------------------------
+1127 [      ]             | L_JMP_11270BCE:
+1127 [      ]             | L_JMP_11270D36:
+1127 [      ]             | L_JMP_11270D63:
+1127 [      ]             | L_JMP_112710EA:
+1127 [8522  ] STA $22     |                 STA.zp      $22 
+1129 [8423  ] STY $23     |                 STY.zp      $23 
+112B [4C47A4] JMP $A447   |                 JMP         $A447 
+112E [      ]             | 
+112E [      ]             | ; ===========================================================================
+112E [      ]             | 
+112E [      ]             |                 ; $112e
+112E [      ]             | ; VECTORTABLE:    DATA        $0f66           ; IMAIN
+112E [      ]             | ;                 DATA        $080E           ; ICRNCH
+112E [      ]             | ;                 DATA        $0a06           ; IQPLOP
+112E [      ]             | ;                 DATA        $0cb1           ; IGONE
+112E [      ]             | ;                 DATA        $0a6e           ; IEVAL
+112E [      ]             | 
+112E [660F  ]             | VECTORTABLE:    DATA        IMAIN_PATCH
+1130 [0E08  ]             |                 DATA        ICRNCH_PATCH
+1132 [060A  ]             |                 DATA        IQPLOP_PATCH
+1134 [B10C  ]             |                 DATA        IGONE_PATCH
+1136 [6E0A  ]             |                 DATA        IEVAL_PATCH
+1138 [      ]             | 
+1138 [      ]             | ; THIS IS THE BLOCK TRANSFER ROUTINE.
+1138 [      ]             | ; IT MAKES SPACE BY SHOVING EVERYTHING FORWARD.
+1138 [      ]             | ;
+1138 [      ]             | ; ON ENTRY:
+1138 [      ]             | ; [Y,A]=[HIGHDS]    (FOR REASON).
+1138 [      ]             | ; [HIGHDS]= DESTINATION OF [HIGH ADDRESS].
+1138 [      ]             | ; [LOWTR]= LOWEST ADDR TO BE TRANSFERRED.
+1138 [      ]             | ; [HIGHTR]= HIGHEST ADDR TO BE TRANSFERRED.
+1138 [      ]             | 
+1138 [      ]             |                 ; $1138
+1138 [A937  ] LDA #$37    | STARTUP:        LDA.#       $37             ; Set Memory Banks
+113A [8501  ] STA $01     |                 STA.zp      R6510           ; $01
+113C [      ]             | 
+113C [A900  ] LDA #$00    |                 LDA.#       $00
+113E [8558  ] STA $58     |                 STA.zp      HIGHDS          ; $58
+1140 [855A  ] STA $5A     |                 STA.zp      HIGHTR          ; $5A
+1142 [855F  ] STA $5F     |                 STA.zp      LOWTR           ; $5F
+1144 [A9C0  ] LDA #$C0    |                 LDA.#       $C0
+1146 [8559  ] STA $59     |                 STA.zp      HIGHDS + 1      ; $59
+1148 [855B  ] STA $5B     |                 STA.zp      HIGHTR + 1      ; $5B
+114A [A9A0  ] LDA #$A0    |                 LDA.#       $A0
+114C [8560  ] STA $60     |                 STA.zp      LOWTR + 1       ; $60
+114E [20BBA3] JSR $A3BB   |                 JSR         BLTU            ; $A3BB           
+1151 [      ]             |                                             ; Copy $A000 to $C000 => $A000
+1151 [      ]             |                                             ; Copy Basic ROM to RAM Location
+1151 [      ]             | 
+1151 [A209  ] LDX #$09    |                 LDX.#       $09             ; Copy Basic Vector Table
+1153 [BD2E11] LDA $112E,X | VECTORLOOP:     LDA,X       VECTORTABLE     ; $112E           ; VECTORTABLE
+1156 [9D0203] STA $0302,X |                 STA,X       IMAIN           ; $0302
+1159 [CA    ] DEX         |                 DEX
+115A [10F7  ] BPL $F7     |                 BPL         VECTORLOOP
+115C [      ]             | 
+115C [A94C  ] LDA #$4C    |                 LDA.#       $4C
+115E [8DC4B5] STA $B5C4   |                 STA         $B5C4 
+1161 [8D92B0] STA $B092   |                 STA         $B092 
+1164 [8D43B1] STA $B143   |                 STA         $B143 
+1167 [8DA5A9] STA $A9A5   |                 STA         $A9A5           ; Perform LET
+116A [      ]             | 
+116A [A90D  ] LDA #$0D    |                 LDA.#       $0D
+116C [8D4EB5] STA $B54E   |                 STA         $B54E 
+116F [8D55B1] STA $B155   |                 STA         $B155 
+1172 [      ]             | 
+1172 [A908  ] LDA #$08    |                 LDA.#       $08
+1174 [8D0FB6] STA $B60F   |                 STA         $B60F 
+1177 [8D89B1] STA $B189   |                 STA         $B189 
+117A [      ]             | 
+117A [A9EA  ] LDA #$EA    |                 LDA.#       $EA
+117C [8D10B6] STA $B610   |                 STA         $B610 
+117F [      ]             | 
+117F [A960  ] LDA #$60    |                 LDA.#       $60
+1181 [8D69B1] STA $B169   |                 STA         $B169 
+1184 [      ]             | 
+1184 [A98C  ] LDA #$8C    |                 LDA.#       $8C
+1186 [A00B  ] LDY #$0B    |                 LDY.#       $0B
+1188 [8D44B1] STA $B144   |                 STA         $B144 
+118B [8C45B1] STY $B145   |                 STY         $B145 
+118E [      ]             | 
+118E [A9E2  ] LDA #$E2    |                 LDA.#       $E2
+1190 [A00A  ] LDY #$0A    |                 LDY.#       $0A
+1192 [8D93B0] STA $B093   |                 STA         $B093 
+1195 [8C94B0] STY $B094   |                 STY         $B094 
+1198 [      ]             | 
+1198 [A9A2  ] LDA #$A2    |                 LDA.#       $A2
+119A [A00B  ] LDY #$0B    |                 LDY.#       $0B
+119C [8DC5B5] STA $B5C5   |                 STA         $B5C5 
+119F [8CC6B5] STY $B5C6   |                 STY         $B5C6 
+11A2 [      ]             | 
+11A2 [A9D7  ] LDA #$D7    |                 LDA.#       $D7
+11A4 [A00C  ] LDY #$0C    |                 LDY.#       $0C
+11A6 [8D2CA0] STA $A02C   |                 STA         $A02C 
+11A9 [8C2DA0] STY $A02D   |                 STY         $A02D 
+11AC [      ]             | 
+11AC [A922  ] LDA #$22    |                 LDA.#       $22
+11AE [A00F  ] LDY #$0F    |                 LDY.#       $0F
+11B0 [8DA6A9] STA $A9A6   |                 STA         $A9A6 
+11B3 [8CA7A9] STY $A9A7   |                 STY         $A9A7 
+11B6 [      ]             | 
+11B6 [A9C4  ] LDA #$C4    |                 LDA.#       $C4
+11B8 [A00C  ] LDY #$0C    |                 LDY.#       $0C
+11BA [8D49A9] STA $A949   |                 STA         $A949 
+11BD [8C4AA9] STY $A94A   |                 STY         $A94A  
+11C0 [      ]             | 
+11C0 [A9FB  ] LDA #$FB    |                 LDA.#       $FB
+11C2 [A0F0  ] LDY #$F0    |                 LDY.#       $F0
+11C4 [8D20D0] STA $D020   |                 STA         VICII_BORDER_COLOR
+11C7 [8C21D0] STY $D021   |                 STY         VICII_BG_COL_0
+11CA [      ]             | 
+11CA [A91B  ] LDA #$1B    |                 LDA.#       $1B
+11CC [A012  ] LDY #$12    |                 LDY.#       $12                     ; Replace with End of App
+11CE [8D8102] STA $0281   |                 STA         $0281
+11D1 [8C8202] STY $0282   |                 STY         $0282
+11D4 [20BFE3] JSR $E3BF   |                 JSR         $E3BF                   ; Init BASIC Ram
+11D7 [      ]             | 
+11D7 [A9E4  ] LDA #$E4    |                 LDA.#       $E4                     ; Replace with TITLEMESSAGE
+11D9 [A011  ] LDY #$11    |                 LDY.#       $11
+11DB [201EAB] JSR $AB1E   |                 JSR         $AB1E                   ; Output String
+11DE [2030E4] JSR $E430   |                 JSR         $E430
+11E1 [4C9DE3] JMP $E39D   |                 JMP         $E39D
+11E4 [      ]             | 
+11E4 [93    ]             | TITLEMESSAGE:   DATA.B      $93
+11E5 [08    ]             |                 DATA.B      $08
+11E6 [0E    ]             |                 DATA.B      $0E
+11E7 [9B    ]             |                 DATA.B      $9B
+11E8 [11    ]             |                 DATA.B      $11
+11E9 [20    ]             |                 DATA.B      $20
+11EA [20    ]             |                 DATA.B      $20
+11EB [2A    ]             |                 DATA.B      $2A
+11EC [20    ]             |                 DATA.B      $20
+11ED [C1    ]             |                 DATA.B      $C1
+11EE [D3    ]             |                 DATA.B      $D3
+11EF [D3    ]             |                 DATA.B      $D3
+11F0 [C5    ]             |                 DATA.B      $C5
+11F1 [CD    ]             |                 DATA.B      $CD
+11F2 [C2    ]             |                 DATA.B      $C2
+11F3 [CC    ]             |                 DATA.B      $CC
+11F4 [C5    ]             |                 DATA.B      $C5
+11F5 [D2    ]             |                 DATA.B      $D2
+11F6 [20    ]             |                 DATA.B      $20
+11F7 [56    ]             |                 DATA.B      $56
+11F8 [33    ]             |                 DATA.B      $33
+11F9 [20    ]             |                 DATA.B      $20
+11FA [2A    ]             |                 DATA.B      $2A
+11FB [20    ]             |                 DATA.B      $20
+11FC [20    ]             |                 DATA.B      $20
+11FD [20    ]             |                 DATA.B      $20
+11FE [42    ]             |                 DATA.B      $42
+11FF [59    ]             |                 DATA.B      $59
+1200 [20    ]             |                 DATA.B      $20
+1201 [D9    ]             |                 DATA.B      $D9
+1202 [56    ]             |                 DATA.B      $56
+1203 [45    ]             |                 DATA.B      $45
+1204 [53    ]             |                 DATA.B      $53
+1205 [20    ]             |                 DATA.B      $20
+1206 [C8    ]             |                 DATA.B      $C8
+1207 [41    ]             |                 DATA.B      $41
+1208 [4E    ]             |                 DATA.B      $4E
+1209 [20    ]             |                 DATA.B      $20
+120A [20    ]             |                 DATA.B      $20
+120B [31    ]             |                 DATA.B      $31
+120C [39    ]             |                 DATA.B      $39
+120D [38    ]             |                 DATA.B      $38
+120E [35    ]             |                 DATA.B      $35
+120F [0D    ]             |                 DATA.B      $0D
+1210 [0D    ]             |                 DATA.B      $0D
+1211 [20    ]             |                 DATA.B      $20
+1212 [20    ]             |                 DATA.B      $20
+1213 [20    ]             |                 DATA.B      $20
+1214 [20    ]             |                 DATA.B      $20
+1215 [20    ]             |                 DATA.B      $20
+1216 [20    ]             |                 DATA.B      $20
+1217 [20    ]             |                 DATA.B      $20
+1218 [20    ]             |                 DATA.B      $20
+1219 [20    ]             |                 DATA.B      $20
+121A [00    ]             |                 DATA.B      $00
+121B [00    ]             |                 DATA.B      $00
+121C [00    ]             |                 DATA.B      $00
+121D [00    ]             |                 DATA.B      $00
+121E [00    ]             |                 DATA.B      $00
+121F [00    ]             |                 DATA.B      $00
+1220 [00    ]             |                 DATA.B      $00
