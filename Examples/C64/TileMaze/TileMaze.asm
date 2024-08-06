@@ -100,7 +100,7 @@ START:
                 ; @SET_WORD(DRAW_TILE.OFFSET,180 - 16)
                 ; JSR     DRAW_TILE
 
-                ; @SET_WORD(DRAW_TILE.OFFSET,180 + 240)
+                ; @SET_WORD(DRAW_TILE.OFFSET,180 + 16)
                 ; JSR     DRAW_TILE
 
                 ; @SET_WORD(DRAW_TILE.OFFSET,180 + 240 - 16)

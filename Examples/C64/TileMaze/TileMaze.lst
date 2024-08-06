@@ -1,0 +1,1086 @@
+0801 [      ]             | * = $0801
+0801 [      ]             | 
+0801 [      ]             | #INCLUDE ..\..\includes\includes.h
+0801 [      ]             | #INCLUDE macros.h
+0801 [      ]             |                             ; Basic Stub
+0801 [      ]             |             ; 10 SYS2061
+0801 [0B08  ]             |             DATA        $080B   ; $0801 Pointer to Next Line
+0803 [0A00  ]             |             DATA        $000A   ; $0803 Line Number '10'
+0805 [9E    ]             |             DATA.B      $9E     ; $0805 BASIC Token for SYS
+0806 [32    ]             |             DATA.B      $32     ; $0806 '2'
+0807 [30    ]             |             DATA.B      $30     ; $0807 '0'
+0808 [36    ]             |             DATA.B      $36     ; $0808 '6'
+0809 [31    ]             |             DATA.B      $31     ; $0809 '1'  - 2061 is $080D
+080A [00    ]             |             DATA.B      $00     ; $080A End of current line
+080B [0000  ]             |             DATA        $0000   ; $080B Next Line (NULL no more lines)
+080D [      ]             |                                 ; $080D - 2061
+080D [      ]             | 
+080D [      ]             | START:
+080D [208B0D] JSR $0D8B   |                 JSR     INITIALIZE
+0810 [AD11D0] LDA $D011   |                                 LDA     $D011
+0813 [296F  ] AND #$6F    |                 AND.#   %01101111
+0815 [8D11D0] STA $D011   |                 STA     $D011
+0818 [20FA0D] JSR $0DFA   |                 JSR     DRAW_SCREEN
+081B [AD11D0] LDA $D011   |                                 LDA     $D011
+081E [0910  ] ORA #$10    |                 ORA.#   %00010000
+0820 [297F  ] AND #$7F    |                 AND.#   %01111111
+0822 [8D11D0] STA $D011   |                 STA     $D011
+0825 [      ]             | 
+0825 [      ]             |                 ; ==============================================================
+0825 [78    ] SEI         |                 SEI                             ; Turn off Interrupts
+0826 [A97F  ] LDA #$7F    |                 LDA.#   $7F
+0828 [8D0DDC] STA $DC0D   |                 STA     $DC0D
+082B [8D0DDD] STA $DD0D   |                 STA     $DD0D
+082E [      ]             |                 ; ==============================================================
+082E [      ]             | 
+082E [A900  ] LDA #$00    |                 LDA.#   0
+0830 [8DA80C] STA $0CA8   |                 STA     GENERATE_TILE.CURRENT
+0833 [A900  ] LDA #$00    |                 LDA.#   0 ; %11111111
+0835 [8DA90C] STA $0CA9   |                 STA     GENERATE_TILE.NEIGHBORS
+0838 [20420A] JSR $0A42   |                 JSR     GENERATE_TILE
+083B [      ]             | 
+083B [A900  ] LDA #$00    |                 LDA.#   0
+083D [8D7C0D] STA $0D7C   |                 STA     DRAW_TILE.OFFSET
+0840 [8D7D0D] STA $0D7D   |                 STA     DRAW_TILE.OFFSET + 1
+0843 [      ]             | 
+0843 [A90A  ] LDA #$0A    |                 LDA.#   10
+0845 [8D1609] STA $0916   |                 STA     .COL_INDEX
+0848 [      ]             | .ROW_LOOP:      
+0848 [      ]             | .COL_LOOP:
+0848 [20ED0C] JSR $0CED   |                 JSR     DRAW_TILE
+084B [18    ] CLC         |                             CLC
+084C [AD7C0D] LDA $0D7C   |             LDA         DRAW_TILE.OFFSET
+084F [6904  ] ADC #$04    |             ADC.#       4
+0851 [8D7C0D] STA $0D7C   |             STA         DRAW_TILE.OFFSET
+0854 [AD7D0D] LDA $0D7D   |             LDA         DRAW_TILE.OFFSET+1
+0857 [6900  ] ADC #$00    |             ADC.#       $00
+0859 [8D7D0D] STA $0D7D   |             STA         DRAW_TILE.OFFSET+1
+085C [      ]             | 
+085C [CE1609] DEC $0916   |                 DEC     .COL_INDEX
+085F [D0E7  ] BNE $E7     |                 BNE     .COL_LOOP
+0861 [      ]             | 
+0861 [EE1709] INC $0917   |                 INC     .ROW_INDEX
+0864 [AD1709] LDA $0917   |                 LDA     .ROW_INDEX
+0867 [2901  ] AND #$01    |                 AND.#   %00000001
+0869 [D019  ] BNE $19     |                 BNE     .ODD_ROW
+086B [      ]             | 
+086B [A90A  ] LDA #$0A    |                 LDA.#   10
+086D [8D1609] STA $0916   |                 STA     .COL_INDEX
+0870 [18    ] CLC         |                             CLC
+0871 [AD7C0D] LDA $0D7C   |             LDA         DRAW_TILE.OFFSET
+0874 [6902  ] ADC #$02    |             ADC.#       2
+0876 [8D7C0D] STA $0D7C   |             STA         DRAW_TILE.OFFSET
+0879 [AD7D0D] LDA $0D7D   |             LDA         DRAW_TILE.OFFSET+1
+087C [6900  ] ADC #$00    |             ADC.#       $00
+087E [8D7D0D] STA $0D7D   |             STA         DRAW_TILE.OFFSET+1
+0881 [4C9A08] JMP $089A   |                 JMP     .CONTINUE
+0884 [      ]             | 
+0884 [A909  ] LDA #$09    | .ODD_ROW:       LDA.#   9
+0886 [8D1609] STA $0916   |                 STA     .COL_INDEX
+0889 [18    ] CLC         |                             CLC
+088A [AD7C0D] LDA $0D7C   |             LDA         DRAW_TILE.OFFSET
+088D [6902  ] ADC #$02    |             ADC.#       2
+088F [8D7C0D] STA $0D7C   |             STA         DRAW_TILE.OFFSET
+0892 [AD7D0D] LDA $0D7D   |             LDA         DRAW_TILE.OFFSET+1
+0895 [6900  ] ADC #$00    |             ADC.#       $00
+0897 [8D7D0D] STA $0D7D   |             STA         DRAW_TILE.OFFSET+1
+089A [      ]             | 
+089A [AD1709] LDA $0917   | .CONTINUE:      LDA     .ROW_INDEX
+089D [C918  ] CMP #$18    |                 CMP.#   24
+089F [D0A7  ] BNE $A7     |                 BNE     .ROW_LOOP
+08A1 [      ]             | 
+08A1 [      ]             |                 ; ==============================================================
+08A1 [      ]             |                 ; Now handle the bottom corner cells
+08A1 [A9C0  ] LDA #$C0    |                             LDA.#   (40*24)  & $00FF
+08A3 [8D3E0A] STA $0A3E   |             STA     SET_CELL_NO_COLOR.OFFSET
+08A6 [A903  ] LDA #$03    |             LDA.#   (((40*24)) & $FF00) >> 8
+08A8 [8D3F0A] STA $0A3F   |             STA     SET_CELL_NO_COLOR.OFFSET+1
+08AB [A900  ] LDA #$00    |                 LDA.#   0 ; $06
+08AD [8D400A] STA $0A40   |                 STA     SET_CELL_NO_COLOR.TILE_NUMBER
+08B0 [20D509] JSR $09D5   |                 JSR     SET_CELL_NO_COLOR
+08B3 [      ]             | 
+08B3 [A9E7  ] LDA #$E7    |                             LDA.#   ((40*24) + 39)  & $00FF
+08B5 [8D3E0A] STA $0A3E   |             STA     SET_CELL_NO_COLOR.OFFSET
+08B8 [A903  ] LDA #$03    |             LDA.#   ((((40*24) + 39)) & $FF00) >> 8
+08BA [8D3F0A] STA $0A3F   |             STA     SET_CELL_NO_COLOR.OFFSET+1
+08BD [A903  ] LDA #$03    |                 LDA.#   3 ; $05
+08BF [8D400A] STA $0A40   |                 STA     SET_CELL_NO_COLOR.TILE_NUMBER
+08C2 [20D509] JSR $09D5   |                 JSR     SET_CELL_NO_COLOR
+08C5 [      ]             |                 ; ==============================================================
+08C5 [      ]             | 
+08C5 [A900  ] LDA #$00    |                 LDA.#   0
+08C7 [8DA80C] STA $0CA8   |                 STA     GENERATE_TILE.CURRENT
+08CA [A900  ] LDA #$00    |                 LDA.#   0 ; %11111111
+08CC [8DA90C] STA $0CA9   |                 STA     GENERATE_TILE.NEIGHBORS
+08CF [      ]             | 
+08CF [A000  ] LDY #$00    | .ANIMATE_LOOP:  LDY.#   0
+08D1 [207E0D] JSR $0D7E   |                 JSR     WAIT_FOR_RASTER_LINE
+08D4 [      ]             |                 
+08D4 [A900  ] LDA #$00    |                 LDA.#   VICII_COLOR_BLACK
+08D6 [8D20D0] STA $D020   |                 STA     VICII_BORDER_COLOR
+08D9 [      ]             | 
+08D9 [A032  ] LDY #$32    |                 LDY.#   50
+08DB [207E0D] JSR $0D7E   |                 JSR     WAIT_FOR_RASTER_LINE
+08DE [      ]             | 
+08DE [A205  ] LDX #$05    |                 LDX.#   5
+08E0 [EA    ] NOP         | .NOP_LOOP:      NOP
+08E1 [CA    ] DEX         |                 DEX
+08E2 [10FC  ] BPL $FC     |                 BPL     .NOP_LOOP
+08E4 [      ]             | 
+08E4 [A901  ] LDA #$01    |                 LDA.#   VICII_COLOR_WHITE
+08E6 [8D20D0] STA $D020   |                 STA     VICII_BORDER_COLOR
+08E9 [      ]             | 
+08E9 [20420A] JSR $0A42   |                 JSR     GENERATE_TILE
+08EC [      ]             | 
+08EC [      ]             |                 ; @SET_WORD(DRAW_TILE.OFFSET,180)
+08EC [A9A4  ] LDA #$A4    |                             LDA.#   180 + 240  & $00FF
+08EE [8D7C0D] STA $0D7C   |             STA     DRAW_TILE.OFFSET
+08F1 [A901  ] LDA #$01    |             LDA.#   ((180 + 240) & $FF00) >> 8
+08F3 [8D7D0D] STA $0D7D   |             STA     DRAW_TILE.OFFSET+1
+08F6 [20ED0C] JSR $0CED   |                 JSR     DRAW_TILE
+08F9 [      ]             | 
+08F9 [      ]             |                 ; @SET_WORD(DRAW_TILE.OFFSET,180 - 16)
+08F9 [      ]             |                 ; JSR     DRAW_TILE
+08F9 [      ]             | 
+08F9 [      ]             |                 ; @SET_WORD(DRAW_TILE.OFFSET,180 + 16)
+08F9 [      ]             |                 ; JSR     DRAW_TILE
+08F9 [      ]             | 
+08F9 [      ]             |                 ; @SET_WORD(DRAW_TILE.OFFSET,180 + 240 - 16)
+08F9 [      ]             |                 ; JSR     DRAW_TILE
+08F9 [      ]             | 
+08F9 [A902  ] LDA #$02    |                 LDA.#   VICII_COLOR_RED
+08FB [8D20D0] STA $D020   |                 STA     VICII_BORDER_COLOR
+08FE [      ]             | 
+08FE [ADA80C] LDA $0CA8   |                 LDA     GENERATE_TILE.CURRENT
+0901 [F008  ] BEQ $08     |                 BEQ     .SET
+0903 [      ]             | 
+0903 [      ]             |                 ;JMP     .ANIMATE_LOOP
+0903 [      ]             | 
+0903 [A900  ] LDA #$00    |                 LDA.#   0
+0905 [8DA80C] STA $0CA8   |                 STA     GENERATE_TILE.CURRENT
+0908 [4CCF08] JMP $08CF   |                 JMP     .ANIMATE_LOOP
+090B [      ]             | 
+090B [A901  ] LDA #$01    | .SET:           LDA.#   1
+090D [8DA80C] STA $0CA8   |                 STA     GENERATE_TILE.CURRENT
+0910 [4CCF08] JMP $08CF   |                 JMP     .ANIMATE_LOOP
+0913 [      ]             | 
+0913 [4C1309] JMP $0913   |                 JMP     CURADDR
+0916 [      ]             | 
+0916 [00    ]             | .COL_INDEX:         DATA.b  $00
+0917 [00    ]             | .ROW_INDEX:         DATA.b  $00
+0918 [      ]             | 
+0918 [      ]             | ; ===========================================================================
+0918 [      ]             | #INCLUDE functions\setcell.asm
+0918 [      ]             | 
+0918 [      ]             | ; ===========================================================================
+0918 [      ]             | SET_CELL:       ; screenLocation := $4400 + offset;
+0918 [A900  ] LDA #$00    |                             LDA.#   $4400  & $00FF
+091A [8DCB09] STA $09CB   |             STA     .SL_ST + 1
+091D [A944  ] LDA #$44    |             LDA.#   (($4400) & $FF00) >> 8
+091F [8DCC09] STA $09CC   |             STA     .SL_ST + 1+1
+0922 [18    ] CLC         |                 CLC
+0923 [ADCB09] LDA $09CB   |                 LDA     .SL_ST + 1
+0926 [6DCE09] ADC $09CE   |                 ADC     .OFFSET
+0929 [8DCB09] STA $09CB   |                 STA     .SL_ST + 1
+092C [ADCC09] LDA $09CC   |                 LDA     .SL_ST + 2
+092F [6DCF09] ADC $09CF   |                 ADC     .OFFSET + 1
+0932 [8DCC09] STA $09CC   |                 STA     .SL_ST + 2
+0935 [      ]             |                 ; colorLocation := $D800 + offset;
+0935 [A900  ] LDA #$00    |                             LDA.#   $D800  & $00FF
+0937 [8DBE09] STA $09BE   |             STA     .CL_ST + 1
+093A [A9D8  ] LDA #$D8    |             LDA.#   (($D800) & $FF00) >> 8
+093C [8DBF09] STA $09BF   |             STA     .CL_ST + 1+1
+093F [18    ] CLC         |                 CLC
+0940 [ADBE09] LDA $09BE   |                 LDA     .CL_ST + 1
+0943 [6DCE09] ADC $09CE   |                 ADC     .OFFSET
+0946 [8DBE09] STA $09BE   |                 STA     .CL_ST + 1
+0949 [ADBF09] LDA $09BF   |                 LDA     .CL_ST + 2
+094C [6DCF09] ADC $09CF   |                 ADC     .OFFSET + 1
+094F [8DBF09] STA $09BF   |                 STA     .CL_ST + 2
+0952 [      ]             | 
+0952 [      ]             |                 ; bitmapLocation := $6000 + (offset * 8);
+0952 [ADCE09] LDA $09CE   |                 LDA     .OFFSET
+0955 [8DB509] STA $09B5   |                 STA     .BMP_ST + 1
+0958 [ADCF09] LDA $09CF   |                 LDA     .OFFSET + 1
+095B [8DB609] STA $09B6   |                 STA     .BMP_ST + 2
+095E [0EB509] ASL $09B5   |                                 ASL     .BMP_ST + 1
+0961 [      ]             |                 ;BCC     CURADDR + 5
+0961 [2EB609] ROL $09B6   |                 ROL     .BMP_ST + 1 + 1
+0964 [0EB509] ASL $09B5   |                                 ASL     .BMP_ST + 1
+0967 [      ]             |                 ;BCC     CURADDR + 5
+0967 [2EB609] ROL $09B6   |                 ROL     .BMP_ST + 1 + 1
+096A [0EB509] ASL $09B5   |                                 ASL     .BMP_ST + 1
+096D [      ]             |                 ;BCC     CURADDR + 5
+096D [2EB609] ROL $09B6   |                 ROL     .BMP_ST + 1 + 1
+0970 [18    ] CLC         |                 CLC
+0971 [ADB509] LDA $09B5   |                 LDA     .BMP_ST + 1
+0974 [6900  ] ADC #$00    |                 ADC.#   $6000  & $00FF
+0976 [8DB509] STA $09B5   |                 STA     .BMP_ST + 1
+0979 [ADB609] LDA $09B6   |                 LDA     .BMP_ST + 2
+097C [6960  ] ADC #$60    |                 ADC.#   (($6000) & $FF00) >> 8
+097E [8DB609] STA $09B6   |                 STA     .BMP_ST + 2
+0981 [      ]             | 
+0981 [      ]             |                 ; tileLocation := tilesetLocation + (tileNumber << 3);
+0981 [ADD009] LDA $09D0   |                 LDA     .TILE_NUMBER
+0984 [8DB209] STA $09B2   |                 STA     .TL_LD + 1
+0987 [A900  ] LDA #$00    |                 LDA.#   0
+0989 [8DB309] STA $09B3   |                 STA     .TL_LD + 2
+098C [0EB209] ASL $09B2   |                                 ASL     .TL_LD + 1
+098F [      ]             |                 ;BCC     CURADDR + 5
+098F [2EB309] ROL $09B3   |                 ROL     .TL_LD + 1 + 1
+0992 [0EB209] ASL $09B2   |                                 ASL     .TL_LD + 1
+0995 [      ]             |                 ;BCC     CURADDR + 5
+0995 [2EB309] ROL $09B3   |                 ROL     .TL_LD + 1 + 1
+0998 [0EB209] ASL $09B2   |                                 ASL     .TL_LD + 1
+099B [      ]             |                 ;BCC     CURADDR + 5
+099B [2EB309] ROL $09B3   |                 ROL     .TL_LD + 1 + 1
+099E [18    ] CLC         |                 CLC
+099F [ADB209] LDA $09B2   |                 LDA     .TL_LD + 1
+09A2 [6949  ] ADC #$49    |                 ADC.#   CHARDATA  & $00FF
+09A4 [8DB209] STA $09B2   |                 STA     .TL_LD + 1
+09A7 [ADB309] LDA $09B3   |                 LDA     .TL_LD + 2
+09AA [690F  ] ADC #$0F    |                 ADC.#   ((CHARDATA) & $FF00) >> 8
+09AC [8DB309] STA $09B3   |                 STA     .TL_LD + 2
+09AF [      ]             | 
+09AF [A207  ] LDX #$07    |                 LDX.#   7
+09B1 [      ]             | .LOOP:          ; FOR bitmapIndex := 0 TO 8 DO
+09B1 [      ]             |                 ; 	bitmapLocation[bitmapIndex] := tileLocation[bitmapIndex];
+09B1 [BD0000] LDA $0000,X | .TL_LD:         LDA,X   $0000
+09B4 [9D0000] STA $0000,X | .BMP_ST:        STA,X   $0000
+09B7 [CA    ] DEX         |                 DEX
+09B8 [10F7  ] BPL $F7     |                 BPL     .LOOP
+09BA [      ]             | 
+09BA [      ]             |                 ; colorLocation[0] := c1;
+09BA [ADD209] LDA $09D2   |                 LDA     .COLOR_1
+09BD [8D0000] STA $0000   | .CL_ST:         STA     $0000
+09C0 [      ]             |                 ; screenLocation[0] := (c2 << 4) | c3;
+09C0 [ADD309] LDA $09D3   |                 LDA     .COLOR_2
+09C3 [0A    ] ASL A       |                 ASL.A
+09C4 [0A    ] ASL A       |                 ASL.A
+09C5 [0A    ] ASL A       |                 ASL.A
+09C6 [0A    ] ASL A       |                 ASL.A
+09C7 [0DD409] ORA $09D4   |                 ORA     .COLOR_3
+09CA [8D0000] STA $0000   | .SL_ST:         STA     $0000
+09CD [      ]             | 
+09CD [60    ] RTS         |                 RTS
+09CE [      ]             | 
+09CE [0000  ]             | .OFFSET:        DATA    $0000
+09D0 [0000  ]             | .TILE_NUMBER:   DATA    $0000
+09D2 [00    ]             | .COLOR_1:       DATA.b  $00
+09D3 [00    ]             | .COLOR_2:       DATA.b  $00
+09D4 [00    ]             | .COLOR_3:       DATA.b  $00
+09D5 [      ]             | 
+09D5 [      ]             | ; ===========================================================================
+09D5 [      ]             | SET_CELL_NO_COLOR:       ; bitmapLocation := $6000 + (offset * 8);
+09D5 [AD3E0A] LDA $0A3E   |                 LDA     .OFFSET
+09D8 [8D380A] STA $0A38   |                 STA     .BMP_ST + 1
+09DB [AD3F0A] LDA $0A3F   |                 LDA     .OFFSET + 1
+09DE [8D390A] STA $0A39   |                 STA     .BMP_ST + 2
+09E1 [0E380A] ASL $0A38   |                                 ASL     .BMP_ST + 1
+09E4 [      ]             |                 ;BCC     CURADDR + 5
+09E4 [2E390A] ROL $0A39   |                 ROL     .BMP_ST + 1 + 1
+09E7 [0E380A] ASL $0A38   |                                 ASL     .BMP_ST + 1
+09EA [      ]             |                 ;BCC     CURADDR + 5
+09EA [2E390A] ROL $0A39   |                 ROL     .BMP_ST + 1 + 1
+09ED [0E380A] ASL $0A38   |                                 ASL     .BMP_ST + 1
+09F0 [      ]             |                 ;BCC     CURADDR + 5
+09F0 [2E390A] ROL $0A39   |                 ROL     .BMP_ST + 1 + 1
+09F3 [18    ] CLC         |                 CLC
+09F4 [AD380A] LDA $0A38   |                 LDA     .BMP_ST + 1
+09F7 [6900  ] ADC #$00    |                 ADC.#   $6000  & $00FF
+09F9 [8D380A] STA $0A38   |                 STA     .BMP_ST + 1
+09FC [AD390A] LDA $0A39   |                 LDA     .BMP_ST + 2
+09FF [6960  ] ADC #$60    |                 ADC.#   (($6000) & $FF00) >> 8
+0A01 [8D390A] STA $0A39   |                 STA     .BMP_ST + 2
+0A04 [      ]             | 
+0A04 [      ]             |                 ; tileLocation := tilesetLocation + (tileNumber << 3);
+0A04 [AD400A] LDA $0A40   |                 LDA     .TILE_NUMBER
+0A07 [8D350A] STA $0A35   |                 STA     .TL_LD + 1
+0A0A [A900  ] LDA #$00    |                 LDA.#   0
+0A0C [8D360A] STA $0A36   |                 STA     .TL_LD + 2
+0A0F [0E350A] ASL $0A35   |                                 ASL     .TL_LD + 1
+0A12 [      ]             |                 ;BCC     CURADDR + 5
+0A12 [2E360A] ROL $0A36   |                 ROL     .TL_LD + 1 + 1
+0A15 [0E350A] ASL $0A35   |                                 ASL     .TL_LD + 1
+0A18 [      ]             |                 ;BCC     CURADDR + 5
+0A18 [2E360A] ROL $0A36   |                 ROL     .TL_LD + 1 + 1
+0A1B [0E350A] ASL $0A35   |                                 ASL     .TL_LD + 1
+0A1E [      ]             |                 ;BCC     CURADDR + 5
+0A1E [2E360A] ROL $0A36   |                 ROL     .TL_LD + 1 + 1
+0A21 [18    ] CLC         |                 CLC
+0A22 [AD350A] LDA $0A35   |                 LDA     .TL_LD + 1
+0A25 [6949  ] ADC #$49    |                 ADC.#   CHARDATA  & $00FF
+0A27 [8D350A] STA $0A35   |                 STA     .TL_LD + 1
+0A2A [AD360A] LDA $0A36   |                 LDA     .TL_LD + 2
+0A2D [690F  ] ADC #$0F    |                 ADC.#   ((CHARDATA) & $FF00) >> 8
+0A2F [8D360A] STA $0A36   |                 STA     .TL_LD + 2
+0A32 [      ]             | 
+0A32 [      ]             |                 ; LDX     .LOOP_COUNT
+0A32 [A207  ] LDX #$07    |                 LDX.#   7
+0A34 [      ]             | 
+0A34 [      ]             | .LOOP:          ; FOR bitmapIndex := 0 TO 8 DO
+0A34 [      ]             |                 ; 	bitmapLocation[bitmapIndex] := tileLocation[bitmapIndex];
+0A34 [BD0000] LDA $0000,X | .TL_LD:         LDA,X   $0000
+0A37 [9D0000] STA $0000,X | .BMP_ST:        STA,X   $0000
+0A3A [CA    ] DEX         |                 DEX
+0A3B [10F7  ] BPL $F7     |                 BPL     .LOOP
+0A3D [      ]             | 
+0A3D [60    ] RTS         |                 RTS
+0A3E [      ]             | 
+0A3E [0000  ]             | .OFFSET:        DATA    $0000
+0A40 [0000  ]             | .TILE_NUMBER:   DATA    $0000
+0A42 [      ]             | ;.LOOP_COUNT:    DATA.b  7
+0A42 [      ]             | #INCLUDE functions\generatetile.asm
+0A42 [      ]             | 
+0A42 [      ]             | ; ===========================================================================
+0A42 [      ]             | ; Will load 10 bytes with the tiles for a tile that will be in the 
+0A42 [      ]             | ;            0 1 2 3
+0A42 [      ]             | ;            4 5 6 7
+0A42 [      ]             | ;              8 9
+0A42 [      ]             | ;
+0A42 [      ]             | ; ===========================================================================
+0A42 [      ]             |                 ; LDA.#   0
+0A42 [      ]             |                 ; STA     .TILE_VALUE
+0A42 [      ]             |                 ; LDA.#   1
+0A42 [      ]             |                 ; STA     .TILE_VALUE + 1
+0A42 [      ]             |                 ; LDA.#   2
+0A42 [      ]             |                 ; STA     .TILE_VALUE + 2
+0A42 [      ]             |                 ; LDA.#   3
+0A42 [      ]             |                 ; STA     .TILE_VALUE + 3
+0A42 [      ]             |                 
+0A42 [      ]             |                 ; RTS
+0A42 [      ]             | 
+0A42 [      ]             | GENERATE_TILE:
+0A42 [ADA80C] LDA $0CA8   |                 LDA     .CURRENT
+0A45 [F003  ] BEQ $03     |                 BEQ     .CURRENT_0
+0A47 [4C790B] JMP $0B79   |                 JMP     .CURRENT_1
+0A4A [      ]             | 
+0A4A [A200  ] LDX #$00    | .CURRENT_0:     LDX.#   0
+0A4C [      ]             | 
+0A4C [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS                                         ; 0
+0A4F [2910  ] AND #$10    |                 AND.#   %00010000
+0A51 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0A53 [A900  ] LDA #$00    |                 LDA.#   $00
+0A55 [4C5A0A] JMP $0A5A   |                 JMP     CURADDR + 3 + 2
+0A58 [A910  ] LDA #$10    |                 LDA.#   $10
+0A5A [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0A5D [E8    ] INX         |                 INX
+0A5E [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; 1
+0A61 [2990  ] AND #$90    |                 AND.#   %10010000
+0A63 [C990  ] CMP #$90    |                 CMP.#   %10010000
+0A65 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0A67 [A911  ] LDA #$11    |                 LDA.#   $11
+0A69 [4C800A] JMP $0A80   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0A6C [C980  ] CMP #$80    |                 CMP.#   %10000000
+0A6E [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0A70 [A912  ] LDA #$12    |                 LDA.#   $12
+0A72 [4C800A] JMP $0A80   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0A75 [C910  ] CMP #$10    |                 CMP.#   %00010000
+0A77 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0A79 [A911  ] LDA #$11    |                 LDA.#   $11
+0A7B [4C800A] JMP $0A80   |                 JMP     CURADDR + 3 + 2
+0A7E [A901  ] LDA #$01    |                 LDA.#   $01
+0A80 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0A83 [E8    ] INX         |                 INX
+0A84 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; 2
+0A87 [29C0  ] AND #$C0    |                 AND.#   %11000000
+0A89 [C9C0  ] CMP #$C0    |                 CMP.#   %11000000
+0A8B [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0A8D [A90E  ] LDA #$0E    |                 LDA.#   $0E
+0A8F [4CA60A] JMP $0AA6   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0A92 [C980  ] CMP #$80    |                 CMP.#   %10000000
+0A94 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0A96 [A913  ] LDA #$13    |                 LDA.#   $13
+0A98 [4CA60A] JMP $0AA6   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0A9B [C940  ] CMP #$40    |                 CMP.#   %01000000
+0A9D [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0A9F [A90E  ] LDA #$0E    |                 LDA.#   $0E
+0AA1 [4CA60A] JMP $0AA6   |                 JMP     CURADDR + 3 + 2
+0AA4 [A902  ] LDA #$02    |                 LDA.#   $02
+0AA6 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0AA9 [E8    ] INX         |                 INX
+0AAA [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS                                         ; 3
+0AAD [2940  ] AND #$40    |                 AND.#   %01000000
+0AAF [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0AB1 [A903  ] LDA #$03    |                 LDA.#   $03
+0AB3 [4CB80A] JMP $0AB8   |                 JMP     CURADDR + 3 + 2
+0AB6 [A90F  ] LDA #$0F    |                 LDA.#   $0F
+0AB8 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0ABB [E8    ] INX         |                 INX
+0ABC [      ]             | 
+0ABC [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; 4
+0ABF [2912  ] AND #$12    |                 AND.#   %00010010
+0AC1 [C912  ] CMP #$12    |                 CMP.#   %00010010
+0AC3 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0AC5 [A908  ] LDA #$08    |                 LDA.#   $08
+0AC7 [4CDE0A] JMP $0ADE   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0ACA [C910  ] CMP #$10    |                 CMP.#   %00010000
+0ACC [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0ACE [A913  ] LDA #$13    |                 LDA.#   $13
+0AD0 [4CDE0A] JMP $0ADE   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0AD3 [C902  ] CMP #$02    |                 CMP.#   %00000010
+0AD5 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0AD7 [A90C  ] LDA #$0C    |                 LDA.#   $0C
+0AD9 [4CDE0A] JMP $0ADE   |                 JMP     CURADDR + 3 + 2
+0ADC [A902  ] LDA #$02    |                 LDA.#   $02
+0ADE [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0AE1 [E8    ] INX         |                 INX
+0AE2 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS                                         ; 5
+0AE5 [2902  ] AND #$02    |                 AND.#   %00000010
+0AE7 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0AE9 [A903  ] LDA #$03    |                 LDA.#   $03
+0AEB [4CF00A] JMP $0AF0   |                 JMP     CURADDR + 3 + 2
+0AEE [A90D  ] LDA #$0D    |                 LDA.#   $0D
+0AF0 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0AF3 [E8    ] INX         |                 INX
+0AF4 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS                                         ; 6
+0AF7 [2908  ] AND #$08    |                 AND.#   %00001000
+0AF9 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0AFB [A900  ] LDA #$00    |                 LDA.#   $00
+0AFD [4C020B] JMP $0B02   |                 JMP     CURADDR + 3 + 2
+0B00 [A90A  ] LDA #$0A    |                 LDA.#   $0A
+0B02 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0B05 [E8    ] INX         |                 INX
+0B06 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; 7
+0B09 [2948  ] AND #$48    |                 AND.#   %01001000
+0B0B [C948  ] CMP #$48    |                 CMP.#   %01001000
+0B0D [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B0F [A909  ] LDA #$09    |                 LDA.#   $09
+0B11 [4C280B] JMP $0B28   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0B14 [C940  ] CMP #$40    |                 CMP.#   %01000000
+0B16 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B18 [A912  ] LDA #$12    |                 LDA.#   $12
+0B1A [4C280B] JMP $0B28   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0B1D [C908  ] CMP #$08    |                 CMP.#   %00001000
+0B1F [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B21 [A90B  ] LDA #$0B    |                 LDA.#   $0B
+0B23 [4C280B] JMP $0B28   |                 JMP     CURADDR + 3 + 2
+0B26 [A901  ] LDA #$01    |                 LDA.#   $01
+0B28 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0B2B [E8    ] INX         |                 INX
+0B2C [      ]             |         
+0B2C [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; 9
+0B2F [2903  ] AND #$03    |                 AND.#   %00000011
+0B31 [C903  ] CMP #$03    |                 CMP.#   %00000011
+0B33 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B35 [A907  ] LDA #$07    |                 LDA.#   $07
+0B37 [4C4E0B] JMP $0B4E   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0B3A [C902  ] CMP #$02    |                 CMP.#   %00000010
+0B3C [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B3E [A911  ] LDA #$11    |                 LDA.#   $11
+0B40 [4C4E0B] JMP $0B4E   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0B43 [C901  ] CMP #$01    |                 CMP.#   %00000001
+0B45 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B47 [A90B  ] LDA #$0B    |                 LDA.#   $0B
+0B49 [4C4E0B] JMP $0B4E   |                 JMP     CURADDR + 3 + 2
+0B4C [A901  ] LDA #$01    |                 LDA.#   $01
+0B4E [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0B51 [E8    ] INX         |                 INX
+0B52 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; A
+0B55 [2909  ] AND #$09    |                 AND.#   %00001001
+0B57 [C909  ] CMP #$09    |                 CMP.#   %00001001
+0B59 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B5B [A904  ] LDA #$04    |                 LDA.#   $04
+0B5D [4C740B] JMP $0B74   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0B60 [C908  ] CMP #$08    |                 CMP.#   %00001000
+0B62 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B64 [A90E  ] LDA #$0E    |                 LDA.#   $0E
+0B66 [4C740B] JMP $0B74   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0B69 [C901  ] CMP #$01    |                 CMP.#   %00000001
+0B6B [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B6D [A90C  ] LDA #$0C    |                 LDA.#   $0C
+0B6F [4C740B] JMP $0B74   |                 JMP     CURADDR + 3 + 2
+0B72 [A902  ] LDA #$02    |                 LDA.#   $02
+0B74 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0B77 [E8    ] INX         |                 INX
+0B78 [      ]             | 
+0B78 [60    ] RTS         |                 RTS
+0B79 [A200  ] LDX #$00    | .CURRENT_1:     LDX.#   0
+0B7B [      ]             | 
+0B7B [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS                                         ; 0
+0B7E [2910  ] AND #$10    |                 AND.#   %00010000
+0B80 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B82 [A90A  ] LDA #$0A    |                 LDA.#   $0A
+0B84 [4C890B] JMP $0B89   |                 JMP     CURADDR + 3 + 2
+0B87 [A906  ] LDA #$06    |                 LDA.#   $06
+0B89 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0B8C [E8    ] INX         |                 INX
+0B8D [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; 1
+0B90 [2990  ] AND #$90    |                 AND.#   %10010000
+0B92 [C990  ] CMP #$90    |                 CMP.#   %10010000
+0B94 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B96 [A907  ] LDA #$07    |                 LDA.#   $07
+0B98 [4CAF0B] JMP $0BAF   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0B9B [C980  ] CMP #$80    |                 CMP.#   %10000000
+0B9D [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0B9F [A907  ] LDA #$07    |                 LDA.#   $07
+0BA1 [4CAF0B] JMP $0BAF   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0BA4 [C910  ] CMP #$10    |                 CMP.#   %00010000
+0BA6 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0BA8 [A909  ] LDA #$09    |                 LDA.#   $09
+0BAA [4CAF0B] JMP $0BAF   |                 JMP     CURADDR + 3 + 2
+0BAD [A90B  ] LDA #$0B    |                 LDA.#   $0B
+0BAF [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0BB2 [E8    ] INX         |                 INX
+0BB3 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; 2
+0BB6 [29C0  ] AND #$C0    |                 AND.#   %11000000
+0BB8 [C9C0  ] CMP #$C0    |                 CMP.#   %11000000
+0BBA [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0BBC [A904  ] LDA #$04    |                 LDA.#   $04
+0BBE [4CD50B] JMP $0BD5   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0BC1 [C980  ] CMP #$80    |                 CMP.#   %10000000
+0BC3 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0BC5 [A908  ] LDA #$08    |                 LDA.#   $08
+0BC7 [4CD50B] JMP $0BD5   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0BCA [C940  ] CMP #$40    |                 CMP.#   %01000000
+0BCC [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0BCE [A904  ] LDA #$04    |                 LDA.#   $04
+0BD0 [4CD50B] JMP $0BD5   |                 JMP     CURADDR + 3 + 2
+0BD3 [A90C  ] LDA #$0C    |                 LDA.#   $0C
+0BD5 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0BD8 [E8    ] INX         |                 INX
+0BD9 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS                                         ; 3
+0BDC [2940  ] AND #$40    |                 AND.#   %01000000
+0BDE [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0BE0 [A90D  ] LDA #$0D    |                 LDA.#   $0D
+0BE2 [4CE70B] JMP $0BE7   |                 JMP     CURADDR + 3 + 2
+0BE5 [A905  ] LDA #$05    |                 LDA.#   $05
+0BE7 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0BEA [E8    ] INX         |                 INX
+0BEB [      ]             | 
+0BEB [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; 4
+0BEE [2912  ] AND #$12    |                 AND.#   %00010010
+0BF0 [C912  ] CMP #$12    |                 CMP.#   %00010010
+0BF2 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0BF4 [A904  ] LDA #$04    |                 LDA.#   $04
+0BF6 [4C0D0C] JMP $0C0D   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0BF9 [C910  ] CMP #$10    |                 CMP.#   %00010000
+0BFB [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0BFD [A90E  ] LDA #$0E    |                 LDA.#   $0E
+0BFF [4C0D0C] JMP $0C0D   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0C02 [C902  ] CMP #$02    |                 CMP.#   %00000010
+0C04 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C06 [A904  ] LDA #$04    |                 LDA.#   $04
+0C08 [4C0D0C] JMP $0C0D   |                 JMP     CURADDR + 3 + 2
+0C0B [A90E  ] LDA #$0E    |                 LDA.#   $0E
+0C0D [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0C10 [E8    ] INX         |                 INX
+0C11 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS                                         ; 5
+0C14 [2902  ] AND #$02    |                 AND.#   %00000010
+0C16 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C18 [A90F  ] LDA #$0F    |                 LDA.#   $0F
+0C1A [4C1F0C] JMP $0C1F   |                 JMP     CURADDR + 3 + 2
+0C1D [A905  ] LDA #$05    |                 LDA.#   $05
+0C1F [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0C22 [E8    ] INX         |                 INX
+0C23 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS                                         ; 6
+0C26 [2908  ] AND #$08    |                 AND.#   %00001000
+0C28 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C2A [A910  ] LDA #$10    |                 LDA.#   $10
+0C2C [4C310C] JMP $0C31   |                 JMP     CURADDR + 3 + 2
+0C2F [A906  ] LDA #$06    |                 LDA.#   $06
+0C31 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0C34 [E8    ] INX         |                 INX
+0C35 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; 7
+0C38 [2948  ] AND #$48    |                 AND.#   %01001000
+0C3A [C948  ] CMP #$48    |                 CMP.#   %01001000
+0C3C [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C3E [A907  ] LDA #$07    |                 LDA.#   $07
+0C40 [4C570C] JMP $0C57   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0C43 [C940  ] CMP #$40    |                 CMP.#   %01000000
+0C45 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C47 [A911  ] LDA #$11    |                 LDA.#   $11
+0C49 [4C570C] JMP $0C57   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0C4C [C908  ] CMP #$08    |                 CMP.#   %00001000
+0C4E [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C50 [A907  ] LDA #$07    |                 LDA.#   $07
+0C52 [4C570C] JMP $0C57   |                 JMP     CURADDR + 3 + 2
+0C55 [A911  ] LDA #$11    |                 LDA.#   $11
+0C57 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0C5A [E8    ] INX         |                 INX
+0C5B [      ]             |         
+0C5B [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; 9
+0C5E [2903  ] AND #$03    |                 AND.#   %00000011
+0C60 [C903  ] CMP #$03    |                 CMP.#   %00000011
+0C62 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C64 [A907  ] LDA #$07    |                 LDA.#   $07
+0C66 [4C7D0C] JMP $0C7D   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0C69 [C902  ] CMP #$02    |                 CMP.#   %00000010
+0C6B [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C6D [A911  ] LDA #$11    |                 LDA.#   $11
+0C6F [4C7D0C] JMP $0C7D   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0C72 [C901  ] CMP #$01    |                 CMP.#   %00000001
+0C74 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C76 [A909  ] LDA #$09    |                 LDA.#   $09
+0C78 [4C7D0C] JMP $0C7D   |                 JMP     CURADDR + 3 + 2
+0C7B [A912  ] LDA #$12    |                 LDA.#   $12
+0C7D [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0C80 [E8    ] INX         |                 INX
+0C81 [ADA90C] LDA $0CA9   |                         LDA     .NEIGHBORS   ; A
+0C84 [2909  ] AND #$09    |                 AND.#   %00001001
+0C86 [C909  ] CMP #$09    |                 CMP.#   %00001001
+0C88 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C8A [A904  ] LDA #$04    |                 LDA.#   $04
+0C8C [4CA30C] JMP $0CA3   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2 + 2 + 2 + 3 + 2
+0C8F [C908  ] CMP #$08    |                 CMP.#   %00001000
+0C91 [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C93 [A908  ] LDA #$08    |                 LDA.#   $08
+0C95 [4CA30C] JMP $0CA3   |                 JMP     CURADDR + 3 + 2 + 2 + 2 + 3 + 2
+0C98 [C901  ] CMP #$01    |                 CMP.#   %00000001
+0C9A [D005  ] BNE $05     |                 BNE     CURADDR + 2 + 2 + 3
+0C9C [A90E  ] LDA #$0E    |                 LDA.#   $0E
+0C9E [4CA30C] JMP $0CA3   |                 JMP     CURADDR + 3 + 2
+0CA1 [A913  ] LDA #$13    |                 LDA.#   $13
+0CA3 [9DAA0C] STA $0CAA,X |                 STA,X   .TILE_VALUE
+0CA6 [E8    ] INX         |                 INX
+0CA7 [      ]             | 
+0CA7 [60    ] RTS         |                 RTS
+0CA8 [      ]             | 
+0CA8 [00    ]             | .CURRENT:       DATA.b  $00
+0CA9 [00    ]             | .NEIGHBORS:     DATA.b  $00
+0CAA [EAEAEA]             | .TILE_VALUE:    PAD     10
+0CB4 [      ]             | 
+0CB4 [      ]             | 
+0CB4 [      ]             | ; ===========================================================================
+0CB4 [      ]             | ; A has row of TILE_DATA
+0CB4 [      ]             | ; X, Y has offset
+0CB4 [      ]             | GET_TILE_DATA_OFFSET:
+0CB4 [2A    ] ROL A       |                     ROL.A
+0CB5 [AA    ] TAX         |                     TAX
+0CB6 [BDC00C] LDA $0CC0,X |                     LDA,X   TILE_DATA_OFFSETS + 1
+0CB9 [A8    ] TAY         |                     TAY
+0CBA [BDBF0C] LDA $0CBF,X |                     LDA,X   TILE_DATA_OFFSETS
+0CBD [AA    ] TAX         |                     TAX
+0CBE [60    ] RTS         |                     RTS
+0CBF [      ]             | 
+0CBF [      ]             | TILE_DATA_OFFSETS:
+0CBF [      ]             |                ; Offsets into 23x23 3 Digit Array
+0CBF [0000  ]             |                DATA $0000     ; 00 => 0
+0CC1 [4500  ]             |                DATA $0045     ; 01 => 69
+0CC3 [8A00  ]             |                DATA $008A     ; 02 => 138
+0CC5 [CF00  ]             |                DATA $00CF     ; 03 => 207
+0CC7 [1401  ]             |                DATA $0114     ; 04 => 276
+0CC9 [5901  ]             |                DATA $0159     ; 05 => 345
+0CCB [9E01  ]             |                DATA $019E     ; 06 => 414
+0CCD [E301  ]             |                DATA $01E3     ; 07 => 483
+0CCF [2802  ]             |                DATA $0228     ; 08 => 552
+0CD1 [6D02  ]             |                DATA $026D     ; 09 => 621
+0CD3 [B202  ]             |                DATA $02B2     ; 10 => 690
+0CD5 [F702  ]             |                DATA $02F7     ; 11 => 759
+0CD7 [3C03  ]             |                DATA $033C     ; 12 => 828
+0CD9 [8103  ]             |                DATA $0381     ; 13 => 897
+0CDB [C603  ]             |                DATA $03C6     ; 14 => 966
+0CDD [0B04  ]             |                DATA $040B     ; 15 => 1035
+0CDF [5004  ]             |                DATA $0450     ; 16 => 1104
+0CE1 [9504  ]             |                DATA $0495     ; 17 => 1173
+0CE3 [DA04  ]             |                DATA $04DA     ; 18 => 1242
+0CE5 [1F05  ]             |                DATA $051F     ; 19 => 1311
+0CE7 [6405  ]             |                DATA $0564     ; 20 => 1380
+0CE9 [A905  ]             |                DATA $05A9     ; 21 => 1449
+0CEB [EE05  ]             |                DATA $05EE     ; 22 => 1518
+0CED [      ]             | ; ===========================================================================
+0CED [      ]             | 
+0CED [      ]             |                ; Tile Data (23 x 23) x 3
+0CED [      ]             | #INCLUDE functions\drawtile.asm
+0CED [      ]             | 
+0CED [      ]             | ; ===========================================================================
+0CED [AD7C0D] LDA $0D7C   | DRAW_TILE:      LDA     .OFFSET
+0CF0 [8D3E0A] STA $0A3E   |                 STA     SET_CELL_NO_COLOR.OFFSET
+0CF3 [AD7D0D] LDA $0D7D   |                 LDA     .OFFSET + 1
+0CF6 [8D3F0A] STA $0A3F   |                 STA     SET_CELL_NO_COLOR.OFFSET + 1
+0CF9 [      ]             | 
+0CF9 [A900  ] LDA #$00    |                 LDA.#   0
+0CFB [8D7B0D] STA $0D7B   |                 STA     .INDEX
+0CFE [      ]             | 
+0CFE [AE7B0D] LDX $0D7B   | .LOOP1:         LDX     .INDEX
+0D01 [BDAA0C] LDA $0CAA,X |                 LDA,X   GENERATE_TILE.TILE_VALUE
+0D04 [8D400A] STA $0A40   |                 STA     SET_CELL_NO_COLOR.TILE_NUMBER
+0D07 [20D509] JSR $09D5   |                 JSR     SET_CELL_NO_COLOR
+0D0A [      ]             | 
+0D0A [EE3E0A] INC $0A3E   |                                 INC         SET_CELL_NO_COLOR.OFFSET
+0D0D [D003  ] BNE $03     |                 BNE         CURADDR + 5
+0D0F [EE3F0A] INC $0A3F   |                 INC         SET_CELL_NO_COLOR.OFFSET + 1
+0D12 [EE7B0D] INC $0D7B   |                 INC     .INDEX
+0D15 [AD7B0D] LDA $0D7B   |                 LDA     .INDEX
+0D18 [C904  ] CMP #$04    |                 CMP.#   4
+0D1A [D0E2  ] BNE $E2     |                 BNE     .LOOP1
+0D1C [      ]             | 
+0D1C [18    ] CLC         |                             CLC
+0D1D [AD3E0A] LDA $0A3E   |             LDA         SET_CELL_NO_COLOR.OFFSET
+0D20 [6924  ] ADC #$24    |             ADC.#       36
+0D22 [8D3E0A] STA $0A3E   |             STA         SET_CELL_NO_COLOR.OFFSET
+0D25 [AD3F0A] LDA $0A3F   |             LDA         SET_CELL_NO_COLOR.OFFSET+1
+0D28 [6900  ] ADC #$00    |             ADC.#       $00
+0D2A [8D3F0A] STA $0A3F   |             STA         SET_CELL_NO_COLOR.OFFSET+1
+0D2D [      ]             | 
+0D2D [AE7B0D] LDX $0D7B   | .LOOP2:         LDX     .INDEX
+0D30 [BDAA0C] LDA $0CAA,X |                 LDA,X   GENERATE_TILE.TILE_VALUE
+0D33 [8D400A] STA $0A40   |                 STA     SET_CELL_NO_COLOR.TILE_NUMBER
+0D36 [20D509] JSR $09D5   |                 JSR     SET_CELL_NO_COLOR
+0D39 [      ]             | 
+0D39 [EE3E0A] INC $0A3E   |                                 INC         SET_CELL_NO_COLOR.OFFSET
+0D3C [D003  ] BNE $03     |                 BNE         CURADDR + 5
+0D3E [EE3F0A] INC $0A3F   |                 INC         SET_CELL_NO_COLOR.OFFSET + 1
+0D41 [EE7B0D] INC $0D7B   |                 INC     .INDEX
+0D44 [AD7B0D] LDA $0D7B   |                 LDA     .INDEX
+0D47 [C908  ] CMP #$08    |                 CMP.#   8
+0D49 [D0E2  ] BNE $E2     |                 BNE     .LOOP2
+0D4B [      ]             | 
+0D4B [18    ] CLC         |                             CLC
+0D4C [AD3E0A] LDA $0A3E   |             LDA         SET_CELL_NO_COLOR.OFFSET
+0D4F [6925  ] ADC #$25    |             ADC.#       37
+0D51 [8D3E0A] STA $0A3E   |             STA         SET_CELL_NO_COLOR.OFFSET
+0D54 [AD3F0A] LDA $0A3F   |             LDA         SET_CELL_NO_COLOR.OFFSET+1
+0D57 [6900  ] ADC #$00    |             ADC.#       $00
+0D59 [8D3F0A] STA $0A3F   |             STA         SET_CELL_NO_COLOR.OFFSET+1
+0D5C [      ]             | 
+0D5C [AE7B0D] LDX $0D7B   | .LOOP3:         LDX     .INDEX
+0D5F [BDAA0C] LDA $0CAA,X |                 LDA,X   GENERATE_TILE.TILE_VALUE
+0D62 [8D400A] STA $0A40   |                 STA     SET_CELL_NO_COLOR.TILE_NUMBER
+0D65 [20D509] JSR $09D5   |                 JSR     SET_CELL_NO_COLOR
+0D68 [      ]             | 
+0D68 [EE3E0A] INC $0A3E   |                                 INC         SET_CELL_NO_COLOR.OFFSET
+0D6B [D003  ] BNE $03     |                 BNE         CURADDR + 5
+0D6D [EE3F0A] INC $0A3F   |                 INC         SET_CELL_NO_COLOR.OFFSET + 1
+0D70 [EE7B0D] INC $0D7B   |                 INC     .INDEX
+0D73 [AD7B0D] LDA $0D7B   |                 LDA     .INDEX
+0D76 [C90A  ] CMP #$0A    |                 CMP.#   10
+0D78 [D0E2  ] BNE $E2     |                 BNE     .LOOP3
+0D7A [      ]             | 
+0D7A [60    ] RTS         |                 RTS
+0D7B [      ]             | 
+0D7B [00    ]             | .INDEX:         DATA.b  $00
+0D7C [0000  ]             | .OFFSET:        DATA    $0000
+0D7E [      ]             | #INCLUDE functions\wait_for_raster_line.asm
+0D7E [      ]             | ; ===========================================================================
+0D7E [      ]             | WAIT_FOR_RASTER_LINE: ; Only works for Rasters < 256
+0D7E [A980  ] LDA #$80    |                 LDA.#   $80
+0D80 [CC12D0] CPY $D012   | .LOOP:          CPY     VICII_RASTER
+0D83 [D0FB  ] BNE $FB     |                 BNE     .LOOP
+0D85 [2D11D0] AND $D011   |                 AND     VICII_CONTROL_1
+0D88 [D0F6  ] BNE $F6     |                 BNE     .LOOP
+0D8A [      ]             | 
+0D8A [60    ] RTS         |                 RTS
+0D8B [      ]             | #INCLUDE functions\initialize.asm
+0D8B [      ]             | ; ===========================================================================
+0D8B [      ]             | INITIALIZE:
+0D8B [      ]             | 	            ; jiffyTime := $A0;
+0D8B [      ]             | 		
+0D8B [      ]             | 	            ; SetBitMapMode();
+0D8B [A93B  ] LDA #$3B    |                 LDA.#   $3B
+0D8D [8D11D0] STA $D011   |                 STA     $D011
+0D90 [      ]             | 
+0D90 [      ]             |                 ; SetMultiColorMode();
+0D90 [A910  ] LDA #$10    |                 LDA.#   16
+0D92 [0D16D0] ORA $D016   |                 ORA     $D016
+0D95 [8D16D0] STA $D016   |                 STA     $D016
+0D98 [      ]             | 
+0D98 [      ]             |                 ; SetBank(VIC_BANK1);
+0D98 [A902  ] LDA #$02    |                 LDA.#   $2
+0D9A [8D00DD] STA $DD00   |                 STA     $DD00
+0D9D [      ]             | 
+0D9D [      ]             |                 ; Poke(^$D018, 0, Peek(^$D018, 0) | $08);
+0D9D [      ]             |                 ; What is this?
+0D9D [AD18D0] LDA $D018   |                 LDA     $D018
+0DA0 [0908  ] ORA #$08    |                 ORA.#   $8
+0DA2 [8D18D0] STA $D018   |                 STA     $D018
+0DA5 [      ]             | 
+0DA5 [      ]             |                 ; Screen_BG_Col := Cyan;
+0DA5 [      ]             |                 ; Screen_FG_Col := Cyan;
+0DA5 [A903  ] LDA #$03    |                 LDA.#   VICII_COLOR_CYAN
+0DA7 [8D20D0] STA $D020   |                 STA     $D020
+0DAA [8D21D0] STA $D021   |                 STA     $D021
+0DAD [      ]             | 
+0DAD [      ]             |                 ; SetMemoryConfig(1, 1, 0);	// IO, Kernal, BASIC
+0DAD [A501  ] LDA $01     |                 LDA.ZP  $01
+0DAF [29F8  ] AND #$F8    |                 AND.#   %11111000
+0DB1 [0906  ] ORA #$06    |                 ORA.#   %110
+0DB3 [8501  ] STA $01     |                 STA.ZP  $01
+0DB5 [      ]             | 
+0DB5 [      ]             |                 ; idleFrame := 0;
+0DB5 [      ]             |                 ; walkingFrame := 0;
+0DB5 [      ]             | 
+0DB5 [60    ] RTS         |                 RTS
+0DB6 [      ]             | #INCLUDE functions\clear_screen.asm
+0DB6 [      ]             | ; ===========================================================================
+0DB6 [      ]             | CLEAR_SCREEN:
+0DB6 [      ]             |                 ; offsetIndex := 0;
+0DB6 [A900  ] LDA #$00    |                 LDA.#   $00
+0DB8 [8DF80D] STA $0DF8   |                 STA     .INDEX
+0DBB [8DF90D] STA $0DF9   |                 STA     .INDEX + 1
+0DBE [      ]             | 
+0DBE [A900  ] LDA #$00    |                 LDA.#   0
+0DC0 [8DD009] STA $09D0   |                 STA     SET_CELL.TILE_NUMBER
+0DC3 [A900  ] LDA #$00    |                 LDA.#   VICII_COLOR_BLACK
+0DC5 [8DD209] STA $09D2   |                 STA     SET_CELL.COLOR_1
+0DC8 [A905  ] LDA #$05    |                 LDA.#   VICII_COLOR_GREEN
+0DCA [8DD309] STA $09D3   |                 STA     SET_CELL.COLOR_2
+0DCD [A904  ] LDA #$04    |                 LDA.#   VICII_COLOR_PURPLE
+0DCF [8DD409] STA $09D4   |                 STA     SET_CELL.COLOR_3
+0DD2 [      ]             | 
+0DD2 [      ]             |                 ; BEGIN
+0DD2 [      ]             | .LOOP:          ; SetCell(offsetIndex, #CharacterTileSet, 0, Screen_BG_Col, Black, Black);
+0DD2 [ADF80D] LDA $0DF8   |                 LDA     .INDEX
+0DD5 [8DCE09] STA $09CE   |                 STA     SET_CELL.OFFSET
+0DD8 [ADF90D] LDA $0DF9   |                 LDA     .INDEX + 1
+0DDB [8DCF09] STA $09CF   |                 STA     SET_CELL.OFFSET + 1
+0DDE [      ]             | 
+0DDE [201809] JSR $0918   |                 JSR     SET_CELL
+0DE1 [      ]             | 
+0DE1 [EEF80D] INC $0DF8   |                                 INC         .INDEX            ; 	Inc(offsetIndex);		
+0DE4 [D003  ] BNE $03     |                 BNE         CURADDR + 5
+0DE6 [EEF90D] INC $0DF9   |                 INC         .INDEX + 1
+0DE9 [ADF90D] LDA $0DF9   |                                 LDA         .INDEX + 1      ; WHILE (offsetIndex < 1000) DO
+0DEC [C903  ] CMP #$03    |                 CMP.#       ((1000) & $FF00) >> 8
+0DEE [D0E2  ] BNE $E2     |                 BNE         .LOOP
+0DF0 [ADF80D] LDA $0DF8   |                 LDA         .INDEX
+0DF3 [C9E8  ] CMP #$E8    |                 CMP.#       1000  & $00FF
+0DF5 [D0DB  ] BNE $DB     |                 BNE         .LOOP
+0DF7 [      ]             |                 ; END;
+0DF7 [60    ] RTS         |                 RTS
+0DF8 [      ]             | 
+0DF8 [0000  ]             | .INDEX:         DATA    $0000
+0DFA [      ]             | #INCLUDE functions\draw_screen.asm
+0DFA [      ]             | ; ===========================================================================
+0DFA [      ]             | DRAW_SCREEN:
+0DFA [20B60D] JSR $0DB6   |                 JSR     CLEAR_SCREEN
+0DFD [      ]             | 
+0DFD [A900  ] LDA #$00    |                 LDA.#   0
+0DFF [8D3E0A] STA $0A3E   |                 STA     SET_CELL_NO_COLOR.OFFSET
+0E02 [8D3F0A] STA $0A3F   |                 STA     SET_CELL_NO_COLOR.OFFSET + 1
+0E05 [      ]             | 
+0E05 [A9E9  ] LDA #$E9    |                 LDA.#   MAPDATA  & $00FF
+0E07 [8D100E] STA $0E10   |                 STA     .LD + 1
+0E0A [A90F  ] LDA #$0F    |                 LDA.#   ((MAPDATA) & $FF00) >> 8
+0E0C [8D110E] STA $0E11   |                 STA     .LD + 2
+0E0F [      ]             | 
+0E0F [      ]             | .LOOP:
+0E0F [AD0000] LDA $0000   | .LD:            LDA     $0000
+0E12 [8D400A] STA $0A40   |                 STA     SET_CELL_NO_COLOR.TILE_NUMBER
+0E15 [20D509] JSR $09D5   |                 JSR     SET_CELL_NO_COLOR
+0E18 [      ]             | 
+0E18 [EE3E0A] INC $0A3E   |                                 INC         SET_CELL_NO_COLOR.OFFSET 
+0E1B [D003  ] BNE $03     |                 BNE         CURADDR + 5
+0E1D [EE3F0A] INC $0A3F   |                 INC         SET_CELL_NO_COLOR.OFFSET + 1
+0E20 [EE100E] INC $0E10   |                                 INC         .LD + 1 
+0E23 [D003  ] BNE $03     |                 BNE         CURADDR + 5
+0E25 [EE110E] INC $0E11   |                 INC         .LD + 1 + 1
+0E28 [      ]             | 
+0E28 [AD110E] LDA $0E11   |                 LDA     .LD + 2
+0E2B [C913  ] CMP #$13    |                 CMP.#   ((MAPEND) & $FF00) >> 8
+0E2D [D0E0  ] BNE $E0     |                 BNE     .LOOP
+0E2F [AD100E] LDA $0E10   |                 LDA     .LD + 1
+0E32 [C9D1  ] CMP #$D1    |                 CMP.#   MAPEND  & $00FF
+0E34 [D0D9  ] BNE $D9     |                 BNE     .LOOP
+0E36 [      ]             | 
+0E36 [60    ] RTS         |                 RTS
+0E37 [      ]             | #INCLUDE functions\draw_board.asm
+0E37 [      ]             | 
+0E37 [      ]             | ; ===========================================================================
+0E37 [      ]             | 
+0E37 [      ]             |                     ;
+0E37 [      ]             | ; ===========================================================================
+0E37 [      ]             | DRAW_BOARD:         ; Reset Pointers
+0E37 [A9D1  ] LDA #$D1    |                                 LDA.#   TILEDATA  & $00FF
+0E39 [8D560E] STA $0E56   |             STA     .TILEDATA_PTR
+0E3C [A913  ] LDA #$13    |             LDA.#   ((TILEDATA) & $FF00) >> 8
+0E3E [8D570E] STA $0E57   |             STA     .TILEDATA_PTR+1
+0E41 [A9E2  ] LDA #$E2    |                                 LDA.#   SCROFFSETLO  & $00FF
+0E43 [8D0E0F] STA $0F0E   |             STA     .SCROFFSETLO_PTR
+0E46 [A915  ] LDA #$15    |             LDA.#   ((SCROFFSETLO) & $FF00) >> 8
+0E48 [8D0F0F] STA $0F0F   |             STA     .SCROFFSETLO_PTR+1
+0E4B [A9F3  ] LDA #$F3    |                                 LDA.#   SCROFFSETHI  & $00FF
+0E4D [8D140F] STA $0F14   |             STA     .SCROFFSETHI_PTR
+0E50 [A917  ] LDA #$17    |             LDA.#   ((SCROFFSETHI) & $FF00) >> 8
+0E52 [8D150F] STA $0F15   |             STA     .SCROFFSETHI_PTR+1
+0E55 [      ]             | 
+0E55 [AD0000] LDA $0000   | .TILEDATA_LD:       LDA     $0000
+0E58 [3003  ] BMI $03     |                     BMI     .JMP_INCREMENT      ; High bit set so ignore...
+0E5A [4C600E] JMP $0E60   |                     JMP     .PROCESS_TILE
+0E5D [      ]             | 
+0E5D [4C190F] JMP $0F19   | .JMP_INCREMENT:     JMP     .INCREMENT
+0E60 [      ]             | 
+0E60 [      ]             | .PROCESS_TILE:      ; In a valid cell, set current...
+0E60 [      ]             |                     
+0E60 [8D0000] STA $0000   |                     STA     $0000
+0E63 [      ]             | 
+0E63 [      ]             |                     ; Get neightbors...
+0E63 [A900  ] LDA #$00    |                     LDA.#   %00000000
+0E65 [8D0000] STA $0000   |                     STA     $0000           ; Clear Neighbors Flag
+0E68 [      ]             | 
+0E68 [AD560E] LDA $0E56   |                     LDA     .TILEDATA_PTR
+0E6B [8D460F] STA $0F46   |                     STA     .NEIGHBOR_PTR
+0E6E [AD570E] LDA $0E57   |                     LDA     .TILEDATA_PTR + 1
+0E71 [8D470F] STA $0F47   |                     STA     .NEIGHBOR_PTR + 1
+0E74 [38    ] SEC         |                                 SEC
+0E75 [AD460F] LDA $0F46   |             LDA         .NEIGHBOR_PTR
+0E78 [E918  ] SBC #$18    |             SBC.#       24
+0E7A [8D460F] STA $0F46   |             STA         .NEIGHBOR_PTR
+0E7D [AD470F] LDA $0F47   |             LDA         .NEIGHBOR_PTR+1
+0E80 [E900  ] SBC #$00    |             SBC.#       $00
+0E82 [8D470F] STA $0F47   |             STA         .NEIGHBOR_PTR+1
+0E85 [      ]             | 
+0E85 [      ]             |                     ; Check NW
+0E85 [      ]             |                     
+0E85 [A200  ] LDX #$00    |                     LDX.#   00
+0E87 [20450F] JSR $0F45   |                     JSR     .GET_NEIGHBOR
+0E8A [      ]             | 
+0E8A [2901  ] AND #$01    |                     AND.#   %00000001
+0E8C [F008  ] BEQ $08     |                     BEQ     CURADDR + 2 + 3 + 2 + 3
+0E8E [      ]             | 
+0E8E [AD0000] LDA $0000   |                     LDA     $0000
+0E91 [0901  ] ORA #$01    |                     ORA.#   %00000001
+0E93 [8D0000] STA $0000   |                     STA     $0000
+0E96 [      ]             |                     
+0E96 [      ]             |                     ; Check N
+0E96 [      ]             |                     
+0E96 [A201  ] LDX #$01    |                     LDX.#   01
+0E98 [20450F] JSR $0F45   |                     JSR     .GET_NEIGHBOR
+0E9B [      ]             | 
+0E9B [2901  ] AND #$01    |                     AND.#   %00000001
+0E9D [F008  ] BEQ $08     |                     BEQ     CURADDR + 2 + 3 + 2 + 3
+0E9F [      ]             | 
+0E9F [AD0000] LDA $0000   |                     LDA     $0000
+0EA2 [0902  ] ORA #$02    |                     ORA.#   %00000010
+0EA4 [8D0000] STA $0000   |                     STA     $0000
+0EA7 [      ]             |                     
+0EA7 [      ]             |                     ; Check NE
+0EA7 [      ]             |                     
+0EA7 [A202  ] LDX #$02    |                     LDX.#   02
+0EA9 [20450F] JSR $0F45   |                     JSR     .GET_NEIGHBOR
+0EAC [      ]             | 
+0EAC [2901  ] AND #$01    |                     AND.#   %00000001
+0EAE [F008  ] BEQ $08     |                     BEQ     CURADDR + 2 + 3 + 2 + 3
+0EB0 [      ]             | 
+0EB0 [AD0000] LDA $0000   |                     LDA     $0000
+0EB3 [0904  ] ORA #$04    |                     ORA.#   %00000100
+0EB5 [8D0000] STA $0000   |                     STA     $0000
+0EB8 [      ]             |                     
+0EB8 [      ]             |                     ; Check W
+0EB8 [      ]             |                     
+0EB8 [A217  ] LDX #$17    |                     LDX.#   23
+0EBA [20450F] JSR $0F45   |                     JSR     .GET_NEIGHBOR
+0EBD [      ]             | 
+0EBD [2901  ] AND #$01    |                     AND.#   %00000001
+0EBF [F008  ] BEQ $08     |                     BEQ     CURADDR + 2 + 3 + 2 + 3
+0EC1 [      ]             | 
+0EC1 [AD0000] LDA $0000   |                     LDA     $0000
+0EC4 [0908  ] ORA #$08    |                     ORA.#   %00001000
+0EC6 [8D0000] STA $0000   |                     STA     $0000
+0EC9 [      ]             |                     
+0EC9 [      ]             |                     ; Check E
+0EC9 [      ]             |                     
+0EC9 [A219  ] LDX #$19    |                     LDX.#   25
+0ECB [20450F] JSR $0F45   |                     JSR     .GET_NEIGHBOR
+0ECE [      ]             | 
+0ECE [2901  ] AND #$01    |                     AND.#   %00000001
+0ED0 [F008  ] BEQ $08     |                     BEQ     CURADDR + 2 + 3 + 2 + 3
+0ED2 [      ]             | 
+0ED2 [AD0000] LDA $0000   |                     LDA     $0000
+0ED5 [0910  ] ORA #$10    |                     ORA.#   %00010000
+0ED7 [8D0000] STA $0000   |                     STA     $0000
+0EDA [      ]             |                     
+0EDA [      ]             |                     ; Check SW
+0EDA [      ]             |                     
+0EDA [A22E  ] LDX #$2E    |                     LDX.#   46
+0EDC [20450F] JSR $0F45   |                     JSR     .GET_NEIGHBOR
+0EDF [      ]             | 
+0EDF [2901  ] AND #$01    |                     AND.#   %00000001
+0EE1 [F008  ] BEQ $08     |                     BEQ     CURADDR + 2 + 3 + 2 + 3
+0EE3 [      ]             | 
+0EE3 [AD0000] LDA $0000   |                     LDA     $0000
+0EE6 [0920  ] ORA #$20    |                     ORA.#   %00100000
+0EE8 [8D0000] STA $0000   |                     STA     $0000
+0EEB [      ]             |                     
+0EEB [      ]             |                     ; Check S
+0EEB [      ]             |                     
+0EEB [A22F  ] LDX #$2F    |                     LDX.#   47
+0EED [20450F] JSR $0F45   |                     JSR     .GET_NEIGHBOR
+0EF0 [      ]             | 
+0EF0 [2901  ] AND #$01    |                     AND.#   %00000001
+0EF2 [F008  ] BEQ $08     |                     BEQ     CURADDR + 2 + 3 + 2 + 3
+0EF4 [      ]             | 
+0EF4 [AD0000] LDA $0000   |                     LDA     $0000
+0EF7 [0940  ] ORA #$40    |                     ORA.#   %01000000
+0EF9 [8D0000] STA $0000   |                     STA     $0000
+0EFC [      ]             |                     
+0EFC [      ]             |                     ; Check SE
+0EFC [      ]             |                     
+0EFC [A230  ] LDX #$30    |                     LDX.#   48
+0EFE [20450F] JSR $0F45   |                     JSR     .GET_NEIGHBOR
+0F01 [      ]             | 
+0F01 [2901  ] AND #$01    |                     AND.#   %00000001
+0F03 [F008  ] BEQ $08     |                     BEQ     CURADDR + 2 + 3 + 2 + 3
+0F05 [      ]             | 
+0F05 [AD0000] LDA $0000   |                     LDA     $0000
+0F08 [0980  ] ORA #$80    |                     ORA.#   %10000000
+0F0A [8D0000] STA $0000   |                     STA     $0000
+0F0D [      ]             |                     
+0F0D [      ]             |                     ; so now set the offset and update the tile...
+0F0D [AD0000] LDA $0000   | .SCROFFSETLO_LD:    LDA     $0000
+0F10 [8D0000] STA $0000   |                     STA     $0000
+0F13 [AD0000] LDA $0000   | .SCROFFSETHI_LD:    LDA     $0000
+0F16 [8D0100] STA $0001   |                     STA     $0000 + 1
+0F19 [      ]             | 
+0F19 [      ]             |                     ; Generate Tile
+0F19 [      ]             |                     ; Draw Tile
+0F19 [      ]             | 
+0F19 [      ]             | .INCREMENT:
+0F19 [      ]             |                     ; Continue Until we hit TILEEND
+0F19 [      ]             |                     ; Increment Pointers
+0F19 [EE560E] INC $0E56   |                                     INC         .TILEDATA_PTR
+0F1C [D003  ] BNE $03     |                 BNE         CURADDR + 5
+0F1E [EE570E] INC $0E57   |                 INC         .TILEDATA_PTR + 1
+0F21 [AD560E] LDA $0E56   |                     LDA     .TILEDATA_PTR
+0F24 [CDE200] CMP $00E2   |                     CMP     TILEEND  & $00FF
+0F27 [D008  ] BNE $08     |                     BNE     .CONTINUE_INCR
+0F29 [AD570E] LDA $0E57   |                     LDA     .TILEDATA_PTR + 1
+0F2C [CD1500] CMP $0015   |                     CMP     ((TILEEND) & $FF00) >> 8
+0F2F [F013  ] BEQ $13     |                     BEQ     .DONE
+0F31 [      ]             | 
+0F31 [      ]             | .CONTINUE_INCR:     ; Not done so increment the rest of the pointers...
+0F31 [EE0E0F] INC $0F0E   |                                     INC         .SCROFFSETLO_PTR
+0F34 [D003  ] BNE $03     |                 BNE         CURADDR + 5
+0F36 [EE0F0F] INC $0F0F   |                 INC         .SCROFFSETLO_PTR + 1
+0F39 [EE140F] INC $0F14   |                                     INC         .SCROFFSETHI_PTR
+0F3C [D003  ] BNE $03     |                 BNE         CURADDR + 5
+0F3E [EE150F] INC $0F15   |                 INC         .SCROFFSETHI_PTR + 1
+0F41 [      ]             | 
+0F41 [4C0000] JMP $0000   |                     JMP     $0000
+0F44 [      ]             | 
+0F44 [      ]             | .DONE:
+0F44 [      ]             | 
+0F44 [60    ] RTS         |                     RTS
+0F45 [      ]             | 
+0F45 [BD0000] LDA $0000,X | .GET_NEIGHBOR:      LDA,X   $0000
+0F48 [60    ] RTS         |                     RTS
+0F49 [      ]             | DRAW_BOARD.NEIGHBOR_PTR = DRAW_BOARD.GET_NEIGHBOR + 1
+0F49 [      ]             | 
+0F49 [      ]             | ; Local Variables
+0F49 [      ]             | DRAW_BOARD.TILEDATA_PTR = DRAW_BOARD.TILEDATA_LD + 1
+0F49 [      ]             | DRAW_BOARD.SCROFFSETLO_PTR = DRAW_BOARD.SCROFFSETLO_LD + 1
+0F49 [      ]             | DRAW_BOARD.SCROFFSETHI_PTR = DRAW_BOARD.SCROFFSETHI_LD + 1
+0F49 [      ]             | 
+0F49 [      ]             | ; ===========================================================================
+0F49 [      ]             | CHARDATA:       #LOADBINARY     TileMaze-Chars.bin
+0F49 [      ]             | ; '.\TileMaze-Chars.bin' : 160 bytes
+0FE9 [      ]             | MAPDATA:        #LOADBINARY     TileMaze-Map.bin
+0FE9 [      ]             | ; '.\TileMaze-Map.bin' : 1000 bytes
+13D1 [      ]             | MAPEND:
+13D1 [      ]             | 
+13D1 [      ]             | TILEDATA:       #LOADBINARY     TileMaze-TileData.bin
+13D1 [      ]             | ; '.\TileMaze-TileData.bin' : 529 bytes
+15E2 [      ]             | TILEEND:
+15E2 [      ]             | 
+15E2 [      ]             | SCROFFSETLO:    #LOADBINARY     TileMaze-ScrOffsetLo.bin
+15E2 [      ]             | ; '.\TileMaze-ScrOffsetLo.bin' : 529 bytes
+17F3 [      ]             | SCROFFSETHI:    #LOADBINARY     TileMaze-ScrOffsetHi.bin
+17F3 [      ]             | ; '.\TileMaze-ScrOffsetHi.bin' : 529 bytes
+1A04 [      ]             | 
+1A04 [      ]             | DUMMY1:         #TEXT           "Data"
+1A04 [04    ]             |    DATA.b $04
+1A05 [61    ]             |    DATA.b $61
+1A06 [74    ]             |    DATA.b $74
+1A07 [61    ]             |    DATA.b $61
+1A08 [      ]             | 
+1A08 [      ]             | ENDPRG:

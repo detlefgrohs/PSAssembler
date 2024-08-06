@@ -535,6 +535,12 @@ class AssemblerV3 {
                             $skipOutput = $true;
                         }
                     }
+                    {$_ -eq "DATA.b" -or $_ -eq "DATA"} {
+                        $dataType = $_;
+                        $parsedSyntax.Parameters -split "," | ForEach-Object {
+                            $this.AssembleLine(@{ Line = "   $($dataType) $($_.Trim())"; Source = $CurrentLine.Source; LineNumber = $CurrentLine.LineNumber });
+                        }
+                    }
                     { $_ -eq "TEXT" -or $_ -eq "TEXTZ" -or $_ -eq "ASCII" -or $_ -eq "ASCIIZ" } {
                         if ($parsedSyntax.Parameters -match '"(.*)"') {
                             if ($this.Pass -eq [PassType]::Assembly) {
