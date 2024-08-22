@@ -26,12 +26,7 @@ $Global:MaxCellsPerScreen = 0
 #     }
 #     Write-Host ""
 # }
-function IncrementCount() {
-    param($dictionary, $key)
 
-    if ($dictionary.ContainsKey($key)) { $dictionary[$key] += 1; }
-    else                               { $dictionary.Add($key, 1); }
-}
 function Generate-Data() {
     param($line)
 
@@ -47,68 +42,65 @@ function Get-IndexOfCellType() {
 function Get-IndexOfRowType() {
     param($rowType)
 
-    return $Global:rowTypeIndexes[$rowType];
+    return 0;
 }
+
 
 function Audit-Screen() {
     param($screenX, $screenY)
-    
-    $localCellTypes = New-Object System.Collections.Generic.Dictionary"[String,Int]"
-    $localRowTypes = New-Object System.Collections.Generic.Dictionary"[String,Int]"
-
-    for ($x = 0; $x -lt 16; $x += 1) {
-        $col = $leftOffset + $x + ($screenX * 16);
-
-        $rowType = ""
-
-        for ($y = 0; $y -lt 11; $y += 1) {
-            $row = $topOffset + $y + ($screenY * 11);
-        
-            $value = $worksheet.cells.Item($row, $col).Text
-            $value = $value.PadRight(4)
-            $rowType = $rowType + $value;
-    
-            IncrementCount $Global:cellTypes $value
-            IncrementCount $localCellTypes $value
-        }
-
-        IncrementCount $Global:rowTypes $rowType
-        IncrementCount $localRowTypes $rowType
-    }
-
-    if ($localCellTypes.Count -gt $Global:MaxCellsPerScreen) {
-        $Global:MaxCellsPerScreen = $localCellTypes.Count;
-    }
-}
-
-function Output-Screen() {
-    param($screenX, $screenY)
-    
     $localCellTypes = New-Object System.Collections.Generic.Dictionary"[String,Int]"
     $localRowTypes = New-Object System.Collections.Generic.Dictionary"[String,Int]"
 
     Generate-Data "       ; Screen[$($screenX),$($screenY)]"
-    Generate-Data "       #DATA.b `$00 ; Palette"
 
-    for ($x = 0; $x -lt 16; $x += 1) {
-        $col = $leftOffset + $x + ($screenX * 16);
+
+    for ($y = 0; $y -lt 11; $y += 1) {
+        $row = $topOffset + $y + ($screenY * 11);
 
         $rowType = ""
 
-        for ($y = 0; $y -lt 11; $y += 1) {
-            $row = $topOffset + $y + ($screenY * 11);
+        for ($x = 0; $x -lt 16; $x += 1) {
+            $col = $leftOffset + $x + ($screenX * 16);
         
             $value = $worksheet.cells.Item($row, $col).Text
             $value = $value.PadRight(4)
             $rowType = $rowType + $value;
+    
+            if ($Global:cellTypes.ContainsKey($value)) {
+                $Global:cellTypes[$value] += 1;
+            } else {
+                $Global:cellTypes.Add($value, 1);
+            }
+
+            if ($localCellTypes.ContainsKey($value)) {
+                $localCellTypes[$value] += 1;
+            } else {
+                $localCellTypes.Add($value, 1);
+            }
         }
 
         $indexOfRowType = Get-IndexOfRowType($rowType);
         Generate-Data "       DATA.b `$$($indexOfRowType.ToString("X2")) ; $($rowType)"
+
+        if ($Global:rowTypes.ContainsKey($rowType)) {
+            $Global:rowTypes[$rowType] += 1;
+        } else {
+            $Global:rowTypes.Add($rowType, 1);
+        }
+
+        if ($localRowTypes.ContainsKey($rowType)) {
+            $localRowTypes[$rowType] += 1;
+        } else {
+            $localRowTypes.Add($rowType, 1);
+        }
     }
     Generate-Data "       ; cellTypes $($localCellTypes.Count)"
     Generate-Data "       ; rowTypes $($localRowTypes.Count)"
     Generate-Data ""
+
+    if ($localCellTypes.Count -gt $Global:MaxCellsPerScreen) {
+        $Global:MaxCellsPerScreen = $localCellTypes.Count;
+    }
 }
 
 
@@ -121,66 +113,9 @@ Write-Host "Summarizing Cells and Columns"
 $Global:cellTypes = New-Object System.Collections.Generic.Dictionary"[String,Int]"
 $Global:rowTypes = New-Object System.Collections.Generic.Dictionary"[String,Int]"
 
-$maxScreenRows = 8; # 8;
-$maxScreenCols = 16; # 16;
-
-# Audit the Screens to get the rowTypes...
-for ($y = 0; $y -lt $maxScreenRows; $y += 1) {
-    for ($x = 0; $x -lt $maxScreenCols; $x += 1) {
+for ($y = 0; $y -lt 8; $y += 1) {
+    for ($x = 0; $x -lt 16; $x += 1) {
         Audit-Screen $x $y
-    }
-}
-
-# Now assign the RowTypeIndexes
-$Global:rowTypeCells = New-Object System.Collections.Generic.Dictionary"[String,Int]"
-$Global:rowTypeIndexes = New-Object System.Collections.Generic.Dictionary"[String,Int]"
-$indexNum = 0;
-$Global:rowTypes.Keys | ForEach-Object {
-    $key = $_;
-    $Global:rowTypeIndexes.Add($key, $indexNum);
-    $indexNum += 1;
-
-    $rowCells = New-Object System.Collections.Generic.Dictionary"[String,Int]"
-    for($index = 0; $index -lt ($key.Length / 4); $index += 1) {
-        $part = $key.Substring(4 * $index, 4);
-        IncrementCount $rowCells $part
-    }
-
-    $rowCellsKey = ""
-    $rowCells.Keys | Sort-Object | ForEach-Object {
-        $rowCellsKey += $_;
-    }
-    IncrementCount $Global:rowTypeCells $rowCellsKey
-}
-
-Write-Host
-Write-Host "==========================================="
-$sorted = @()
-$Global:rowTypeCells.Keys | ForEach-Object {
-    $sorted += @{ Key = $_; Count = ($_.Length / 4) }
-}
-$sorted | Sort-Object -Property Count -Descending | ForEach-Object {
-    Write-Host "   $($_.Count) : $($_.Key)"
-}
-Write-Host
-$sorted | Sort-Object -Property Count -Descending | ForEach-Object {
-    $key = $_.Key
-    $line = "   @( "
-    for($index = 0; $index -lt ($key.Length / 4); $index += 1) {
-        $part = $key.Substring(4 * $index, 4);
-
-        $line += "$(Get-IndexOfCellType $part), "
-    }
-    Write-Host "$($line.Trim(", ")) ),";
-}
-# Write-Host
-# Write-Host "==========================================="
-# Write-Host $Global:rowTypeIndexes
-
-# Now actually output the screens
-for ($y = 0; $y -lt $maxScreenRows; $y += 1) {
-    for ($x = 0; $x -lt $maxScreenCols; $x += 1) {
-        Output-Screen $x $y
     }
     # Write-Host $col
 }
@@ -244,39 +179,19 @@ $cellTypes.Keys | Sort-Object | ForEach-Object {
     $totalCells += $cellTypes[$_]
 }
 Write-Host
-Write-Host "==========================================="
 Generate-Data ""
-$maxRowCells = 0
 $Global:rowTypes.Keys | ForEach-Object {
-    Generate-Data "      ; $($_) : $($Global:rowTypes[$_])"
+    Generate-Data "; $($_) : $($Global:rowTypes[$_])"
     $line = "      #DATA.b "
     $key = $_;
-    $rowCells = New-Object System.Collections.Generic.Dictionary"[String,Int]";
-    
     for($index = 0; $index -lt ($key.Length / 4); $index += 1) {
         $part = $key.Substring(4 * $index, 4);
         $cellTypeIndex = Get-IndexOfCellType $part
         $line += "`$$($cellTypeIndex.ToString("X2")), "
-
-        IncrementCount $rowCells $part
     }
-    # Write-Host $line.TrimEnd(", ")
-    #Generate-Data $line.TrimEnd(", ")
-    # 1st nibble => TileSet => 11 more nibbles for a total of 12 nibbles or 6 bytes
-    Generate-Data "      ; # rowCells = $($rowCells.Count)"
-    Generate-Data "      #DATA.b `$00, `$00, `$00, `$00, `$00, `$00"
-
-    if ($rowCells.Count -gt $maxRowCells) { $maxRowCells = $rowCells.Count; }
+    Generate-Data $line.TrimEnd(", ")
 }
-Write-Host "==========================================="
-Write-Host
 Write-Host "$([System.DateTime]::Now)"
-Write-Host "maxRowCells = $($maxRowCells)"
-Generate-Data ""
-Generate-Data "      ; Tilesets (16)"
-for($index = 0; $index -lt 16; $index += 1) {
-    Generate-Data "      #DATA.b `$00, `$00, `$00, `$00, `$00, `$00, `$00, `$00"
-}
 
 Write-Host
 Write-Host "assignedCells = $($assignedCells)"

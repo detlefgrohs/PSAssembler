@@ -1,0 +1,288 @@
+0000 [      ]             | 
+0801 [      ]             | * = $0801
+0801 [      ]             | 
+0801 [      ]             | #INCLUDE ..\..\Examples\includes\includes.h
+0801 [      ]             | ; #INCLUDE macros.h
+0801 [      ]             | 
+0801 [      ]             |                             ; Basic Stub
+0801 [      ]             |             ; 10 SYS2061
+0801 [0B08  ]             |             DATA        $080B   ; $0801 Pointer to Next Line
+0803 [0A00  ]             |             DATA        $000A   ; $0803 Line Number '10'
+0805 [9E    ]             |             DATA.B      $9E     ; $0805 BASIC Token for SYS
+0806 [32    ]             |             DATA.B      $32     ; $0806 '2'
+0807 [30    ]             |             DATA.B      $30     ; $0807 '0'
+0808 [36    ]             |             DATA.B      $36     ; $0808 '6'
+0809 [31    ]             |             DATA.B      $31     ; $0809 '1'  - 2061 is $080D
+080A [00    ]             |             DATA.B      $00     ; $080A End of current line
+080B [0000  ]             |             DATA        $0000   ; $080B Next Line (NULL no more lines)
+080D [      ]             |                                 ; $080D - 2061
+080D [      ]             | 
+080D [      ]             | START:
+080D [A901  ] LDA #$01    |             LDA.#       $01
+080F [8D0004] STA $0400   |             STA         VICII_SCREEN_RAM
+0812 [      ]             | 
+0812 [      ]             |             ; Y = 3
+0812 [      ]             |             ; X = 5
+0812 [      ]             |             ; So (Y*16) + X => 53
+0812 [      ]             |             
+0812 [60    ] RTS         |             RTS
+0813 [      ]             | 
+0813 [      ]             | LOADSCREEN: ; Registers X & Y will hold the screen x,y
+0813 [8ECE08] STX $08CE   |             STX         LOADSCREEN_X
+0816 [8CCF08] STY $08CF   |             STY         LOADSCREEN_Y
+0819 [      ]             | 
+0819 [      ]             |             ; Calculate Screen #
+0819 [      ]             |             ; (Y * 16) + X => SCREENNUM
+0819 [98    ] TYA         |             TYA         ; Y register still holds y
+081A [2A    ] ROL A       |             ROL.A
+081B [2A    ] ROL A       |             ROL.A
+081C [2A    ] ROL A       |             ROL.A
+081D [2A    ] ROL A       |             ROL.A
+081E [6DCE08] ADC $08CE   |             ADC         LOADSCREEN_X
+0821 [8DD008] STA $08D0   |             STA         LOADSCREEN_SCREENNUMBER
+0824 [      ]             | 
+0824 [      ]             |             ; SETUP PTRS
+0824 [      ]             |             ; SETUP THE SCREENDATA_PTR => (SCREENNUMBER * 4) + SCREENDATA
+0824 [      ]             |             ; LOADSCREEN_SCREENDATA_PTR = LOADSCREEN_SCREENNUMBER
+0824 [      ]             |             
+0824 [ADD008] LDA $08D0   |             LDA         LOADSCREEN_SCREENNUMBER     ; Remove/Optimize out...
+0827 [8DD208] STA $08D2   |             STA         LOADSCREEN_SCREENDATA_PTR
+082A [8DD408] STA $08D4   |             STA         LOADSCREEN_SCREENMAPDATA_PTR
+082D [A900  ] LDA #$00    |             LDA.#       $00
+082F [8DD308] STA $08D3   |             STA         LOADSCREEN_SCREENDATA_PTR + 1
+0832 [8DD508] STA $08D5   |             STA         LOADSCREEN_SCREENMAPDATA_PTR + 1
+0835 [      ]             | 
+0835 [      ]             |             ; LOADSCREEN_SCREENDATA_PTR * 4
+0835 [0ED208] ASL $08D2   |                             ASL     LOADSCREEN_SCREENDATA_PTR
+0838 [      ]             |                 ;BCC     CURADDR + 5
+0838 [2ED308] ROL $08D3   |                 ROL     LOADSCREEN_SCREENDATA_PTR + 1
+083B [0ED208] ASL $08D2   |                             ASL     LOADSCREEN_SCREENDATA_PTR
+083E [      ]             |                 ;BCC     CURADDR + 5
+083E [2ED308] ROL $08D3   |                 ROL     LOADSCREEN_SCREENDATA_PTR + 1
+0841 [      ]             |             ; LOADSCREEN_SCREENDATA_PTR += SCREENDATA
+0841 [      ]             |             ; @ADD_WORD(LOADSCREEN_SCREENDATA_PTR,SCREENDATA)
+0841 [18    ] CLC         |             CLC
+0842 [ADD208] LDA $08D2   |             LDA         LOADSCREEN_SCREENDATA_PTR
+0845 [69DC  ] ADC #$DC    |             ADC.#       SCREENDATA  & $00FF
+0847 [8DD208] STA $08D2   |             STA         LOADSCREEN_SCREENDATA_PTR
+084A [ADD308] LDA $08D3   |             LDA         LOADSCREEN_SCREENDATA_PTR + 1
+084D [6908  ] ADC #$08    |             ADC.#       ((SCREENDATA) & $FF00) >> 8
+084F [8DD308] STA $08D3   |             STA         LOADSCREEN_SCREENDATA_PTR + 1
+0852 [      ]             |             
+0852 [      ]             |             ; SETUP THE SCREENMAPDATA_PTR => (SCREENNUMBER * 16) + SCREENMAPDATA
+0852 [      ]             |             ; LOADSCREEN_SCREENDMAPATA_PTR * 16
+0852 [0ED408] ASL $08D4   |                             ASL     LOADSCREEN_SCREENMAPDATA_PTR
+0855 [      ]             |                 ;BCC     CURADDR + 5
+0855 [2ED508] ROL $08D5   |                 ROL     LOADSCREEN_SCREENMAPDATA_PTR + 1
+0858 [0ED408] ASL $08D4   |                             ASL     LOADSCREEN_SCREENMAPDATA_PTR
+085B [      ]             |                 ;BCC     CURADDR + 5
+085B [2ED508] ROL $08D5   |                 ROL     LOADSCREEN_SCREENMAPDATA_PTR + 1
+085E [0ED408] ASL $08D4   |                             ASL     LOADSCREEN_SCREENMAPDATA_PTR
+0861 [      ]             |                 ;BCC     CURADDR + 5
+0861 [2ED508] ROL $08D5   |                 ROL     LOADSCREEN_SCREENMAPDATA_PTR + 1
+0864 [0ED408] ASL $08D4   |                             ASL     LOADSCREEN_SCREENMAPDATA_PTR
+0867 [      ]             |                 ;BCC     CURADDR + 5
+0867 [2ED508] ROL $08D5   |                 ROL     LOADSCREEN_SCREENMAPDATA_PTR + 1
+086A [      ]             |             ; LOADSCREEN_SCREENDATA_PTR += SCREENDATA
+086A [      ]             |             ;@ADD_WORD(LOADSCREEN_SCREENMAPDATA_PTR,SCREENMAPDATA)
+086A [18    ] CLC         |             CLC
+086B [ADD408] LDA $08D4   |             LDA         LOADSCREEN_SCREENMAPDATA_PTR
+086E [69E0  ] ADC #$E0    |             ADC.#       SCREENMAPDATA  & $00FF
+0870 [8DD408] STA $08D4   |             STA         LOADSCREEN_SCREENMAPDATA_PTR
+0873 [ADD508] LDA $08D5   |             LDA         LOADSCREEN_SCREENMAPDATA_PTR + 1
+0876 [6908  ] ADC #$08    |             ADC.#       ((SCREENMAPDATA) & $FF00) >> 8
+0878 [8DD508] STA $08D5   |             STA         LOADSCREEN_SCREENMAPDATA_PTR + 1
+087B [      ]             | 
+087B [      ]             |             ; Set the SCREEN_PTR
+087B [A900  ] LDA #$00    |             LDA.#       VICII_SCREEN_RAM  & $00FF
+087D [8DD808] STA $08D8   |             STA         LOADSCREEN_SCREEN_PTR
+0880 [A904  ] LDA #$04    |             LDA.#       ((VICII_SCREEN_RAM) & $FF00) >> 8
+0882 [8DD908] STA $08D9   |             STA         LOADSCREEN_SCREEN_PTR + 1
+0885 [      ]             | 
+0885 [      ]             |             ; Reset COLUMN_INDEX
+0885 [A900  ] LDA #$00    |             LDA.#       $00
+0887 [8DD108] STA $08D1   |             STA         LOADSCREEN_COLUMN_INDEX
+088A [      ]             | 
+088A [      ]             |             ; Get the current
+088A [      ]             | COLUMN_LOOP:
+088A [      ]             |             ; Get the current COLUMNDATA_INDEX from the SCREENMAPDATA
+088A [AED108] LDX $08D1   |             LDX         LOADSCREEN_COLUMN_INDEX
+088D [E010  ] CPX #$10    |             CPX.#       $10
+088F [F03C  ] BEQ $3C     |             BEQ         CONTINUE
+0891 [      ]             | 
+0891 [      ]             |             ; Get the current index into the COLUMNDATA
+0891 [BDD408] LDA $08D4,X |             LDA,X     LOADSCREEN_SCREENMAPDATA_PTR
+0894 [      ]             | 
+0894 [8DDA08] STA $08DA   |             STA         LOADSCREEN_TEMP
+0897 [A900  ] LDA #$00    |             LDA.#       $00
+0899 [8DDB08] STA $08DB   |             STA         LOADSCREEN_TEMP + 1
+089C [      ]             |             ; (COLUMNDATA_IMDEX * 2) + (COLUMNDATA_INDEX * 4)
+089C [0ED608] ASL $08D6   |                             ASL     LOADSCREEN_COLUMNDATA_PTR
+089F [      ]             |                 ;BCC     CURADDR + 5
+089F [2ED708] ROL $08D7   |                 ROL     LOADSCREEN_COLUMNDATA_PTR + 1
+08A2 [      ]             | 
+08A2 [ADDA08] LDA $08DA   |             LDA         LOADSCREEN_TEMP
+08A5 [8DD608] STA $08D6   |             STA         LOADSCREEN_COLUMNDATA_PTR
+08A8 [ADDB08] LDA $08DB   |             LDA         LOADSCREEN_TEMP + 1
+08AB [8DD708] STA $08D7   |             STA         LOADSCREEN_COLUMNDATA_PTR + 1
+08AE [0ED608] ASL $08D6   |                             ASL     LOADSCREEN_COLUMNDATA_PTR
+08B1 [      ]             |                 ;BCC     CURADDR + 5
+08B1 [2ED708] ROL $08D7   |                 ROL     LOADSCREEN_COLUMNDATA_PTR + 1
+08B4 [      ]             |             
+08B4 [18    ] CLC         |             CLC
+08B5 [ADD608] LDA $08D6   |             LDA         LOADSCREEN_COLUMNDATA_PTR
+08B8 [6DDA08] ADC $08DA   |             ADC         LOADSCREEN_TEMP
+08BB [8DD608] STA $08D6   |             STA         LOADSCREEN_COLUMNDATA_PTR
+08BE [ADD708] LDA $08D7   |             LDA         LOADSCREEN_COLUMNDATA_PTR + 1
+08C1 [6DDB08] ADC $08DB   |             ADC         LOADSCREEN_TEMP + 1
+08C4 [8DD708] STA $08D7   |             STA         LOADSCREEN_COLUMNDATA_PTR + 1
+08C7 [      ]             | 
+08C7 [EED108] INC $08D1   |             INC         LOADSCREEN_COLUMN_INDEX
+08CA [4C8A08] JMP $088A   |             JMP         COLUMN_LOOP
+08CD [      ]             | CONTINUE:
+08CD [      ]             | 
+08CD [60    ] RTS         |             RTS
+08CE [      ]             | 
+08CE [      ]             | LOADSCREEN_X:
+08CE [00    ]             |             DATA.b      $00
+08CF [      ]             | LOADSCREEN_Y:
+08CF [00    ]             |             DATA.b      $00
+08D0 [      ]             | LOADSCREEN_SCREENNUMBER:
+08D0 [00    ]             |             DATA.b      $00
+08D1 [      ]             | LOADSCREEN_COLUMN_INDEX:
+08D1 [00    ]             |             DATA.b      $00
+08D2 [      ]             | 
+08D2 [      ]             | LOADSCREEN_SCREENDATA_PTR:
+08D2 [0000  ]             |             DATA        $0000
+08D4 [      ]             | LOADSCREEN_SCREENMAPDATA_PTR:
+08D4 [0000  ]             |             DATA        $0000
+08D6 [      ]             | 
+08D6 [      ]             | LOADSCREEN_COLUMNDATA_PTR:
+08D6 [0000  ]             |             DATA        $0000
+08D8 [      ]             | 
+08D8 [      ]             | LOADSCREEN_SCREEN_PTR:
+08D8 [0000  ]             |             DATA        $0000
+08DA [      ]             | 
+08DA [      ]             | LOADSCREEN_TEMP:
+08DA [0000  ]             |             DATA        $0000
+08DC [      ]             | 
+08DC [      ]             | SCREENDATA:             ; Pallette, secret info, monster info, other
+08DC [      ]             |             ; Screen[0,0]
+08DC [00    ]             |    DATA.b $00
+08DD [00    ]             |    DATA.b $00
+08DE [00    ]             |    DATA.b $00
+08DF [00    ]             |    DATA.b $00
+08E0 [      ]             |             #DATA.b     $00, $00, $00, $00
+08E0 [      ]             | 
+08E0 [      ]             | SCREENMAPDATA:          ; Each screen has 16 bytes of column data
+08E0 [      ]             |             ; Screen[0,0]
+08E0 [00    ]             |    DATA.b $00
+08E1 [01    ]             |    DATA.b $01
+08E2 [00    ]             |    DATA.b $00
+08E3 [01    ]             |    DATA.b $01
+08E4 [00    ]             |    DATA.b $00
+08E5 [01    ]             |    DATA.b $01
+08E6 [00    ]             |    DATA.b $00
+08E7 [01    ]             |    DATA.b $01
+08E8 [      ]             |             #DATA.b     $00, $01, $00, $01, $00, $01, $00, $01
+08E8 [00    ]             |    DATA.b $00
+08E9 [01    ]             |    DATA.b $01
+08EA [00    ]             |    DATA.b $00
+08EB [01    ]             |    DATA.b $01
+08EC [00    ]             |    DATA.b $00
+08ED [01    ]             |    DATA.b $01
+08EE [00    ]             |    DATA.b $00
+08EF [01    ]             |    DATA.b $01
+08F0 [      ]             |             #DATA.b     $00, $01, $00, $01, $00, $01, $00, $01
+08F0 [      ]             | 
+08F0 [      ]             | COLUMNDATA:             ; Each column has 6 bytes
+08F0 [      ]             |                         ; 1st nibble => TILESET Index
+08F0 [      ]             |                         ; 2nd nibble => cell data
+08F0 [      ]             |                         ; Each byte after that is 2 nibbles of cell data
+08F0 [      ]             |                         ; for a total of 11 cells
+08F0 [      ]             |             ; ColumnData[0]
+08F0 [00    ]             |    DATA.b $00
+08F1 [12    ]             |    DATA.b $12
+08F2 [30    ]             |    DATA.b $30
+08F3 [12    ]             |    DATA.b $12
+08F4 [30    ]             |    DATA.b $30
+08F5 [12    ]             |    DATA.b $12
+08F6 [      ]             |             #DATA.b     $00, $12, $30, $12, $30, $12
+08F6 [      ]             |             ; ColumnData[1]
+08F6 [13    ]             |    DATA.b $13
+08F7 [21    ]             |    DATA.b $21
+08F8 [03    ]             |    DATA.b $03
+08F9 [21    ]             |    DATA.b $21
+08FA [03    ]             |    DATA.b $03
+08FB [21    ]             |    DATA.b $21
+08FC [      ]             |             #DATA.b     $13, $21, $03, $21, $03, $21
+08FC [      ]             | 
+08FC [      ]             | TILESETS:               ; Each TileSet has a mapping of indexes to actual
+08FC [      ]             |                         ; TileData, 16 mappings because each nibble in
+08FC [      ]             |                         ; COLUMNDATA represents a byte in here which
+08FC [      ]             |                         ; represents a cell
+08FC [      ]             |             ; TileSet[0]
+08FC [00    ]             |    DATA.b $00
+08FD [01    ]             |    DATA.b $01
+08FE [02    ]             |    DATA.b $02
+08FF [03    ]             |    DATA.b $03
+0900 [00    ]             |    DATA.b $00
+0901 [00    ]             |    DATA.b $00
+0902 [00    ]             |    DATA.b $00
+0903 [00    ]             |    DATA.b $00
+0904 [      ]             |             #DATA.b     $00, $01, $02, $03, $00, $00, $00, $00
+0904 [00    ]             |    DATA.b $00
+0905 [00    ]             |    DATA.b $00
+0906 [00    ]             |    DATA.b $00
+0907 [00    ]             |    DATA.b $00
+0908 [00    ]             |    DATA.b $00
+0909 [00    ]             |    DATA.b $00
+090A [00    ]             |    DATA.b $00
+090B [00    ]             |    DATA.b $00
+090C [      ]             |             #DATA.b     $00, $00, $00, $00, $00, $00, $00, $00
+090C [      ]             |             ; TileSet[1]
+090C [03    ]             |    DATA.b $03
+090D [02    ]             |    DATA.b $02
+090E [01    ]             |    DATA.b $01
+090F [00    ]             |    DATA.b $00
+0910 [00    ]             |    DATA.b $00
+0911 [00    ]             |    DATA.b $00
+0912 [00    ]             |    DATA.b $00
+0913 [00    ]             |    DATA.b $00
+0914 [      ]             |             #DATA.b     $03, $02, $01, $00, $00, $00, $00, $00
+0914 [00    ]             |    DATA.b $00
+0915 [00    ]             |    DATA.b $00
+0916 [00    ]             |    DATA.b $00
+0917 [00    ]             |    DATA.b $00
+0918 [00    ]             |    DATA.b $00
+0919 [00    ]             |    DATA.b $00
+091A [00    ]             |    DATA.b $00
+091B [00    ]             |    DATA.b $00
+091C [      ]             |             #DATA.b     $00, $00, $00, $00, $00, $00, $00, $00
+091C [      ]             | 
+091C [      ]             | CELLDATA:
+091C [      ]             |             ; CellData[0]
+091C [01    ]             |    DATA.b $01
+091D [01    ]             |    DATA.b $01
+091E [01    ]             |    DATA.b $01
+091F [01    ]             |    DATA.b $01
+0920 [      ]             |             #DATA.b     $01, $01, $01, $01      ; AAAA
+0920 [      ]             |             ; CellData[1]
+0920 [02    ]             |    DATA.b $02
+0921 [02    ]             |    DATA.b $02
+0922 [02    ]             |    DATA.b $02
+0923 [02    ]             |    DATA.b $02
+0924 [      ]             |             #DATA.b     $02, $02, $02, $02      ; BBBB
+0924 [      ]             |             ; CellData[2]
+0924 [03    ]             |    DATA.b $03
+0925 [03    ]             |    DATA.b $03
+0926 [03    ]             |    DATA.b $03
+0927 [03    ]             |    DATA.b $03
+0928 [      ]             |             #DATA.b     $03, $03, $03, $03      ; CCCC
+0928 [      ]             |             ; CellData[3]
+0928 [04    ]             |    DATA.b $04
+0929 [04    ]             |    DATA.b $04
+092A [04    ]             |    DATA.b $04
+092B [04    ]             |    DATA.b $04
+092C [      ]             |             #DATA.b     $04, $04, $04, $04      ; DDDD
+092C [      ]             | 
