@@ -171,7 +171,7 @@ $sorted | Sort-Object -Property Count -Descending | ForEach-Object {
 
         $line += "$(Get-IndexOfCellType $part), "
     }
-    Write-Host "$($line.Trim(", ")) ),";
+    # Write-Host "$($line.Trim(", ")) ),";
 }
 # Write-Host
 # Write-Host "==========================================="
