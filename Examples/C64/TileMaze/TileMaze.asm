@@ -45,12 +45,12 @@ START:
 
                 LDA.#   10
                 STA     .COL_INDEX
-                @ADD_WORD(DRAW_TILE.OFFSET,2)
+                @ADD_WORD(DRAW_TILE.OFFSET, 2)
                 JMP     .CONTINUE
 
 .ODD_ROW:       LDA.#   9
                 STA     .COL_INDEX
-                @ADD_WORD(DRAW_TILE.OFFSET,2)
+                @ADD_WORD(DRAW_TILE.OFFSET, 2)
 
 .CONTINUE:      LDA     .ROW_INDEX
                 CMP.#   24
@@ -93,17 +93,17 @@ START:
 
                 JSR     GENERATE_TILE
 
-                ; @SET_WORD(DRAW_TILE.OFFSET,180)
-                @SET_WORD(DRAW_TILE.OFFSET,180 + 240)
+                ; @SET_WORD(DRAW_TILE.OFFSET, 180)
+                @SET_WORD(DRAW_TILE.OFFSET, 180 + 240)
                 JSR     DRAW_TILE
 
-                ; @SET_WORD(DRAW_TILE.OFFSET,180 - 16)
+                ; @SET_WORD(DRAW_TILE.OFFSET, 180 - 16)
                 ; JSR     DRAW_TILE
 
-                ; @SET_WORD(DRAW_TILE.OFFSET,180 + 16)
+                ; @SET_WORD(DRAW_TILE.OFFSET, 180 + 16)
                 ; JSR     DRAW_TILE
 
-                ; @SET_WORD(DRAW_TILE.OFFSET,180 + 240 - 16)
+                ; @SET_WORD(DRAW_TILE.OFFSET, 180 + 240 - 16)
                 ; JSR     DRAW_TILE
 
                 LDA.#   VICII_COLOR_RED

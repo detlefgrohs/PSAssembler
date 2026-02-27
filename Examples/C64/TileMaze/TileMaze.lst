@@ -1063,19 +1063,19 @@
 0F49 [      ]             | 
 0F49 [      ]             | ; ===========================================================================
 0F49 [      ]             | CHARDATA:       #LOADBINARY     TileMaze-Chars.bin
-0F49 [      ]             | ; '.\TileMaze-Chars.bin' : 160 bytes
+0F49 [      ]             | ; 'C:\Users\detle\OneDrive\Documents\GitHub\PSAssembler\Examples\C64\TileMaze\TileMaze-Chars.bin' : 160 bytes
 0FE9 [      ]             | MAPDATA:        #LOADBINARY     TileMaze-Map.bin
-0FE9 [      ]             | ; '.\TileMaze-Map.bin' : 1000 bytes
+0FE9 [      ]             | ; 'C:\Users\detle\OneDrive\Documents\GitHub\PSAssembler\Examples\C64\TileMaze\TileMaze-Map.bin' : 1000 bytes
 13D1 [      ]             | MAPEND:
 13D1 [      ]             | 
 13D1 [      ]             | TILEDATA:       #LOADBINARY     TileMaze-TileData.bin
-13D1 [      ]             | ; '.\TileMaze-TileData.bin' : 529 bytes
+13D1 [      ]             | ; 'C:\Users\detle\OneDrive\Documents\GitHub\PSAssembler\Examples\C64\TileMaze\TileMaze-TileData.bin' : 529 bytes
 15E2 [      ]             | TILEEND:
 15E2 [      ]             | 
 15E2 [      ]             | SCROFFSETLO:    #LOADBINARY     TileMaze-ScrOffsetLo.bin
-15E2 [      ]             | ; '.\TileMaze-ScrOffsetLo.bin' : 529 bytes
+15E2 [      ]             | ; 'C:\Users\detle\OneDrive\Documents\GitHub\PSAssembler\Examples\C64\TileMaze\TileMaze-ScrOffsetLo.bin' : 529 bytes
 17F3 [      ]             | SCROFFSETHI:    #LOADBINARY     TileMaze-ScrOffsetHi.bin
-17F3 [      ]             | ; '.\TileMaze-ScrOffsetHi.bin' : 529 bytes
+17F3 [      ]             | ; 'C:\Users\detle\OneDrive\Documents\GitHub\PSAssembler\Examples\C64\TileMaze\TileMaze-ScrOffsetHi.bin' : 529 bytes
 1A04 [      ]             | 
 1A04 [      ]             | DUMMY1:         #TEXT           "Data"
 1A04 [04    ]             |    DATA.b $04

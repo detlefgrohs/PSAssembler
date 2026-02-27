@@ -460,5 +460,5 @@
 0B16 [60    ] RTS         |                 RTS
 0B17 [      ]             | 
 0B17 [      ]             | CHARDATA:       #LOADBINARY     aleahdumasklop-character.bin
-0B17 [      ]             | ; '.\aleahdumasklop-character.bin' : 1808 bytes
+0B17 [      ]             | ; 'C:\Users\detle\OneDrive\Documents\GitHub\PSAssembler\Examples\C64\CharacterAnimation\aleahdumasklop-character.bin' : 1808 bytes
 1227 [      ]             | 

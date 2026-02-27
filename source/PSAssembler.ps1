@@ -393,7 +393,7 @@ class AssemblerV3 {
         if ($PrePendStartingAddress) { $out = $this.WordToByteArray($this.StartingAddress) + $this.Bytes; }
 
         Remove-Item -Path $FileName -Force -ErrorAction SilentlyContinue
-        [System.IO.File]::WriteAllBytes("$($PWD)\$($FileName)", $out);
+        [System.IO.File]::WriteAllBytes("$($FileName)", $out);
 
         $elapsed = [DateTime]::Now - $exportStartDTM;
         Write-Host "   Wrote to '$($FileName)' in $($elapsed.TotalSeconds) seconds."
@@ -569,7 +569,7 @@ class AssemblerV3 {
                     }
                     "LOADBINARY" {
                         $binaryFileName = [IO.Path]::Combine([IO.Path]::GetDirectoryName($this.MainAssemblyFileName), $parsedSyntax.Parameters);
-                        $binaryBytes = [System.IO.File]::ReadAllBytes("$($PWD)\$($binaryFileName)");
+                        $binaryBytes = [System.IO.File]::ReadAllBytes("$($binaryFileName)");
 
                         $dataOffset = $binaryBytes.Count;
                         if ($this.Pass -eq [PassType]::Assembly) {
@@ -795,9 +795,9 @@ if ($GeneratePRG -or $ExecutePRG) {
     if ($ExecutePRG) {
         Write-Host -ForegroundColor Yellow "Launching'$($prgFileName)' in Vice."
         if ($C128) {
-            (. "C:\Program Files\GTK3VICE-3.7-win64\bin\x128.exe" $prgFileName) | Out-Null
+            (. "C:\Program Files\GTK3VICE-3.9-win64\bin\x128.exe" $prgFileName) | Out-Null
         } else {
-            (. "C:\Program Files\GTK3VICE-3.7-win64\bin\x64sc.exe" $prgFileName) | Out-Null
+            (. "C:\Program Files\GTK3VICE-3.9-win64\bin\x64sc.exe" $prgFileName) | Out-Null
         }
     }
 }

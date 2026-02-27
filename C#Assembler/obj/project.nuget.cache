@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "dgSpecHash": "cyNzEAjr/Z4=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\detle\\OneDrive\\Documents\\GitHub\\PSAssembler\\C#Assembler\\AssemblerWorkarea.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\detle\\.nuget\\packages\\microsoft.codeanalysis.analyzers\\3.3.4\\microsoft.codeanalysis.analyzers.3.3.4.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\microsoft.codeanalysis.common\\4.11.0\\microsoft.codeanalysis.common.4.11.0.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\microsoft.codeanalysis.csharp\\4.11.0\\microsoft.codeanalysis.csharp.4.11.0.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\microsoft.codeanalysis.csharp.scripting\\4.11.0\\microsoft.codeanalysis.csharp.scripting.4.11.0.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\microsoft.codeanalysis.scripting.common\\4.11.0\\microsoft.codeanalysis.scripting.common.4.11.0.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\system.collections.immutable\\8.0.0\\system.collections.immutable.8.0.0.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\system.reflection.metadata\\8.0.0\\system.reflection.metadata.8.0.0.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.18\\microsoft.netcore.app.ref.8.0.18.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.18\\microsoft.windowsdesktop.app.ref.8.0.18.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.18\\microsoft.aspnetcore.app.ref.8.0.18.nupkg.sha512",
+    "C:\\Users\\detle\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.18\\microsoft.netcore.app.host.win-x64.8.0.18.nupkg.sha512"
+  ],
+  "logs": []
+}

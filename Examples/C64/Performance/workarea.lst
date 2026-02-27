@@ -18,75 +18,56 @@
 080D [      ]             | 
 080D [      ]             | START:
 080D [      ]             | 
-080D [      ]             | #INCLUDE process\screen_loop-setup.asm
-080D [      ]             | SETUP:
-080D [A200  ] LDX #$00    |                     LDX.#   $00
-080F [8A    ] TXA         | .LOOP:              TXA
-0810 [9D0004] STA $0400,X |                     STA,X   VICII_SCREEN_RAM
-0813 [9D0005] STA $0500,X |                     STA,X   VICII_SCREEN_RAM + $100
+080D [      ]             | ;#INCLUDE process\screen_loop-setup.asm
+080D [      ]             | 
+080D [78    ] SEI         |                                 SEI                             ; Turn off Interrupts
+080E [A97F  ] LDA #$7F    |                 LDA.#   $7F
+0810 [8D0DDC] STA $DC0D   |                 STA     $DC0D
+0813 [8D0DDD] STA $DD0D   |                 STA     $DD0D
 0816 [      ]             | 
-0816 [49FF  ] EOR #$FF    |                     EOR.#   $FF
-0818 [9D00D8] STA $D800,X |                     STA,X   VICII_COLOR_RAM
-081B [9D00D9] STA $D900,X |                     STA,X   VICII_COLOR_RAM + $100
-081E [      ]             | 
-081E [E8    ] INX         |                     INX
-081F [D0EE  ] BNE $EE     |                     BNE     .LOOP
-0821 [      ]             | 
-0821 [78    ] SEI         |                                 SEI                             ; Turn off Interrupts
-0822 [A97F  ] LDA #$7F    |                 LDA.#   $7F
-0824 [8D0DDC] STA $DC0D   |                 STA     $DC0D
-0827 [8D0DDD] STA $DD0D   |                 STA     $DD0D
-082A [      ]             | 
-082A [A000  ] LDY #$00    | .LOOP:                          LDY.#   0
-082C [205D08] JSR $085D   |                 JSR     WAIT_FOR_RASTER_LINE
-082F [A900  ] LDA #$00    |                                 LDA.#       VICII_COLOR_BLACK
-0831 [8D20D0] STA $D020   |                 STA         VICII_BORDER_COLOR
-0834 [A032  ] LDY #$32    |                                 LDY.#   50
-0836 [205D08] JSR $085D   |                 JSR     WAIT_FOR_RASTER_LINE
-0839 [A205  ] LDX #$05    |                                 LDX.#   5
-083B [EA    ] NOP         |                 NOP
-083C [CA    ] DEX         |                 DEX
-083D [10FC  ] BPL $FC     |                 BPL     CURADDR - 2
-083F [A901  ] LDA #$01    |                                 LDA.#       VICII_COLOR_WHITE
-0841 [8D20D0] STA $D020   |                 STA         VICII_BORDER_COLOR
-0844 [      ]             | 
-0844 [      ]             | ; #INCLUDE process\nop_loop.asm
-0844 [      ]             | #INCLUDE process\screen_loop.asm
-0844 [      ]             | 
-0844 [      ]             | ;SCREEN_LOOP:
-0844 [A200  ] LDX #$00    |                 LDX.#   $00
-0846 [FE0004] INC $0400,X | .LOOPX:         INC,X   VICII_SCREEN_RAM
-0849 [FE0005] INC $0500,X |                 INC,X   VICII_SCREEN_RAM + $100
-084C [      ]             | 
-084C [FE00D8] INC $D800,X |                 INC,X   VICII_COLOR_RAM
-084F [FE00D9] INC $D900,X |                 INC,X   VICII_COLOR_RAM + $100
-0852 [      ]             | 
-0852 [E8    ] INX         |                 INX
-0853 [D0F1  ] BNE $F1     |                 BNE     .LOOPX
-0855 [      ]             | 
-0855 [      ]             | 
-0855 [      ]             | ; Stat: 'Process-screen_loop'
-0855 [      ]             | ;    Bytes: 17   MinCycles: 8,670   MaxCycles: 10,200
-0855 [      ]             | ;    MinCycleTime: 8.50 mSec   MaxCycleTime: 10.00 mSec
-0855 [      ]             | ;    Max FPS: 117.65   Min FPS: 100.00
-0855 [      ]             | 
-0855 [      ]             | ; 18.5 Rows => 18.5 * 8 => 148 lines
-0855 [      ]             | ;   148 lines * 63 cycles => 9324 cycles
-0855 [      ]             | 
-0855 [A902  ] LDA #$02    |                                 LDA.#       VICII_COLOR_RED
-0857 [8D20D0] STA $D020   |                 STA         VICII_BORDER_COLOR
-085A [4C2A08] JMP $082A   |                 JMP     .LOOP
-085D [      ]             | 
-085D [      ]             | ; ===========================================================================
-085D [      ]             | #INCLUDE functions\wait_for_raster_line.asm
-085D [      ]             | 
-085D [      ]             | ; ===========================================================================
-085D [      ]             | WAIT_FOR_RASTER_LINE: ; Only works for Rasters < 256
-085D [A980  ] LDA #$80    |                 LDA.#   $80
-085F [CC12D0] CPY $D012   | .LOOP:          CPY     VICII_RASTER
-0862 [D0FB  ] BNE $FB     |                 BNE     .LOOP
-0864 [2D11D0] AND $D011   |                 AND     VICII_CONTROL_1
-0867 [D0F6  ] BNE $F6     |                 BNE     .LOOP
-0869 [      ]             | 
-0869 [60    ] RTS         |                 RTS
-086A [      ]             | ; ===========================================================================
+0816 [A000  ] LDY #$00    | .LOOP:                          LDY.#   0
+0818 [203E08] JSR $083E   |                 JSR     WAIT_FOR_RASTER_LINE
+081B [A900  ] LDA #$00    |                                 LDA.#       VICII_COLOR_BLACK
+081D [8D20D0] STA $D020   |                 STA         VICII_BORDER_COLOR
+0820 [A032  ] LDY #$32    |                                 LDY.#   50
+0822 [203E08] JSR $083E   |                 JSR     WAIT_FOR_RASTER_LINE
+0825 [A205  ] LDX #$05    |                                 LDX.#   5
+0827 [EA    ] NOP         |                 NOP
+0828 [CA    ] DEX         |                 DEX
+0829 [10FC  ] BPL $FC     |                 BPL     CURADDR - 2
+082B [A901  ] LDA #$01    |                                 LDA.#       VICII_COLOR_WHITE
+082D [8D20D0] STA $D020   |                 STA         VICII_BORDER_COLOR
+0830 [      ]             | 
+0830 [      ]             | ;#INCLUDE process\empty_loop.asm
+0830 [      ]             | #INCLUDE process\nop_loop.asm
+0830 [A220  ] LDX #$20    |                 LDX.#   $20
+0832 [EA    ] NOP         | .IDLE_LOOP:     NOP
+0833 [CA    ] DEX         |                 DEX
+0834 [D0FC  ] BNE $FC     |                 BNE     .IDLE_LOOP
+0836 [      ]             | 
+0836 [      ]             | ; Stat: 'Process-nop_loop'
+0836 [      ]             | ;    Bytes: 6   MinCycles: 2,040   MaxCycles: 2,550
+0836 [      ]             | ;    MinCycleTime: 2.00 mSec   MaxCycleTime: 2.50 mSec
+0836 [      ]             | ;    Max FPS: 500.00   Min FPS: 400.00
+0836 [      ]             | 
+0836 [      ]             | ; About 4 lines or 8*4 => 32 lines * 63 cycles
+0836 [      ]             | ; 2016 cycles...
+0836 [      ]             | ; #INCLUDE process\screen_loop.asm
+0836 [      ]             | 
+0836 [A902  ] LDA #$02    |                                 LDA.#       VICII_COLOR_RED
+0838 [8D20D0] STA $D020   |                 STA         VICII_BORDER_COLOR
+083B [4C1608] JMP $0816   |                 JMP     .LOOP
+083E [      ]             | 
+083E [      ]             | ; ===========================================================================
+083E [      ]             | #INCLUDE functions\wait_for_raster_line.asm
+083E [      ]             | 
+083E [      ]             | ; ===========================================================================
+083E [      ]             | WAIT_FOR_RASTER_LINE: ; Only works for Rasters < 256
+083E [A980  ] LDA #$80    |                 LDA.#   $80
+0840 [CC12D0] CPY $D012   | .LOOP:          CPY     VICII_RASTER
+0843 [D0FB  ] BNE $FB     |                 BNE     .LOOP
+0845 [2D11D0] AND $D011   |                 AND     VICII_CONTROL_1
+0848 [D0F6  ] BNE $F6     |                 BNE     .LOOP
+084A [      ]             | 
+084A [60    ] RTS         |                 RTS
+084B [      ]             | ; ===========================================================================

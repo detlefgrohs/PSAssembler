@@ -1,9 +1,9 @@
 #STATS.PUSH
-                LDX.#   $FF
+                LDX.#   $20
 .IDLE_LOOP:     NOP
                 DEX
                 BNE     .IDLE_LOOP
-#STATS.LOOP $FF
+#STATS.LOOP $10
 #STATS.SAVE Process-nop_loop
 #STATS.POP
 

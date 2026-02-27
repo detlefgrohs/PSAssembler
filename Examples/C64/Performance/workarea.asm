@@ -7,7 +7,7 @@
 
 START:
 
-#INCLUDE process\screen_loop-setup.asm
+;#INCLUDE process\screen_loop-setup.asm
 
                 @TURN_INTERRUPTS_OFF()
 
@@ -17,8 +17,9 @@ START:
                 @NOP_LOOP(5)
                 @SET_BORDER_COLOR(VICII_COLOR_WHITE)
 
-; #INCLUDE process\nop_loop.asm
-#INCLUDE process\screen_loop.asm
+;#INCLUDE process\empty_loop.asm
+#INCLUDE process\nop_loop.asm
+; #INCLUDE process\screen_loop.asm
 
                 @SET_BORDER_COLOR(VICII_COLOR_RED)
                 JMP     .LOOP
